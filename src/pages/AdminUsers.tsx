@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, ArrowLeft, Settings, Ban, Trash2, Eye, EyeOff, Link as LinkIcon, Upload, Loader2, KeyRound } from 'lucide-react';
+import { Search, ArrowLeft, Settings, Ban, Trash2, Eye, EyeOff, Link as LinkIcon, Upload, Loader2, KeyRound, Shield } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
@@ -48,6 +48,25 @@ export default function AdminUsers() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetResults, setResetResults] = useState<any>(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
+
+  // Fetch admin user IDs
+  useEffect(() => {
+    const fetchAdminIds = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'admin');
+        if (!error && data) {
+          setAdminUserIds(new Set(data.map(r => r.user_id)));
+        }
+      } catch (err) {
+        console.error('Error fetching admin roles:', err);
+      }
+    };
+    fetchAdminIds();
+  }, []);
 
   const KIWIFY_USERS = [
     { email: "rosetelles1968@outlook.com", fullName: "Roselaine Souza Telles Walker", kiwifyOrderId: "Mt6TsBK" },
@@ -186,6 +205,10 @@ export default function AdminUsers() {
   const handleUserUpdated = () => {
     fetchUsers();
     fetchUsersWithLinkedEmails();
+    // Refresh admin IDs
+    supabase.from('user_roles').select('user_id').eq('role', 'admin').then(({ data }) => {
+      if (data) setAdminUserIds(new Set(data.map(r => r.user_id)));
+    });
   };
 
   const hasLinkedEmails = (userId: string) => {
@@ -311,6 +334,7 @@ export default function AdminUsers() {
                 <TableHead>Status</TableHead>
                 <TableHead>Expira em</TableHead>
                 <TableHead>Origem</TableHead>
+                <TableHead>Cargo</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -374,6 +398,16 @@ export default function AdminUsers() {
                       <span className="text-sm">
                         {user.payment_source === 'kiwify' ? '💳 Kiwify' : '✋ Manual'}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      {adminUserIds.has(user.user_id) ? (
+                        <Badge className="bg-amber-500 text-white gap-1">
+                          <Shield className="h-3 w-3" />
+                          Admin
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Usuário</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button 
