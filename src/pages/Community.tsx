@@ -433,17 +433,6 @@ export default function Community() {
 
                         {/* Actions */}
                         <div className={`flex gap-1 mt-1 ${isOwn ? 'justify-end' : ''}`}>
-                          {/* Reply button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={() => handleReply(msg)}
-                          >
-                            <Reply className="h-3 w-3 mr-1" />
-                            Responder
-                          </Button>
-                          
                           {/* Add reaction button (when no reactions yet) */}
                           {(!msg.reactions || msg.reactions.length === 0) && (
                             <EmojiReactions
@@ -464,7 +453,7 @@ export default function Community() {
                               Fixar
                             </Button>
                           )}
-                          {(isOwn || isAdmin) && (
+                          {isAdmin && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -483,41 +472,41 @@ export default function Community() {
               </div>
             </ScrollArea>
 
-            {/* Reply preview */}
-            {replyTo && (
-              <div className="border-t p-3">
-                <ReplyPreview replyTo={replyTo} onCancel={() => setReplyTo(null)} />
-              </div>
-            )}
+            {/* Input area - Admin only */}
+            {isAdmin ? (
+              <>
+                {/* Reply preview */}
+                {replyTo && (
+                  <div className="border-t p-3">
+                    <ReplyPreview replyTo={replyTo} onCancel={() => setReplyTo(null)} />
+                  </div>
+                )}
 
-            {/* File preview */}
-            {selectedFile && (
-              <div className="border-t p-3 bg-muted/50">
-                <div className="flex items-center gap-2">
-                  {selectedFile.type.startsWith('image/') ? (
-                    <ImageIcon className="h-4 w-4 text-primary" />
-                  ) : (
-                    <FileText className="h-4 w-4 text-primary" />
-                  )}
-                  <span className="text-sm truncate flex-1">{selectedFile.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => setSelectedFile(null)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
+                {/* File preview */}
+                {selectedFile && (
+                  <div className="border-t p-3 bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      {selectedFile.type.startsWith('image/') ? (
+                        <ImageIcon className="h-4 w-4 text-primary" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-primary" />
+                      )}
+                      <span className="text-sm truncate flex-1">{selectedFile.name}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => setSelectedFile(null)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
-            {/* Input */}
-            <div className="border-t p-4">
-              <div className="flex gap-2 items-end">
-                {/* File upload for admins */}
-                {isAdmin && (
-                  <>
+                {/* Input */}
+                <div className="border-t p-4">
+                  <div className="flex gap-2 items-end">
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -545,28 +534,32 @@ export default function Community() {
                     >
                       <BarChart3 className="h-4 w-4" />
                     </Button>
-                  </>
-                )}
-                <Input
-                  placeholder="Digite sua mensagem..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={sending || uploading}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={handleSend} 
-                  disabled={(sending || uploading) || (!newMessage.trim() && !selectedFile)}
-                >
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
+                    <Input
+                      placeholder="Digite sua mensagem..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      disabled={sending || uploading}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={handleSend} 
+                      disabled={(sending || uploading) || (!newMessage.trim() && !selectedFile)}
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="border-t p-4 text-center text-sm text-muted-foreground">
+                📢 Somente administradores podem enviar mensagens neste canal.
               </div>
-            </div>
+            )}
           </Card>
 
           {/* Poll Dialog */}
