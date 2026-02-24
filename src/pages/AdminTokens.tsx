@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Cpu, Users, TrendingUp, Zap, MessageCircle, Brain, ListOrdered, Camera, BarChart3 } from 'lucide-react';
+import { Cpu, Users, TrendingUp, Zap, MessageCircle, Brain, ListOrdered, Camera, BarChart3, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 interface TokenStats {
   total_tokens_used: number;
@@ -77,6 +79,21 @@ export default function AdminTokens() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/admin">Painel Admin</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbPage>Métricas de Tokens</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
       <div>
         <h1 className="text-2xl font-bold text-foreground">Métricas de Tokens</h1>
         <p className="text-muted-foreground">Monitore o consumo de IA e custos operacionais</p>
