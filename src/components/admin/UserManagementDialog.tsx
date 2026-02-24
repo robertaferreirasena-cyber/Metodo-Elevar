@@ -136,6 +136,10 @@ export function UserManagementDialog({ user, open, onOpenChange, onUserUpdated }
   // Password reset
   const [newPassword, setNewPassword] = useState<string | null>(null);
 
+  // Admin role state
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
+  const [showAdminConfirm, setShowAdminConfirm] = useState<'promote' | 'demote' | null>(null);
+
   useEffect(() => {
     if (user && open) {
       setFullName(user.full_name || '');
@@ -148,6 +152,8 @@ export function UserManagementDialog({ user, open, onOpenChange, onUserUpdated }
       setNewLinkedEmail('');
       setLinkedEmails([]);
       setPendingOrders([]);
+      setIsUserAdmin(false);
+      setShowAdminConfirm(null);
       loadUserData();
     }
   }, [user, open]);
@@ -186,6 +192,14 @@ export function UserManagementDialog({ user, open, onOpenChange, onUserUpdated }
       });
       if (linkedData?.linkedEmails) {
         setLinkedEmails(linkedData.linkedEmails);
+      }
+
+      // Check admin status
+      const { data: adminData } = await supabase.functions.invoke('admin-manage-user', {
+        body: { action: 'check_admin', userId: user.user_id }
+      });
+      if (adminData) {
+        setIsUserAdmin(adminData.isAdmin === true);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -343,6 +357,12 @@ export function UserManagementDialog({ user, open, onOpenChange, onUserUpdated }
             )}
             {isDeleted && (
               <Badge variant="outline" className="border-destructive text-destructive">Desativado</Badge>
+            )}
+            {isUserAdmin && (
+              <Badge className="bg-amber-500 text-white">
+                <Shield className="h-3 w-3 mr-1" />
+                Admin
+              </Badge>
             )}
             {userTags.map(tag => (
               <Badge 
@@ -660,6 +680,34 @@ export function UserManagementDialog({ user, open, onOpenChange, onUserUpdated }
             </TabsContent>
 
             <TabsContent value="actions" className="space-y-4">
+              {/* Admin Role */}
+              <div className="border rounded-lg p-4 space-y-3">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Shield className="h-4 w-4" /> Cargo de Administrador
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  {isUserAdmin ? 'Este usuário é administrador.' : 'Este usuário não é administrador.'}
+                </p>
+                {isUserAdmin ? (
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowAdminConfirm('demote')} 
+                    disabled={isLoading}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Remover Admin
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={() => setShowAdminConfirm('promote')} 
+                    disabled={isLoading}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Promover a Admin
+                  </Button>
+                )}
+              </div>
+
               {/* Block/Unblock */}
               <div className="border rounded-lg p-4 space-y-3">
                 <h4 className="font-medium flex items-center gap-2">
@@ -781,6 +829,38 @@ export function UserManagementDialog({ user, open, onOpenChange, onUserUpdated }
               }}
             >
               Sim, excluir permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Admin Role Confirmation */}
+      <AlertDialog open={showAdminConfirm !== null} onOpenChange={(open) => !open && setShowAdminConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {showAdminConfirm === 'promote' ? 'Promover a administrador?' : 'Remover cargo de administrador?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {showAdminConfirm === 'promote'
+                ? `O usuário ${user.email} terá acesso total ao painel administrativo.`
+                : `O usuário ${user.email} perderá acesso ao painel administrativo.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                const action = showAdminConfirm === 'promote' ? 'promote_admin' : 'demote_admin';
+                setShowAdminConfirm(null);
+                const result = await handleAction(action);
+                if (result?.success) {
+                  setIsUserAdmin(showAdminConfirm === 'promote');
+                  loadUserData();
+                }
+              }}
+            >
+              {showAdminConfirm === 'promote' ? 'Sim, promover' : 'Sim, remover'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
