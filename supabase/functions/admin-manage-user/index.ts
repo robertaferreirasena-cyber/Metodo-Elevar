@@ -445,6 +445,62 @@ Deno.serve(async (req) => {
         );
       }
 
+      case 'check_admin': {
+        const { data, error } = await supabaseAdmin
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (error) throw error;
+        return new Response(
+          JSON.stringify({ success: true, isAdmin: !!data }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'promote_admin': {
+        // Prevent duplicates with ON CONFLICT
+        const { error } = await supabaseAdmin
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'admin' });
+
+        if (error && error.message.includes('duplicate')) {
+          return new Response(
+            JSON.stringify({ success: true, message: 'Usuário já é administrador' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        if (error) throw error;
+        return new Response(
+          JSON.stringify({ success: true, message: 'Usuário promovido a administrador' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'demote_admin': {
+        // Prevent self-demotion
+        if (userId === caller.id) {
+          return new Response(
+            JSON.stringify({ error: 'Você não pode remover seu próprio cargo de administrador' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const { error } = await supabaseAdmin
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('role', 'admin');
+
+        if (error) throw error;
+        return new Response(
+          JSON.stringify({ success: true, message: 'Cargo de administrador removido' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: 'Invalid action' }),
