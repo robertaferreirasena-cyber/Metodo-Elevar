@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, ArrowLeft, Settings, Ban, Trash2, Eye, EyeOff, Link as LinkIcon, Upload, Loader2 } from 'lucide-react';
+import { Search, ArrowLeft, Settings, Ban, Trash2, Eye, EyeOff, Link as LinkIcon, Upload, Loader2, KeyRound } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
@@ -45,6 +45,9 @@ export default function AdminUsers() {
   const [importLoading, setImportLoading] = useState(false);
   const [importResults, setImportResults] = useState<any>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetResults, setResetResults] = useState<any>(null);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   const KIWIFY_USERS = [
     { email: "rosetelles1968@outlook.com", fullName: "Roselaine Souza Telles Walker", kiwifyOrderId: "Mt6TsBK" },
@@ -91,6 +94,24 @@ export default function AdminUsers() {
       toast.error('Erro na importação: ' + err.message);
     } finally {
       setImportLoading(false);
+    }
+  };
+
+  const handleBulkResetPasswords = async () => {
+    setResetLoading(true);
+    try {
+      const emails = KIWIFY_USERS.map(u => u.email);
+      const { data, error } = await supabase.functions.invoke('bulk-reset-password', {
+        body: { emails, newPassword: 'mentoragi123' }
+      });
+      if (error) throw error;
+      setResetResults(data);
+      setResetDialogOpen(true);
+      toast.success(`Senhas resetadas: ${data.summary.success} atualizadas, ${data.summary.errors} erros`);
+    } catch (err: any) {
+      toast.error('Erro ao resetar senhas: ' + err.message);
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -267,6 +288,16 @@ export default function AdminUsers() {
                 {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 Importar Kiwify (27)
               </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleBulkResetPasswords}
+                disabled={resetLoading}
+                className="gap-1"
+              >
+                {resetLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                Resetar Senhas Kiwify
+              </Button>
               <CreateUserDialog onCreateUser={createManualUser} />
             </div>
           </div>
@@ -405,6 +436,41 @@ export default function AdminUsers() {
                       </Badge>
                     </TableCell>
                     <TableCell className="font-mono text-sm">{r.tempPassword || '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Resultado do Reset de Senhas</DialogTitle>
+            <DialogDescription>
+              {resetResults && `${resetResults.summary.success} atualizadas, ${resetResults.summary.errors} erros de ${resetResults.summary.total} total`}
+            </DialogDescription>
+          </DialogHeader>
+          {resetResults?.results && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Detalhes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {resetResults.results.map((r: any, i: number) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-sm">{r.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={r.status === 'updated' ? 'default' : 'destructive'}>
+                        {r.status === 'updated' ? '✅ Atualizado' : r.status === 'not_found' ? '⚠️ Não encontrado' : '❌ Erro'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{r.error || 'Senha definida como mentoragi123'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

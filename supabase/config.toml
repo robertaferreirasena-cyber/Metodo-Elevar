@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.bulk-import-users]
 verify_jwt = false
+
+[functions.bulk-reset-password]
+verify_jwt = false
