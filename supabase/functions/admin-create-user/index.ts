@@ -50,8 +50,9 @@ Deno.serve(async (req) => {
       }
     });
 
-    // Get the current user
-    const { data: { user: caller }, error: userError } = await supabaseClient.auth.getUser();
+    // Get the current user using the token directly
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user: caller }, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !caller) {
       console.error('Error getting user:', userError);
       return new Response(
