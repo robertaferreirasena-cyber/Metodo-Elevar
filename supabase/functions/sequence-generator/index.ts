@@ -233,6 +233,7 @@ IMPORTANTE:
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-lite",
+        max_tokens: 1500,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },

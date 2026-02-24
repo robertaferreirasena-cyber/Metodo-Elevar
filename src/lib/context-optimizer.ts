@@ -8,8 +8,8 @@ export type Message = {
 };
 
 // Configuration
-const MAX_CONTEXT_MESSAGES = 6; // Last 6 messages with full content
-const MAX_TOKENS_PER_MESSAGE = 500; // Truncate very long messages
+const MAX_CONTEXT_MESSAGES = 4; // Last 4 messages with full content (economy mode)
+const MAX_TOKENS_PER_MESSAGE = 300; // Truncate very long messages (economy mode)
 
 /**
  * Truncates a message to approximately the max token limit

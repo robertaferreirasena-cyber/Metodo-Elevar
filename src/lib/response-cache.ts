@@ -31,6 +31,17 @@ const CACHEABLE_PATTERNS = [
   /^(como|o que) (responder|falar|dizer).*(marido|esposa|família)/i,
   /^(o que|qual) (mensagem|msg).*(oi|ol[aá]|primeiro contato)/i,
   /^(como|o que) (abordar|iniciar).*(lead frio|cliente novo)/i,
+  // Expanded patterns for more cache hits
+  /^(como|o que) (responder|falar|dizer).*(concorr[eê]ncia|concorrente)/i,
+  /^(como|o que) (responder|falar|dizer).*(garantia|devolu[çc][ãa]o)/i,
+  /^(como|o que) (responder|falar|dizer).*(funciona|resultado)/i,
+  /^(como|o que) (responder|falar|dizer).*(demora|prazo|entrega)/i,
+  /^(como|o que) (criar|fazer|montar).*(oferta|promo[çc][ãa]o)/i,
+  /^(como|o que) (criar|fazer|montar).*(post|story|stories)/i,
+  /^(como|o que) (criar|fazer).*(bio|perfil|vitrine)/i,
+  /^(qual|me d[eê]).*(script|roteiro|modelo).*(venda|abordagem)/i,
+  /^(como|o que) (quebrar|contornar).*(obje[çc][ãa]o|resist[eê]ncia)/i,
+  /^(como|o que) (enviar|mandar).*(proposta|or[çc]amento)/i,
 ];
 
 // Simple hash function for cache keys
