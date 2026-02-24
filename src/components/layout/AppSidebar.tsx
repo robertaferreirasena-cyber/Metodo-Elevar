@@ -178,14 +178,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive('/admin/usuarios')} size="sm">
-                    <NavLink to="/admin/usuarios" className="hover:bg-muted/50 py-1" activeClassName="bg-muted text-primary font-medium">
-                      <Users className="mr-2 h-3.5 w-3.5" />
-                      <span className="text-xs">Usuários</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={isActive('/admin/whatsapp')} size="sm">
                     <NavLink to="/admin/whatsapp" className="hover:bg-muted/50 py-1" activeClassName="bg-muted text-primary font-medium">
                       <Smartphone className="mr-2 h-3.5 w-3.5" />
