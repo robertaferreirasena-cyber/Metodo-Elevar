@@ -1,73 +1,43 @@
 
 
-## Definir senha padrao "mentoragi123" para os 27 usuarios importados
+## Adicionar botao de visualizar senha na tela de Login
 
 ### Resumo
 
-Criar uma Edge Function que redefine a senha de todos os 27 usuarios importados da Kiwify para a senha padrao `mentoragi123`, usando o metodo `auth.admin.updateUserById`.
+Adicionar um icone de "olhinho" (Eye/EyeOff) no campo de senha da pagina de Login, permitindo ao usuario alternar entre visualizar e ocultar a senha digitada. O mesmo padrao ja existe na pagina `ResetPassword.tsx`.
 
 ### O que sera feito
 
-1. **Criar Edge Function `bulk-reset-password`** que:
-   - Recebe uma lista de emails e a nova senha
-   - Valida que o chamador e admin
-   - Para cada email, busca o usuario na tabela `profiles`
-   - Usa `supabaseAdmin.auth.admin.updateUserById()` para redefinir a senha
-   - Retorna relatorio de sucesso/erro para cada usuario
+**Arquivo: `src/pages/Login.tsx`**
 
-2. **Adicionar botao na pagina Admin Usuarios** para executar o reset em lote com a senha padrao `mentoragi123` para os 27 emails da lista Kiwify
-
-### Lista de emails que terao a senha redefinida (27)
-
-Os mesmos 27 emails ja cadastrados na importacao anterior:
-- rosetelles1968@outlook.com
-- ana_angelica_acosta@yahoo.com.br
-- robertabaggiotto@gmail.com
-- crisarteembiscuit80@gmail.com
-- pinowmilena@gmail.com
-- kerberlaura0@gmail.com
-- witekinha@yahoo.com.br
-- micheleoliveirami531@gmail.com
-- ivanete_a@hotmail.com
-- fabiana.knechtel@gmail.com
-- tainara_marafon@hotmail.com
-- lenibergozza@hotmail.com.br
-- francileoncio@hotmail.com
-- alinejjoanelo16m@gmail.com
-- cutelariaventania@gmail.com
-- rb4324791@gmail.com
-- pittrichele@gmail.com
-- tatielegt@hotmail.com
-- izabelapasquali615@gmail.com
-- thaismanuellaalves@gmail.com
-- anaaluisa70@gmail.com
-- contato.closetplusg@gmail.com
-- marina.fiorenza4@gmail.com
-- viviserena13@gmail.com
-- elissavaris@hotmail.com
-- lusi_leacrestani@hotmail.com
-- carolinexavier6571@gmail.com
+1. Importar os icones `Eye` e `EyeOff` do `lucide-react`
+2. Adicionar estado `showPassword` para controlar a visibilidade
+3. Envolver o campo de senha em um `div` com `position: relative`
+4. Adicionar botao com o icone Eye/EyeOff posicionado a direita do campo
+5. Alternar o `type` do input entre `password` e `text` conforme o estado
 
 ### Detalhes Tecnicos
 
-**Edge Function `bulk-reset-password/index.ts`:**
-- Endpoint recebe `{ emails: string[], newPassword: string }`
-- Autentica o chamador como admin via token JWT
-- Para cada email:
-  - Busca o `user_id` na tabela `profiles`
-  - Chama `auth.admin.updateUserById(userId, { password: newPassword })`
-- Retorna `{ summary: { total, success, errors }, results: [...] }`
+O padrao sera identico ao ja utilizado em `ResetPassword.tsx`:
 
-**Pagina AdminUsers.tsx:**
-- Adiciona botao "Resetar Senhas Kiwify" ao lado do botao de importacao existente
-- Ao clicar, chama a Edge Function com os 27 emails e a senha `mentoragi123`
-- Exibe dialogo com resultado (quantos foram atualizados com sucesso)
+```tsx
+const [showPassword, setShowPassword] = useState(false);
 
-### Resultado esperado
+<div className="relative">
+  <Input
+    id="password"
+    type={showPassword ? 'text' : 'password'}
+    ...
+  />
+  <button
+    type="button"
+    onClick={() => setShowPassword(!showPassword)}
+    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+  >
+    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+  </button>
+</div>
+```
 
-Todos os 27 usuarios poderao fazer login com:
-- **Email:** seu email pessoal
-- **Senha:** mentoragi123
-
-Recomenda-se orientar os usuarios a trocar a senha apos o primeiro acesso.
+Alteracao simples e isolada, sem impacto em outros componentes.
 
