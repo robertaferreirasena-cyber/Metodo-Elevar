@@ -172,7 +172,7 @@ Quando o usuário pedir conteúdo de engajamento/comunidade/enquete/sorteio:
 
 REGRA COMUNIDADE: Posts devem pedir interação SIMPLES (1 emoji, 1 palavra), criar EXCLUSIVIDADE, fazer a pessoa se sentir PARTE do grupo, NUNCA ser apenas sobre vender.`;
 
-const LIMITS = { daily: 50, monthly: 500 };
+const LIMITS = { daily: 15, monthly: 100 };
 
 const personaCache = new Map<string, { data: string; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000;

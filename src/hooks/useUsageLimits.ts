@@ -19,10 +19,10 @@ interface UsageLimitsConfig {
 }
 
 const DEFAULT_LIMITS: UsageLimitsConfig = {
-  daily_limit: 50,
-  monthly_limit: 500,
-  persona_limit: 3,
-  sequence_limit: 20,
+  daily_limit: 15,
+  monthly_limit: 100,
+  persona_limit: 1,
+  sequence_limit: 5,
 };
 
 export function useUsageLimits() {
