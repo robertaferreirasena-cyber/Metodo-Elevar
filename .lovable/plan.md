@@ -1,32 +1,29 @@
 
 
-# Plano: Adicionar "Gerenciar Usuarios" no sidebar admin
+# Plano: Remover "Usuarios" do Sidebar e Manter Dentro do Painel Admin
 
 ## Resumo
-Adicionar um link direto para a pagina de gerenciamento de usuarios (`/admin/usuarios`) na secao Admin do sidebar, para que o admin nao precise passar pelo dashboard para acessar a lista de usuarios.
+Remover o link "Usuarios" que foi adicionado ao menu lateral (sidebar) e manter o acesso ao gerenciamento de usuarios exclusivamente atraves do card "Gerenciar Usuarios" dentro do Painel Administrativo (`/admin`).
 
-## Alteracoes
+## Alteracao
 
-### 1. Sidebar (`src/components/layout/AppSidebar.tsx`)
-Adicionar um item "Usuarios" na secao Admin do sidebar, logo apos o "Painel Admin":
+### Sidebar (`src/components/layout/AppSidebar.tsx`)
+Remover o `SidebarMenuItem` de "Usuarios" que aponta para `/admin/usuarios`, revertendo a alteracao anterior. O menu Admin ficara assim:
 
 ```text
-🔐 Admin
-  - Painel Admin     (Settings)
-  - Usuarios         (Users)       <-- NOVO
-  - WhatsApp         (Smartphone)
-  - Chat             (MessagesSquare)
-  - Agentes IA       (Bot)
-  - Agenda           (CalendarDays)
-  - Analytics        (BarChart3)
-  - Organizador      (Sparkles)
+Admin
+  - Painel Admin
+  - WhatsApp
+  - Chat
+  - Agentes IA
+  - Agenda
+  - Analytics
+  - Organizador
 ```
 
-Sera um `SidebarMenuItem` com icone `Users`, rota `/admin/usuarios`, usando o mesmo padrao dos outros itens.
+O acesso a pagina de usuarios continua funcionando normalmente pelo card "Gerenciar Usuarios" dentro do dashboard admin (`/admin`), que ja inclui todas as funcionalidades: ativar/desativar acesso, promover/remover admin, permissoes, tags e emails vinculados.
 
 ### Detalhes tecnicos
-- O icone `Users` ja esta importado no arquivo
-- A rota `/admin/usuarios` ja existe e funciona (definida em App.tsx)
-- Todas as funcionalidades de gerenciamento (promover admin, bloquear, permissoes, tags, emails vinculados) ja estao implementadas no `UserManagementDialog`
-- Nenhuma alteracao de backend necessaria - tudo ja esta funcional
+- Remover apenas as linhas 177-184 do arquivo `AppSidebar.tsx` (o bloco do SidebarMenuItem de Usuarios)
+- Nenhuma outra alteracao necessaria - a rota `/admin/usuarios` e a pagina `AdminUsers.tsx` continuam existindo e acessiveis pelo card no dashboard
 
