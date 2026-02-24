@@ -1,34 +1,48 @@
 
 
-# Plano: Reduzir Limites de Uso para Proteger Custos
+# Plano: Promover/Remover Administrador
 
-## Objetivo
-Reduzir os limites de uso dos 31 usuários "lifetime" (R$ 47 único) para garantir sustentabilidade financeira do projeto.
+## Resumo
+Adicionar um botao no painel de gerenciamento de usuarios para promover ou remover o cargo de administrador.
 
-## Alterações
+## Alteracoes
 
-### 1. Reduzir limites no frontend (`src/hooks/useUsageLimits.ts`)
-Atualizar as constantes `DEFAULT_LIMITS`:
-- Diario: 50 → **15**
-- Mensal: 500 → **100**
-- Raio-X (persona): 3 → **1**
-- Sequencias: 20 → **5**
+### 1. Edge Function (`supabase/functions/admin-manage-user/index.ts`)
+Adicionar duas novas actions:
 
-### 2. Reduzir limites no backend (`supabase/functions/conversation-analyzer/index.ts`)
-Atualizar a constante `LIMITS`:
-- daily: 50 → **15**
-- monthly: 500 → **100**
+- **`promote_admin`**: Insere na tabela `user_roles` o role `admin` para o usuario selecionado
+- **`demote_admin`**: Remove o role `admin` da tabela `user_roles`
+- **`check_admin`**: Verifica se o usuario ja e admin (para mostrar o estado correto no UI)
 
-### 3. Verificar e atualizar demais Edge Functions
-Atualizar os mesmos limites em todas as edge functions que fazem verificacao de uso:
-- `sales-strategist/index.ts`
-- `persona-generator/index.ts`
-- `sequence-generator/index.ts`
-- `whatsapp-ai-agent/index.ts`
-- `whatsapp-followup-agent/index.ts`
+### 2. UserManagementDialog (`src/components/admin/UserManagementDialog.tsx`)
+Na aba "Acoes" (actions tab), adicionar:
 
-## Resultado Esperado
-- Reducao de ~70% no consumo maximo possivel de API
-- Custo maximo estimado cai de R$ 1.500/ano para ~R$ 450/ano
-- Margem de lucro sobe para ~70% sobre os R$ 1.457 ja recebidos
+- Um indicador mostrando se o usuario e admin ou nao
+- Botao "Promover a Admin" (com icone Shield) - aparece quando o usuario NAO e admin
+- Botao "Remover Admin" (com icone Shield em vermelho) - aparece quando o usuario JA e admin
+- Confirmacao via AlertDialog antes de executar a acao (para evitar cliques acidentais)
+
+### 3. Fluxo de seguranca
+- A acao so pode ser executada por quem ja e admin (verificado no backend pelo `is_admin` check existente)
+- Nao sera possivel remover o proprio cargo de admin (protecao contra auto-remocao)
+
+## Detalhes tecnicos
+
+A tabela `user_roles` ja existe com a estrutura:
+```
+user_roles (id, user_id, role, created_at)
+```
+E o enum `app_role` ja inclui `admin`. As RLS policies ja permitem que admins gerenciem roles.
+
+O codigo usara:
+```sql
+-- Promover
+INSERT INTO user_roles (user_id, role) VALUES (userId, 'admin') ON CONFLICT DO NOTHING;
+
+-- Remover  
+DELETE FROM user_roles WHERE user_id = userId AND role = 'admin';
+
+-- Verificar
+SELECT EXISTS (SELECT 1 FROM user_roles WHERE user_id = userId AND role = 'admin');
+```
 
