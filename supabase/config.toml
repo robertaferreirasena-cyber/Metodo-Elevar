@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.admin-credentials]
 verify_jwt = false
+
+[functions.bulk-import-users]
+verify_jwt = false
