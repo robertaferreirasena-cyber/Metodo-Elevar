@@ -1,43 +1,34 @@
 
 
-## Adicionar botao de visualizar senha na tela de Login
+# Plano: Reduzir Limites de Uso para Proteger Custos
 
-### Resumo
+## Objetivo
+Reduzir os limites de uso dos 31 usuários "lifetime" (R$ 47 único) para garantir sustentabilidade financeira do projeto.
 
-Adicionar um icone de "olhinho" (Eye/EyeOff) no campo de senha da pagina de Login, permitindo ao usuario alternar entre visualizar e ocultar a senha digitada. O mesmo padrao ja existe na pagina `ResetPassword.tsx`.
+## Alterações
 
-### O que sera feito
+### 1. Reduzir limites no frontend (`src/hooks/useUsageLimits.ts`)
+Atualizar as constantes `DEFAULT_LIMITS`:
+- Diario: 50 → **15**
+- Mensal: 500 → **100**
+- Raio-X (persona): 3 → **1**
+- Sequencias: 20 → **5**
 
-**Arquivo: `src/pages/Login.tsx`**
+### 2. Reduzir limites no backend (`supabase/functions/conversation-analyzer/index.ts`)
+Atualizar a constante `LIMITS`:
+- daily: 50 → **15**
+- monthly: 500 → **100**
 
-1. Importar os icones `Eye` e `EyeOff` do `lucide-react`
-2. Adicionar estado `showPassword` para controlar a visibilidade
-3. Envolver o campo de senha em um `div` com `position: relative`
-4. Adicionar botao com o icone Eye/EyeOff posicionado a direita do campo
-5. Alternar o `type` do input entre `password` e `text` conforme o estado
+### 3. Verificar e atualizar demais Edge Functions
+Atualizar os mesmos limites em todas as edge functions que fazem verificacao de uso:
+- `sales-strategist/index.ts`
+- `persona-generator/index.ts`
+- `sequence-generator/index.ts`
+- `whatsapp-ai-agent/index.ts`
+- `whatsapp-followup-agent/index.ts`
 
-### Detalhes Tecnicos
-
-O padrao sera identico ao ja utilizado em `ResetPassword.tsx`:
-
-```tsx
-const [showPassword, setShowPassword] = useState(false);
-
-<div className="relative">
-  <Input
-    id="password"
-    type={showPassword ? 'text' : 'password'}
-    ...
-  />
-  <button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-  >
-    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-  </button>
-</div>
-```
-
-Alteracao simples e isolada, sem impacto em outros componentes.
+## Resultado Esperado
+- Reducao de ~70% no consumo maximo possivel de API
+- Custo maximo estimado cai de R$ 1.500/ano para ~R$ 450/ano
+- Margem de lucro sobe para ~70% sobre os R$ 1.457 ja recebidos
 
