@@ -5,12 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, ArrowLeft, Settings, Ban, Trash2, Eye, EyeOff, Link as LinkIcon } from 'lucide-react';
+import { Search, ArrowLeft, Settings, Ban, Trash2, Eye, EyeOff, Link as LinkIcon, Upload, Loader2 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface UserData {
   id: string;
@@ -39,6 +42,57 @@ export default function AdminUsers() {
   
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [managementDialogOpen, setManagementDialogOpen] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResults, setImportResults] = useState<any>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
+  const KIWIFY_USERS = [
+    { email: "rosetelles1968@outlook.com", fullName: "Roselaine Souza Telles Walker", kiwifyOrderId: "Mt6TsBK" },
+    { email: "ana_angelica_acosta@yahoo.com.br", fullName: "Ana Angelica Borges Acosta", kiwifyOrderId: "6KtOctI" },
+    { email: "robertabaggiotto@gmail.com", fullName: "Roberta Vestena Baggiotto", kiwifyOrderId: "QXW6Ou8" },
+    { email: "crisarteembiscuit80@gmail.com", fullName: "Cristiane de Barros Alvares", kiwifyOrderId: "ubW0gsD" },
+    { email: "pinowmilena@gmail.com", fullName: "Milena Henzel Pinow", kiwifyOrderId: "XpLsT1i" },
+    { email: "kerberlaura0@gmail.com", fullName: "Laura Cristina Kerber", kiwifyOrderId: "0qNuoZo" },
+    { email: "witekinha@yahoo.com.br", fullName: "Luciane Witek", kiwifyOrderId: "kPR9YGp" },
+    { email: "micheleoliveirami531@gmail.com", fullName: "Michele Oliveira Carre", kiwifyOrderId: "aVy0VvG" },
+    { email: "ivanete_a@hotmail.com", fullName: "Ivanete Chiodi", kiwifyOrderId: "p299FpE" },
+    { email: "fabiana.knechtel@gmail.com", fullName: "Fabiana Knechtel", kiwifyOrderId: "PacgsLD" },
+    { email: "tainara_marafon@hotmail.com", fullName: "Tainara Aparecida Marafon", kiwifyOrderId: "6cVqleM" },
+    { email: "lenibergozza@hotmail.com.br", fullName: "Leni Natalina de Bergozza", kiwifyOrderId: "LZ2anrZ" },
+    { email: "francileoncio@hotmail.com", fullName: "Francieli Leoncio", kiwifyOrderId: "WSfiiZ4" },
+    { email: "alinejjoanelo16m@gmail.com", fullName: "Aline Joanelo", kiwifyOrderId: "ThouHNj" },
+    { email: "cutelariaventania@gmail.com", fullName: "Cutelaria Ventania", kiwifyOrderId: "GAxFpLQ" },
+    { email: "rb4324791@gmail.com", fullName: "Raquel Batista Kunz", kiwifyOrderId: "6WO4haS" },
+    { email: "pittrichele@gmail.com", fullName: "Richele Girotto Pitt", kiwifyOrderId: "ncv4tXi" },
+    { email: "tatielegt@hotmail.com", fullName: "Tatiele Knapp Kempf", kiwifyOrderId: "yXd1RV4" },
+    { email: "izabelapasquali615@gmail.com", fullName: "Izabela Santos", kiwifyOrderId: "UxK3Pfn" },
+    { email: "thaismanuellaalves@gmail.com", fullName: "Tais Alves", kiwifyOrderId: "BFtJJto" },
+    { email: "anaaluisa70@gmail.com", fullName: "Ana Luisa Honaiser", kiwifyOrderId: "zjK2R1B" },
+    { email: "contato.closetplusg@gmail.com", fullName: "Sabrina Gabriela dos Santos", kiwifyOrderId: "v2zdT2e" },
+    { email: "marina.fiorenza4@gmail.com", fullName: "Marina Fiorenza", kiwifyOrderId: "yZZy6LD" },
+    { email: "viviserena13@gmail.com", fullName: "Viviane Serena", kiwifyOrderId: "cZmw662" },
+    { email: "elissavaris@hotmail.com", fullName: "Elisangela Terezinha Savaris", kiwifyOrderId: "1slbE1h" },
+    { email: "lusi_leacrestani@hotmail.com", fullName: "Lusi Lea Crestani", kiwifyOrderId: "e8YP5LT" },
+    { email: "carolinexavier6571@gmail.com", fullName: "Caroline dos Santos Xavier Fernandes", kiwifyOrderId: "4MP1JZg" },
+  ];
+
+  const handleBulkImport = async () => {
+    setImportLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('bulk-import-users', {
+        body: { users: KIWIFY_USERS }
+      });
+      if (error) throw error;
+      setImportResults(data);
+      setImportDialogOpen(true);
+      toast.success(`Importação concluída: ${data.summary.created} criados, ${data.summary.skipped} já existiam`);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error('Erro na importação: ' + err.message);
+    } finally {
+      setImportLoading(false);
+    }
+  };
 
   // Update search when URL param changes
   useEffect(() => {
@@ -203,6 +257,16 @@ export default function AdminUsers() {
                 {showDeleted ? 'Mostrando' : 'Ocultos'} ({deletedCount})
               </Button>
               
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleBulkImport}
+                disabled={importLoading}
+                className="gap-1"
+              >
+                {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Importar Kiwify (27)
+              </Button>
               <CreateUserDialog onCreateUser={createManualUser} />
             </div>
           </div>
@@ -311,6 +375,43 @@ export default function AdminUsers() {
         onOpenChange={setManagementDialogOpen}
         onUserUpdated={handleUserUpdated}
       />
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Resultado da Importação</DialogTitle>
+            <DialogDescription>
+              {importResults && `${importResults.summary.created} criados, ${importResults.summary.skipped} pulados, ${importResults.summary.errors} erros`}
+            </DialogDescription>
+          </DialogHeader>
+          {importResults?.results && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Senha Temporária</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {importResults.results.map((r: any, i: number) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-sm">{r.email}</TableCell>
+                    <TableCell className="text-sm">{r.fullName || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant={r.status === 'created' ? 'default' : r.status === 'skipped' ? 'secondary' : 'destructive'}>
+                        {r.status === 'created' ? '✅ Criado' : r.status === 'skipped' ? '⏭️ Já existe' : '❌ Erro'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">{r.tempPassword || '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -33,31 +33,34 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    // Verify caller is admin
+    // Auth: check Authorization header OR x-admin-key matching service role
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'No authorization header' }),
+    
+    // Parse body first
+    const body = await req.json() as { users: UserToImport[], adminKey?: string };
+    const { users, adminKey } = body;
+    
+    if (adminKey === supabaseServiceKey) {
+      console.log('Auth via admin key');
+    } else if (authHeader) {
+      const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { autoRefreshToken: false, persistSession: false }
+      });
+      const { data: { user: caller } } = await supabaseClient.auth.getUser();
+      if (!caller) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const { data: isAdmin } = await supabaseAdmin.rpc('is_admin', { check_user_id: caller.id });
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: 'Only admins can bulk import' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    } else {
+      return new Response(JSON.stringify({ error: 'No authorization' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-
-    const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { autoRefreshToken: false, persistSession: false }
-    });
-
-    const { data: { user: caller } } = await supabaseClient.auth.getUser();
-    if (!caller) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const { data: isAdmin } = await supabaseAdmin.rpc('is_admin', { check_user_id: caller.id });
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: 'Only admins can bulk import' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const { users } = await req.json() as { users: UserToImport[] };
     
     const results: any[] = [];
     const expiresAt = new Date();
