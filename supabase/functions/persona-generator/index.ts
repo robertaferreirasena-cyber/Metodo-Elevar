@@ -190,6 +190,7 @@ IMPORTANTE:
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-lite",
+        max_tokens: 1200,
         messages: [
           { role: "system", content: PERSONA_PROMPT },
           { role: "user", content: userMessage },

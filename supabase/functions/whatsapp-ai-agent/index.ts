@@ -151,7 +151,7 @@ A mensagem foi enviada por: ${senderName || senderNumber}`
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured')
 
     // Use more capable model for closer agents
-    const model = isCloser ? 'google/gemini-2.5-flash' : 'google/gemini-2.5-flash-lite'
+    const model = 'google/gemini-2.5-flash-lite'
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -161,6 +161,7 @@ A mensagem foi enviada por: ${senderName || senderNumber}`
       },
       body: JSON.stringify({
         model,
+        max_tokens: 500,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: messageBody },

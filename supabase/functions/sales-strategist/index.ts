@@ -354,6 +354,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-lite",
+        max_tokens: 800,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
