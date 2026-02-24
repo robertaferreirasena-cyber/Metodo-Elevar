@@ -1,0 +1,1 @@
+ALTER TABLE public.sequences ADD COLUMN send_mode text NOT NULL DEFAULT 'uazapi';

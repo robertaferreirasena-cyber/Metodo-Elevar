@@ -1,0 +1,40 @@
+project_id = "atizmwsokehhxclbckfr"
+
+[functions.sales-strategist]
+verify_jwt = false
+
+[functions.conversation-analyzer]
+verify_jwt = false
+
+[functions.persona-generator]
+verify_jwt = false
+
+[functions.sequence-generator]
+verify_jwt = false
+
+[functions.kiwify-webhook]
+verify_jwt = false
+
+[functions.admin-create-user]
+verify_jwt = false
+
+[functions.admin-manage-user]
+verify_jwt = false
+
+[functions.send-scheduled-posts]
+verify_jwt = false
+
+[functions.uazapi-manager]
+verify_jwt = false
+
+[functions.whatsapp-webhook-receiver]
+verify_jwt = false
+
+[functions.whatsapp-ai-agent]
+verify_jwt = false
+
+[functions.whatsapp-followup-agent]
+verify_jwt = false
+
+[functions.admin-credentials]
+verify_jwt = false
