@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, ArrowLeft, Settings, Ban, Trash2, Eye, EyeOff, Link as LinkIcon, Upload, Loader2, KeyRound, Shield } from 'lucide-react';
+import { Search, Settings, Ban, Trash2, Eye, EyeOff, Link as LinkIcon, Upload, Loader2, KeyRound, Shield, ChevronRight } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -228,18 +229,26 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to="/admin">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Gerenciar Usuários</h1>
-          <p className="text-muted-foreground">
-            {users.length} usuários • {blockedCount} bloqueados • {deletedCount} desativados
-          </p>
-        </div>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/admin">Painel Admin</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbPage>Gerenciar Usuários</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Gerenciar Usuários</h1>
+        <p className="text-muted-foreground">
+          {users.length} usuários • {blockedCount} bloqueados • {deletedCount} desativados
+        </p>
       </div>
 
       <Card>
