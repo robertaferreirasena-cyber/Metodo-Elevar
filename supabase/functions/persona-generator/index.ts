@@ -85,7 +85,7 @@ REGRAS:
 - Retorne APENAS JSON válido`;
 
 // Limits
-const LIMITS = { daily: 50, monthly: 500, persona: 3 };
+const LIMITS = { daily: 15, monthly: 100, persona: 1 };
 
 // deno-lint-ignore no-explicit-any
 async function checkUsageLimits(supabase: any, userId: string): Promise<{ allowed: boolean; reason?: string }> {

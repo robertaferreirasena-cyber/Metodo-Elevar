@@ -51,7 +51,7 @@ Formato: [nome] | Por que funciona: [explicação]
 🔮 **PRÓXIMO PASSO**
 🎓 **LIÇÃO PRINCIPAL**`;
 
-const LIMITS = { daily: 50, monthly: 500 };
+const LIMITS = { daily: 15, monthly: 100 };
 const personaCache = new Map<string, { data: string; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
 

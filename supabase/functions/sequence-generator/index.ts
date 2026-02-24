@@ -51,7 +51,7 @@ grupo: Posts curtos coletivos | x1: Íntimo personalizado | diagnostico: Pergunt
 RETORNE APENAS JSON VÁLIDO.`;
 
 // Limits
-const LIMITS = { daily: 50, monthly: 500, sequence: 20 };
+const LIMITS = { daily: 15, monthly: 100, sequence: 5 };
 
 // Persona cache
 const personaCache = new Map<string, { data: string; timestamp: number }>();
