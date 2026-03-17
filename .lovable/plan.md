@@ -1,34 +1,20 @@
-# Plano: Jornada do Aluno + Hub Pages + Menu Simplificado
+# Plano: Acesso 4 Meses + Admin Completo + Base de Conhecimento
 
 ## Status: ✅ Implementado
 
 ## O que foi feito
 
-### 1. Sidebar Simplificado (`AppSidebar.tsx`)
-- Rebrand: "Mentoria Elevar" / "Sua assistente de vendas"
-- Menu reduzido: Dashboard, WhatsApp, Mentora Gi, Aprendizado, Conquistas
-- Seção "Mais" collapsible com itens secundários
+### 1. Acesso de 4 Meses
+- `handle_new_user()` agora define `expires_at = NOW() + 4 months`
+- Subscriptions existentes sem `expires_at` atualizadas para `started_at + 4 meses`
 
-### 2. WhatsApp Hub (`/whatsapp`) - NOVA
-- Página centralizando todas ferramentas de WhatsApp
-- Seções: Vendas Privadas (1:1) e Grupos & Comunidade
-- Stats de conversas e favoritos
+### 2. Admin com Menu de Abas
+- `AdminLayout.tsx` com navegação horizontal: Dashboard, Usuários, Pagamentos, Tokens, Credenciais, Aprendizado, Base IA
+- Todas as páginas admin envolvidas com AdminLayout
+- Breadcrumbs removidos em favor das abas
 
-### 3. Mentora Gi Hub (`/mentora-hub`) - NOVA
-- Hub com CTA principal para chat + recursos relacionados
-- Links para Ideias, Persona, Ensaio Foto
-
-### 4. Dashboard = Jornada do Aluno
-- Card de boas-vindas contextualizado para mentoria
-- Card "Sua Próxima Atividade" baseado em learning_lessons
-- Progresso do aluno (%, nível XP, streak)
-- Acesso rápido aos 4 hubs principais
-- Persona insights mantidos
-
-### 5. Migração: `activity_type` em `learning_lessons`
-- Coluna `activity_type text default null` adicionada
-- Valores: whatsapp_private, whatsapp_group, persona, content, mentor, calculator, photo
-
-### 6. Rotas atualizadas
-- `/whatsapp` → WhatsAppHub
-- `/mentora-hub` → MentoraHub
+### 3. Base de Conhecimento IA
+- Tabela `agent_knowledge_base` (agent_key, agent_name, system_prompt)
+- Página `/admin/base-conhecimento` para editar prompts dos agentes
+- Edge functions (ai-mentor-chat, sales-strategist, conversation-analyzer, sequence-generator) consultam a tabela com fallback para prompts hardcoded
+- Cache de 5 minutos para evitar queries excessivas
