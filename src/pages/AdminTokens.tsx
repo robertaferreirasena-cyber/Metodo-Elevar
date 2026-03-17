@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Cpu, Users, TrendingUp, Zap, MessageCircle, Brain, ListOrdered, Camera, BarChart3, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { Cpu, Users, TrendingUp, Zap, MessageCircle, Brain, ListOrdered, Camera, BarChart3 } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface TokenStats {
   total_tokens_used: number;
