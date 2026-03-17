@@ -228,22 +228,8 @@ export default function AdminUsers() {
   const blockedCount = users.filter(u => u.blocked_at).length;
 
   return (
+    <AdminLayout>
     <div className="space-y-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/admin">Painel Admin</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator>
-            <ChevronRight className="h-4 w-4" />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbPage>Gerenciar Usuários</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
       <div>
         <h1 className="text-2xl font-bold text-foreground">Gerenciar Usuários</h1>
         <p className="text-muted-foreground">
