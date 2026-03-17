@@ -416,6 +416,18 @@ const App = () => (
                 }
               />
               
+              {/* Mentora Gi */}
+              <Route
+                path="/mentora"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <MentorChat />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>

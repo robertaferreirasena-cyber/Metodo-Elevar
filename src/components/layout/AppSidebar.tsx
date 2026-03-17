@@ -62,6 +62,7 @@ const menuGroups = [
       { title: "Calculadora", url: "/calculadora", icon: Calculator },
       { title: "Conquistas", url: "/conquistas", icon: Trophy, isNew: true },
       { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap, isNew: true },
+      { title: "Mentora Gi", url: "/mentora", icon: BotMessageSquare, isNew: true },
     ],
   },
   {
