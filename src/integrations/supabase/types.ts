@@ -53,6 +53,33 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_knowledge_base: {
+        Row: {
+          agent_key: string
+          agent_name: string
+          id: string
+          system_prompt: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          agent_key: string
+          agent_name: string
+          id?: string
+          system_prompt: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          agent_key?: string
+          agent_name?: string
+          id?: string
+          system_prompt?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       community_materials: {
         Row: {
           created_at: string | null

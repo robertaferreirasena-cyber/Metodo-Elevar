@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 
 interface CredentialsData {
   project_url: string | null;
@@ -187,6 +188,7 @@ export default function AdminCredentials() {
   };
 
   return (
+    <AdminLayout>
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
@@ -307,5 +309,6 @@ export default function AdminCredentials() {
         </div>
       )}
     </div>
+    </AdminLayout>
   );
 }

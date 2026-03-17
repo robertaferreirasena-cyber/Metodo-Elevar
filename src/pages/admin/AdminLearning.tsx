@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, GraduationCap, Users, BookOpen, Bot, Save } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -198,6 +199,7 @@ export default function AdminLearning() {
   }
 
   return (
+    <AdminLayout>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Gerenciar Aprendizado</h1>
@@ -364,6 +366,7 @@ export default function AdminLearning() {
         </DialogContent>
       </Dialog>
     </div>
+    </AdminLayout>
   );
 }
 

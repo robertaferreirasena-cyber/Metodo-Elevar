@@ -37,6 +37,7 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminPayments from "./pages/AdminPayments";
 import AdminTokens from "./pages/AdminTokens";
 import AdminLearning from "./pages/admin/AdminLearning";
+import AdminKnowledgeBase from "./pages/admin/AdminKnowledgeBase";
 import SubscriptionExpired from "./pages/SubscriptionExpired";
 import AccessBlocked from "./pages/AccessBlocked";
 import PhotoBoss from "./pages/PhotoBoss";
@@ -338,8 +339,10 @@ const App = () => (
                 }
               />
 
+              <Route path="/admin/credenciais" element={<ProtectedRoute><AdminRoute><AppLayout><AdminCredentials /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin-credentials" element={<ProtectedRoute><AdminRoute><AppLayout><AdminCredentials /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin/aprendizado" element={<ProtectedRoute><AdminRoute><AppLayout><AdminLearning /></AppLayout></AdminRoute></ProtectedRoute>} />
+              <Route path="/admin/base-conhecimento" element={<ProtectedRoute><AdminRoute><AppLayout><AdminKnowledgeBase /></AppLayout></AdminRoute></ProtectedRoute>} />
 
               {/* WhatsApp Hub */}
               <Route

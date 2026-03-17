@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, AlertTriangle, Link as LinkIcon, CheckCircle, ChevronRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { RefreshCw, AlertTriangle, Link as LinkIcon, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -48,28 +48,12 @@ export default function AdminPayments() {
   };
 
   return (
+    <AdminLayout>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/admin">Painel Admin</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4" />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Pagamentos Kiwify</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Pagamentos Kiwify</h1>
-            <p className="text-muted-foreground">{orders.length} pagamentos • {pendingOrders.length} pendentes</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Pagamentos Kiwify</h1>
+          <p className="text-muted-foreground">{orders.length} pagamentos • {pendingOrders.length} pendentes</p>
         </div>
         <Button onClick={handleRefresh} variant="outline" className="gap-2">
           <RefreshCw className="h-4 w-4" />
@@ -245,5 +229,6 @@ export default function AdminPayments() {
         </TabsContent>
       </Tabs>
     </div>
+    </AdminLayout>
   );
 }

@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Settings, Ban, Trash2, Eye, EyeOff, Link as LinkIcon, Upload, Loader2, KeyRound, Shield, ChevronRight } from 'lucide-react';
+import { Search, Settings, Ban, Trash2, Eye, EyeOff, Link as LinkIcon, Upload, Loader2, KeyRound, Shield } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -228,22 +228,8 @@ export default function AdminUsers() {
   const blockedCount = users.filter(u => u.blocked_at).length;
 
   return (
+    <AdminLayout>
     <div className="space-y-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/admin">Painel Admin</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator>
-            <ChevronRight className="h-4 w-4" />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbPage>Gerenciar Usuários</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
       <div>
         <h1 className="text-2xl font-bold text-foreground">Gerenciar Usuários</h1>
         <p className="text-muted-foreground">
@@ -522,5 +508,6 @@ export default function AdminUsers() {
         </DialogContent>
       </Dialog>
     </div>
+    </AdminLayout>
   );
 }

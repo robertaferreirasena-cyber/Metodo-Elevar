@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, CreditCard, MessageCircle, TrendingUp, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 export default function Admin() {
   const { users, orders, loading } = useAdminData();
@@ -20,6 +21,7 @@ export default function Admin() {
   }
 
   return (
+    <AdminLayout>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Painel Administrativo</h1>
@@ -177,5 +179,6 @@ export default function Admin() {
         </CardContent>
       </Card>
     </div>
+    </AdminLayout>
   );
 }
