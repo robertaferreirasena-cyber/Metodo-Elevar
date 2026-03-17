@@ -46,6 +46,7 @@ import WhatsAppAgents from "./pages/admin/WhatsAppAgents";
 import WhatsAppSchedule from "./pages/admin/WhatsAppSchedule";
 import WhatsAppAnalytics from "./pages/admin/WhatsAppAnalytics";
 import WhatsAppOrganizer from "./pages/admin/WhatsAppOrganizer";
+import AdminLearning from "./pages/admin/AdminLearning";
 import SubscriptionExpired from "./pages/SubscriptionExpired";
 import AccessBlocked from "./pages/AccessBlocked";
 import PhotoBoss from "./pages/PhotoBoss";
