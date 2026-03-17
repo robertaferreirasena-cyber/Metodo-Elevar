@@ -2,7 +2,7 @@ import {
   MessageCircle, Users, Heart, Clock, Lightbulb, Zap, Brain, ArrowRight, 
   Target, AlertTriangle, Camera, Calculator, Trophy, GraduationCap, 
   BotMessageSquare, Calendar, Layout, Search, FileText, MessageSquare,
-  Download, BookOpen, Sparkles
+  Download, BookOpen, Sparkles, TrendingUp, Star
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,10 @@ import { usePersonaProfile } from "@/hooks/usePersonaProfile";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import OnboardingFlow from "@/components/OnboardingFlow";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface QuickToolProps {
   icon: ReactNode;
@@ -73,9 +76,34 @@ function FeatureLink({ icon, title, description, href, isNew }: FeatureLinkProps
 }
 
 export default function Dashboard() {
-  const { profile, loading: personaLoading, hasRaioX } = usePersonaProfile();
+  const { profile: personaProfile, loading: personaLoading, hasRaioX } = usePersonaProfile();
   const { showOnboarding, currentStep, loading: onboardingLoading, updateStep, completeOnboarding } = useOnboarding();
-  const raioX = profile?.generated_raio_x;
+  const { profile, user } = useAuth();
+  const raioX = personaProfile?.generated_raio_x;
+
+  const [usageStats, setUsageStats] = useState<{ daily: number; monthly: number; favorites: number; conversations: number } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchStats = async () => {
+      const [usageRes, favsRes, convsRes] = await Promise.all([
+        supabase.from('usage_limits').select('daily_requests, monthly_requests').eq('user_id', user.id).maybeSingle(),
+        supabase.from('favorites').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      ]);
+      setUsageStats({
+        daily: usageRes.data?.daily_requests ?? 0,
+        monthly: usageRes.data?.monthly_requests ?? 0,
+        favorites: favsRes.count ?? 0,
+        conversations: convsRes.count ?? 0,
+      });
+    };
+    fetchStats();
+  }, [user]);
+
+  const firstName = profile?.full_name?.split(' ')[0] || 'usuário';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -86,15 +114,59 @@ export default function Dashboard() {
         onComplete={completeOnboarding}
       />
 
-      {/* Header */}
-      <div className="text-center space-y-1">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-          Central de Ferramentas ✨
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Tudo que você precisa para vender mais, em um só lugar
-        </p>
-      </div>
+      {/* Welcome Card */}
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+        <CardContent className="py-5 px-5">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-12 w-12 border-2 border-primary/30">
+              <AvatarImage src={profile?.avatar_url || ''} />
+              <AvatarFallback className="bg-primary/20 text-primary font-bold text-lg">
+                {firstName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground">
+                {greeting}, {firstName}! 👋
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Pronta para vender mais hoje?
+              </p>
+            </div>
+          </div>
+          {usageStats && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-background/60">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Hoje</p>
+                  <p className="text-sm font-semibold text-foreground">{usageStats.daily} usos</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-background/60">
+                <Zap className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Este mês</p>
+                  <p className="text-sm font-semibold text-foreground">{usageStats.monthly} usos</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-background/60">
+                <Heart className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Favoritos</p>
+                  <p className="text-sm font-semibold text-foreground">{usageStats.favorites}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-background/60">
+                <Star className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Conversas</p>
+                  <p className="text-sm font-semibold text-foreground">{usageStats.conversations}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Quick Access Grid */}
       <Card>
@@ -136,7 +208,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <Brain className="h-5 w-5 text-primary" />
                 <CardTitle className="text-base">Sua Persona</CardTitle>
-                <Badge variant="secondary" className="text-xs">{profile?.niche}</Badge>
+                <Badge variant="secondary" className="text-xs">{personaProfile?.niche}</Badge>
               </div>
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/persona" className="gap-1 text-xs">
