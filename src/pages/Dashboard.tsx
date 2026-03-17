@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { usePersonaProfile } from "@/hooks/usePersonaProfile";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import OnboardingFlow from "@/components/OnboardingFlow";
 
 export default function Dashboard() {
   // Executar verificação de limpeza automática a cada 48h
