@@ -1,4 +1,4 @@
-import { Home, MessageCircle, Search, FileText, Users, Calendar, Layout, Heart, Clock, Lightbulb, LogOut, Brain, Download, MessageSquare, Settings, Camera, BookOpen, BarChart3, Contact, Kanban, ListTodo, Smartphone, MessagesSquare, Bot, CalendarDays, Sparkles, Calculator, Trophy } from "lucide-react";
+import { Home, MessageCircle, Search, FileText, Users, Calendar, Layout, Heart, Clock, Lightbulb, LogOut, Brain, Download, MessageSquare, Settings, Camera, BookOpen, BarChart3, Contact, Kanban, ListTodo, Smartphone, MessagesSquare, Bot, CalendarDays, Sparkles, Calculator, Trophy, GraduationCap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -61,6 +61,7 @@ const menuGroups = [
       { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera, isNew: true },
       { title: "Calculadora", url: "/calculadora", icon: Calculator },
       { title: "Conquistas", url: "/conquistas", icon: Trophy, isNew: true },
+      { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap, isNew: true },
     ],
   },
   {

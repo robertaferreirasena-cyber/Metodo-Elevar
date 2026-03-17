@@ -52,6 +52,7 @@ import PhotoBoss from "./pages/PhotoBoss";
 import AdminCredentials from "./pages/AdminCredentials";
 import PriceCalculator from "./pages/PriceCalculator";
 import Gamification from "./pages/Gamification";
+import LearningModules from "./pages/LearningModules";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -397,6 +398,18 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Gamification />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Aprendizado */}
+              <Route
+                path="/aprendizado"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <LearningModules />
                     </AppLayout>
                   </ProtectedRoute>
                 }
