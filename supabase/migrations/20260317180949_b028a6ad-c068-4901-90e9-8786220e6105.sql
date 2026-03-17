@@ -1,0 +1,1 @@
+ALTER TABLE public.learning_lessons ADD COLUMN IF NOT EXISTS activity_type text DEFAULT NULL;

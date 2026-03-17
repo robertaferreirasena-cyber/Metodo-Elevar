@@ -45,6 +45,8 @@ import PriceCalculator from "./pages/PriceCalculator";
 import Gamification from "./pages/Gamification";
 import LearningModules from "./pages/LearningModules";
 import MentorChat from "./pages/MentorChat";
+import WhatsAppHub from "./pages/WhatsAppHub";
+import MentoraHub from "./pages/MentoraHub";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -339,10 +341,33 @@ const App = () => (
               <Route path="/admin-credentials" element={<ProtectedRoute><AdminRoute><AppLayout><AdminCredentials /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin/aprendizado" element={<ProtectedRoute><AdminRoute><AppLayout><AdminLearning /></AppLayout></AdminRoute></ProtectedRoute>} />
 
+              {/* WhatsApp Hub */}
+              <Route
+                path="/whatsapp"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <WhatsAppHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Mentora Hub */}
+              <Route
+                path="/mentora-hub"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <MentoraHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Legacy redirects */}
               <Route path="/estrategias" element={<Navigate to="/privado/estrategias" replace />} />
               <Route path="/analise" element={<Navigate to="/privado/analise" replace />} />
-              <Route path="/whatsapp" element={<Navigate to="/privado/scripts" replace />} />
 
               {/* Install Page - no layout needed */}
               <Route path="/instalar" element={<Install />} />
