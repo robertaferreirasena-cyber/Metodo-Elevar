@@ -60,6 +60,7 @@ const menuGroups = [
       { title: "Comunidade", url: "/comunidade", icon: MessageSquare },
       { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera, isNew: true },
       { title: "Calculadora", url: "/calculadora", icon: Calculator },
+      { title: "Conquistas", url: "/conquistas", icon: Trophy, isNew: true },
     ],
   },
   {

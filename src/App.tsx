@@ -389,6 +389,18 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+
+              {/* Gamificação */}
+              <Route
+                path="/conquistas"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Gamification />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
