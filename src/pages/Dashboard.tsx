@@ -208,7 +208,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <Brain className="h-5 w-5 text-primary" />
                 <CardTitle className="text-base">Sua Persona</CardTitle>
-                <Badge variant="secondary" className="text-xs">{profile?.niche}</Badge>
+                <Badge variant="secondary" className="text-xs">{personaProfile?.niche}</Badge>
               </div>
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/persona" className="gap-1 text-xs">
