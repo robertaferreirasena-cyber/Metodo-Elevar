@@ -309,5 +309,6 @@ export default function AdminCredentials() {
         </div>
       )}
     </div>
+    </AdminLayout>
   );
 }
