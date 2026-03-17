@@ -240,6 +240,9 @@ IMPORTANTE:
 8. Inclua "mentorNote" com uma dica geral sobre a sequência
 9. Retorne APENAS o JSON válido`;
 
+    const kbPrompt = await getKBPrompt("sequence-generator");
+    const finalSystemPrompt = kbPrompt || SYSTEM_PROMPT;
+
     console.log(`[sequence-generator] ${numPosts} posts, mode: ${mode}${personaContext ? " (with persona)" : ""}`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -252,7 +255,7 @@ IMPORTANTE:
         model: "google/gemini-2.5-flash-lite",
         max_tokens: 1500,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: finalSystemPrompt },
           { role: "user", content: userPrompt },
         ],
         stream: false,
