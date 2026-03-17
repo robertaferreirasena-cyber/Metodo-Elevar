@@ -1,29 +1,34 @@
+# Plano: Jornada do Aluno + Hub Pages + Menu Simplificado
 
+## Status: ✅ Implementado
 
-# Plano: Remover "Usuarios" do Sidebar e Manter Dentro do Painel Admin
+## O que foi feito
 
-## Resumo
-Remover o link "Usuarios" que foi adicionado ao menu lateral (sidebar) e manter o acesso ao gerenciamento de usuarios exclusivamente atraves do card "Gerenciar Usuarios" dentro do Painel Administrativo (`/admin`).
+### 1. Sidebar Simplificado (`AppSidebar.tsx`)
+- Rebrand: "Mentoria Elevar" / "Sua assistente de vendas"
+- Menu reduzido: Dashboard, WhatsApp, Mentora Gi, Aprendizado, Conquistas
+- Seção "Mais" collapsible com itens secundários
 
-## Alteracao
+### 2. WhatsApp Hub (`/whatsapp`) - NOVA
+- Página centralizando todas ferramentas de WhatsApp
+- Seções: Vendas Privadas (1:1) e Grupos & Comunidade
+- Stats de conversas e favoritos
 
-### Sidebar (`src/components/layout/AppSidebar.tsx`)
-Remover o `SidebarMenuItem` de "Usuarios" que aponta para `/admin/usuarios`, revertendo a alteracao anterior. O menu Admin ficara assim:
+### 3. Mentora Gi Hub (`/mentora-hub`) - NOVA
+- Hub com CTA principal para chat + recursos relacionados
+- Links para Ideias, Persona, Ensaio Foto
 
-```text
-Admin
-  - Painel Admin
-  - WhatsApp
-  - Chat
-  - Agentes IA
-  - Agenda
-  - Analytics
-  - Organizador
-```
+### 4. Dashboard = Jornada do Aluno
+- Card de boas-vindas contextualizado para mentoria
+- Card "Sua Próxima Atividade" baseado em learning_lessons
+- Progresso do aluno (%, nível XP, streak)
+- Acesso rápido aos 4 hubs principais
+- Persona insights mantidos
 
-O acesso a pagina de usuarios continua funcionando normalmente pelo card "Gerenciar Usuarios" dentro do dashboard admin (`/admin`), que ja inclui todas as funcionalidades: ativar/desativar acesso, promover/remover admin, permissoes, tags e emails vinculados.
+### 5. Migração: `activity_type` em `learning_lessons`
+- Coluna `activity_type text default null` adicionada
+- Valores: whatsapp_private, whatsapp_group, persona, content, mentor, calculator, photo
 
-### Detalhes tecnicos
-- Remover apenas as linhas 177-184 do arquivo `AppSidebar.tsx` (o bloco do SidebarMenuItem de Usuarios)
-- Nenhuma outra alteracao necessaria - a rota `/admin/usuarios` e a pagina `AdminUsers.tsx` continuam existindo e acessiveis pelo card no dashboard
-
+### 6. Rotas atualizadas
+- `/whatsapp` → WhatsAppHub
+- `/mentora-hub` → MentoraHub
