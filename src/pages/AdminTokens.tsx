@@ -77,22 +77,8 @@ export default function AdminTokens() {
   }
 
   return (
+    <AdminLayout>
     <div className="space-y-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/admin">Painel Admin</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator>
-            <ChevronRight className="h-4 w-4" />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbPage>Métricas de Tokens</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
       <div>
         <h1 className="text-2xl font-bold text-foreground">Métricas de Tokens</h1>
         <p className="text-muted-foreground">Monitore o consumo de IA e custos operacionais</p>
