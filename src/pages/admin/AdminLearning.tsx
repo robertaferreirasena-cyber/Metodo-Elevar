@@ -243,6 +243,7 @@ export default function AdminLearning() {
                     <TableRow>
                       <TableHead>Pos</TableHead>
                       <TableHead>Título</TableHead>
+                      <TableHead>Tipo Atividade</TableHead>
                       <TableHead>Duração</TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
