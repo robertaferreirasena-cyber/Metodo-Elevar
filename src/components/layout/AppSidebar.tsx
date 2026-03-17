@@ -1,4 +1,4 @@
-import { Home, MessageCircle, Search, FileText, Users, Calendar, Layout, Heart, Clock, Lightbulb, LogOut, Brain, Download, MessageSquare, Settings, Camera, BookOpen, Calculator, Trophy, GraduationCap, BotMessageSquare } from "lucide-react";
+import { Home, Smartphone, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Calculator, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,63 +15,32 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AppLogo } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CopyFormatsGlossary } from "@/components/CopyFormatsGlossary";
+import { useState } from "react";
 
-const menuGroups = [
-  {
-    label: null,
-    items: [
-      { title: "Dashboard", url: "/", icon: Home },
-    ],
-  },
-  {
-    label: "💬 Privado",
-    items: [
-      { title: "Estratégias 1:1", url: "/privado/estrategias", icon: MessageCircle },
-      { title: "Análise", url: "/privado/analise", icon: Search },
-      { title: "Scripts", url: "/privado/scripts", icon: FileText },
-    ],
-  },
-  {
-    label: "👥 Grupo",
-    items: [
-      { title: "Conteúdo", url: "/grupo/conteudo", icon: Users },
-      { title: "Sequências", url: "/grupo/sequencias", icon: Calendar },
-      { title: "Templates", url: "/grupo/templates", icon: Layout },
-    ],
-  },
-  {
-    label: "📚 Biblioteca",
-    items: [
-      { title: "Favoritos", url: "/favoritos", icon: Heart },
-      { title: "Histórico", url: "/historico", icon: Clock },
-    ],
-  },
-  {
-    label: "🛠️ Ferramentas",
-    items: [
-      { title: "Raio-X Persona", url: "/persona", icon: Brain },
-      { title: "Ideias", url: "/ideias", icon: Lightbulb },
-      { title: "Comunidade", url: "/comunidade", icon: MessageSquare },
-      { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera, isNew: true },
-      { title: "Calculadora", url: "/calculadora", icon: Calculator },
-      { title: "Conquistas", url: "/conquistas", icon: Trophy, isNew: true },
-      { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap, isNew: true },
-      { title: "Mentora Gi", url: "/mentora", icon: BotMessageSquare, isNew: true },
-    ],
-  },
-  {
-    label: "📚 Recursos",
-    items: [
-      { title: "Instalar App", url: "/instalar", icon: Download },
-    ],
-    hasGlossary: true,
-  },
+const mainItems = [
+  { title: "Dashboard", url: "/", icon: Home },
+  { title: "WhatsApp", url: "/whatsapp", icon: Smartphone },
+  { title: "Mentora Gi", url: "/mentora-hub", icon: BotMessageSquare },
+  { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap },
+  { title: "Conquistas", url: "/conquistas", icon: Trophy },
+];
+
+const moreItems = [
+  { title: "Raio-X Persona", url: "/persona", icon: Brain },
+  { title: "Ideias", url: "/ideias", icon: Lightbulb },
+  { title: "Calculadora", url: "/calculadora", icon: Calculator },
+  { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera },
+  { title: "Comunidade", url: "/comunidade", icon: MessageSquare },
+  { title: "Favoritos", url: "/favoritos", icon: Heart },
+  { title: "Histórico", url: "/historico", icon: Clock },
+  { title: "Instalar App", url: "/instalar", icon: Download },
 ];
 
 export function AppSidebar() {
@@ -79,11 +48,15 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const { profile, subscription, signOut, loading } = useAuth();
   const { isAdmin } = useAdmin();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (path: string) => {
     if (path === "/") return currentPath === "/";
     return currentPath.startsWith(path);
   };
+
+  // Auto-open "Mais" if current path matches one of its items
+  const isMoreActive = moreItems.some(item => isActive(item.url));
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -115,44 +88,65 @@ export function AppSidebar() {
             <AppLogo size={32} />
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-foreground text-xs">Estrategista IA</span>
-            <span className="text-[10px] text-muted-foreground">Vendas & Marketing</span>
+            <span className="font-semibold text-foreground text-xs">Mentoria Elevar</span>
+            <span className="text-[10px] text-muted-foreground">Sua assistente de vendas</span>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent className="gap-0">
-        {menuGroups.map((group, groupIndex) => (
-          <SidebarGroup key={groupIndex} className="py-0.5 px-2">
-            {group.label && <SidebarGroupLabel className="h-5 text-[10px] px-1">{group.label}</SidebarGroupLabel>}
-            <SidebarGroupContent>
-              <SidebarMenu className="gap-0.5">
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)} size="sm">
-                      <NavLink 
-                        to={item.url} 
-                        end={item.url === "/"}
-                        className="hover:bg-muted/50 flex items-center justify-between w-full py-1" 
-                        activeClassName="bg-muted text-primary font-medium"
-                      >
-                        <div className="flex items-center">
+        {/* Main Navigation */}
+        <SidebarGroup className="py-0.5 px-2">
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-0.5">
+              {mainItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} size="sm">
+                    <NavLink
+                      to={item.url}
+                      end={item.url === "/"}
+                      className="hover:bg-muted/50 flex items-center w-full py-1"
+                      activeClassName="bg-muted text-primary font-medium"
+                    >
+                      <item.icon className="mr-2 h-3.5 w-3.5" />
+                      <span className="text-xs">{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* More - Collapsible */}
+        <SidebarGroup className="py-0.5 px-2">
+          <Collapsible open={moreOpen || isMoreActive} onOpenChange={setMoreOpen}>
+            <CollapsibleTrigger className="w-full">
+              <SidebarGroupLabel className="h-5 text-[10px] px-1 cursor-pointer flex items-center justify-between w-full">
+                <span>📦 Mais</span>
+                <ChevronDown className={`h-3 w-3 transition-transform ${moreOpen || isMoreActive ? 'rotate-180' : ''}`} />
+              </SidebarGroupLabel>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu className="gap-0.5">
+                  {moreItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={isActive(item.url)} size="sm">
+                        <NavLink
+                          to={item.url}
+                          className="hover:bg-muted/50 flex items-center w-full py-1"
+                          activeClassName="bg-muted text-primary font-medium"
+                        >
                           <item.icon className="mr-2 h-3.5 w-3.5" />
                           <span className="text-xs">{item.title}</span>
-                        </div>
-                        {'isNew' in item && item.isNew && (
-                          <Badge className="ml-1 bg-primary text-primary-foreground text-[8px] px-1 py-0 animate-pulse">
-                            NOVO
-                          </Badge>
-                        )}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-                {/* Glossário de Copy - aparece no grupo Recursos */}
-                {'hasGlossary' in group && group.hasGlossary && (
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                  {/* Glossário de Copy */}
                   <SidebarMenuItem>
-                    <CopyFormatsGlossary 
+                    <CopyFormatsGlossary
                       trigger={
                         <SidebarMenuButton size="sm" className="hover:bg-muted/50 py-1 cursor-pointer">
                           <BookOpen className="mr-2 h-3.5 w-3.5" />
@@ -161,13 +155,13 @@ export function AppSidebar() {
                       }
                     />
                   </SidebarMenuItem>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </SidebarGroup>
 
-        {/* Admin Section - Only visible to admins */}
+        {/* Admin Section */}
         {isAdmin && (
           <SidebarGroup className="py-0.5 px-2">
             <SidebarGroupLabel className="h-5 text-[10px] px-1">🔐 Admin</SidebarGroupLabel>
@@ -183,14 +177,9 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={isActive('/admin/aprendizado')} size="sm">
-                    <NavLink to="/admin/aprendizado" className="hover:bg-muted/50 flex items-center justify-between w-full py-1" activeClassName="bg-muted text-primary font-medium">
-                      <div className="flex items-center">
-                        <GraduationCap className="mr-2 h-3.5 w-3.5" />
-                        <span className="text-xs">Aprendizado</span>
-                      </div>
-                      <Badge className="ml-1 bg-primary text-primary-foreground text-[8px] px-1 py-0 animate-pulse">
-                        NOVO
-                      </Badge>
+                    <NavLink to="/admin/aprendizado" className="hover:bg-muted/50 py-1" activeClassName="bg-muted text-primary font-medium">
+                      <GraduationCap className="mr-2 h-3.5 w-3.5" />
+                      <span className="text-xs">Aprendizado</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -223,15 +212,15 @@ export function AppSidebar() {
                   {profile?.full_name || profile?.email?.split('@')[0] || 'Usuário'}
                 </span>
                 <div className="flex items-center gap-0.5">
-                  <Badge 
-                    variant={isPro ? "default" : "secondary"} 
+                  <Badge
+                    variant={isPro ? "default" : "secondary"}
                     className="text-[8px] px-1 py-0 w-fit"
                   >
                     {isPro ? 'Pro' : 'Free'}
                   </Badge>
                   {isAdmin && (
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className="text-[8px] px-1 py-0 w-fit"
                     >
                       Admin
