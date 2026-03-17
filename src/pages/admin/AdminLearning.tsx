@@ -366,6 +366,7 @@ export default function AdminLearning() {
         </DialogContent>
       </Dialog>
     </div>
+    </AdminLayout>
   );
 }
 
