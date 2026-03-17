@@ -179,7 +179,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    let systemPrompt = SYSTEM_PROMPT;
+    const kbPrompt = await getKBPrompt("conversation-analyzer");
+    let systemPrompt = kbPrompt || SYSTEM_PROMPT;
     if (userId) {
       const personaContext = await getPersonaContext(userId);
       if (personaContext) systemPrompt += personaContext;

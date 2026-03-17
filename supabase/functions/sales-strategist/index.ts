@@ -350,7 +350,8 @@ Deno.serve(async (req) => {
     }
 
     const modeSuffix = mode === "group" ? GROUP_SUFFIX : PRIVATE_SUFFIX;
-    let systemPrompt = SYSTEM_PROMPT + modeSuffix;
+    const kbPrompt = await getKBPrompt("sales-strategist");
+    let systemPrompt = (kbPrompt || SYSTEM_PROMPT) + modeSuffix;
 
     if (userId) {
       const personaContext = await getPersonaContext(userId);
