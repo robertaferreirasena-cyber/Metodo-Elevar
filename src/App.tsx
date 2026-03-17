@@ -45,6 +45,8 @@ import PriceCalculator from "./pages/PriceCalculator";
 import Gamification from "./pages/Gamification";
 import LearningModules from "./pages/LearningModules";
 import MentorChat from "./pages/MentorChat";
+import WhatsAppHub from "./pages/WhatsAppHub";
+import MentoraHub from "./pages/MentoraHub";
 
 const queryClient = new QueryClient({
   defaultOptions: {
