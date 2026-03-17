@@ -177,7 +177,7 @@ export default function AdminLearning() {
 
   const openEditLesson = (lesson: Lesson) => {
     setEditingLesson(lesson);
-    setLessonForm({ title: lesson.title, content: lesson.content || '', video_url: lesson.video_url || '', duration_minutes: lesson.duration_minutes || 5, position: lesson.position || 0 });
+    setLessonForm({ title: lesson.title, content: lesson.content || '', video_url: lesson.video_url || '', duration_minutes: lesson.duration_minutes || 5, position: lesson.position || 0, activity_type: lesson.activity_type || '' });
     setLessonDialogOpen(true);
   };
 
