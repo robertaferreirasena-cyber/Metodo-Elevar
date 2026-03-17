@@ -14,6 +14,7 @@ export default function Dashboard() {
   useAutoCleanup();
   
   const { profile, loading: personaLoading, hasRaioX } = usePersonaProfile();
+  const { showOnboarding, currentStep, loading: onboardingLoading, updateStep, completeOnboarding } = useOnboarding();
   const raioX = profile?.generated_raio_x;
 
   return (
