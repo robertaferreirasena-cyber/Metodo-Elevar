@@ -35,6 +35,7 @@ interface Lesson {
   position: number | null;
   duration_minutes: number | null;
   is_active: boolean | null;
+  activity_type: string | null;
 }
 
 interface StudentProgress {
