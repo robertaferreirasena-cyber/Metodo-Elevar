@@ -50,6 +50,7 @@ import SubscriptionExpired from "./pages/SubscriptionExpired";
 import AccessBlocked from "./pages/AccessBlocked";
 import PhotoBoss from "./pages/PhotoBoss";
 import AdminCredentials from "./pages/AdminCredentials";
+import PriceCalculator from "./pages/PriceCalculator";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -372,6 +373,18 @@ const App = () => (
                         <PhotoBoss />
                       </AppLayout>
                     </ModuleGuard>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Calculadora de Preços */}
+              <Route
+                path="/calculadora"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PriceCalculator />
+                    </AppLayout>
                   </ProtectedRoute>
                 }
               />
