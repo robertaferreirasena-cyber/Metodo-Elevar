@@ -84,7 +84,7 @@ const Index = () => {
                   <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary glow-pink shrink-0">
                     <SparklesIcon />
                   </div>
-                  <span className="font-semibold text-foreground">Estrategista IA</span>
+                  <span className="font-semibold text-foreground">Mentoria Elevar</span>
                 </div>
                 <Button
                   variant="ghost"

@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Brain, MessageCircle, Calculator, GraduationCap, Trophy, Sparkles, ArrowRight, ArrowLeft, Rocket } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface OnboardingFlowProps {
   open: boolean;
@@ -17,13 +19,31 @@ const TOTAL_STEPS = 4;
 
 export default function OnboardingFlow({ open, currentStep, onUpdateStep, onComplete }: OnboardingFlowProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(currentStep);
   const [name, setName] = useState('');
   const [niche, setNiche] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const goTo = async (s: number) => {
     setStep(s);
     await onUpdateStep(s);
+  };
+
+  const saveProfileAndContinue = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      if (name.trim()) {
+        await supabase
+          .from('profiles')
+          .update({ full_name: name.trim() })
+          .eq('id', user.id);
+      }
+      await goTo(2);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleFinish = async (route?: string) => {
@@ -49,8 +69,8 @@ export default function OnboardingFlow({ open, currentStep, onUpdateStep, onComp
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
               <Rocket className="h-8 w-8 text-primary" />
             </div>
-            <h2 className="text-xl font-bold text-foreground">Bem-vinda ao WhatsPro! 🎉</h2>
-            <p className="text-sm text-muted-foreground">Sua plataforma completa para vender mais pelo WhatsApp com inteligência artificial.</p>
+            <h2 className="text-xl font-bold text-foreground">Bem-vinda à Mentoria Elevar! 🎉</h2>
+            <p className="text-sm text-muted-foreground">Sua plataforma exclusiva para elevar suas vendas pelo WhatsApp com inteligência artificial.</p>
             <div className="grid gap-3 text-left pt-2">
               {[
                 { icon: Brain, text: 'Mentora Gi: sua IA de vendas pessoal' },
@@ -90,8 +110,8 @@ export default function OnboardingFlow({ open, currentStep, onUpdateStep, onComp
               <Button variant="outline" className="flex-1" onClick={() => goTo(0)}>
                 <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
               </Button>
-              <Button className="flex-1" onClick={() => goTo(2)}>
-                Continuar <ArrowRight className="h-4 w-4 ml-1" />
+              <Button className="flex-1" onClick={saveProfileAndContinue} disabled={saving}>
+                {saving ? 'Salvando...' : 'Continuar'} {!saving && <ArrowRight className="h-4 w-4 ml-1" />}
               </Button>
             </div>
           </div>
