@@ -61,6 +61,7 @@ const menuGroups = [
       { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera, isNew: true },
       { title: "Calculadora", url: "/calculadora", icon: Calculator },
       { title: "Conquistas", url: "/conquistas", icon: Trophy, isNew: true },
+      { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap, isNew: true },
     ],
   },
   {

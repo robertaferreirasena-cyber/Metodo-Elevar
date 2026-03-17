@@ -48,17 +48,17 @@ export function useLearning() {
     setLoading(true);
     try {
       const [modulesRes, lessonsRes, progressRes] = await Promise.all([
-        supabase.from('learning_modules').select('*').eq('is_active', true).order('position'),
-        supabase.from('learning_lessons').select('*').eq('is_active', true).order('position'),
-        supabase.from('user_module_progress').select('lesson_id, completed').eq('user_id', user!.id),
+        supabase.from('learning_modules' as any).select('*').eq('is_active', true).order('position'),
+        supabase.from('learning_lessons' as any).select('*').eq('is_active', true).order('position'),
+        supabase.from('user_module_progress' as any).select('lesson_id, completed').eq('user_id', user!.id),
       ]);
 
-      if (modulesRes.data) setModules(modulesRes.data);
-      if (lessonsRes.data) setLessons(lessonsRes.data);
-      if (progressRes.data) setProgress(progressRes.data);
+      if (modulesRes.data) setModules(modulesRes.data as any);
+      if (lessonsRes.data) setLessons(lessonsRes.data as any);
+      if (progressRes.data) setProgress(progressRes.data as any);
 
-      if (modulesRes.data?.length && !selectedModuleId) {
-        setSelectedModuleId(modulesRes.data[0].id);
+      if ((modulesRes.data as any)?.length && !selectedModuleId) {
+        setSelectedModuleId((modulesRes.data as any)[0].id);
       }
     } catch (error) {
       console.error('Error fetching learning data:', error);
@@ -72,16 +72,14 @@ export function useLearning() {
     const existing = progress.find(p => p.lesson_id === lessonId);
 
     if (existing) {
-      await supabase
-        .from('user_module_progress')
+      await (supabase.from('user_module_progress' as any) as any)
         .update({ completed: !existing.completed, completed_at: !existing.completed ? new Date().toISOString() : null })
         .eq('user_id', user.id)
         .eq('lesson_id', lessonId);
 
       setProgress(prev => prev.map(p => p.lesson_id === lessonId ? { ...p, completed: !p.completed } : p));
     } else {
-      await supabase
-        .from('user_module_progress')
+      await (supabase.from('user_module_progress' as any) as any)
         .insert({ user_id: user.id, lesson_id: lessonId, completed: true, completed_at: new Date().toISOString() });
 
       setProgress(prev => [...prev, { lesson_id: lessonId, completed: true }]);
