@@ -339,8 +339,10 @@ const App = () => (
                 }
               />
 
+              <Route path="/admin/credenciais" element={<ProtectedRoute><AdminRoute><AppLayout><AdminCredentials /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin-credentials" element={<ProtectedRoute><AdminRoute><AppLayout><AdminCredentials /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin/aprendizado" element={<ProtectedRoute><AdminRoute><AppLayout><AdminLearning /></AppLayout></AdminRoute></ProtectedRoute>} />
+              <Route path="/admin/base-conhecimento" element={<ProtectedRoute><AdminRoute><AppLayout><AdminKnowledgeBase /></AppLayout></AdminRoute></ProtectedRoute>} />
 
               {/* WhatsApp Hub */}
               <Route
