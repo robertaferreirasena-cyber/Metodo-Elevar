@@ -253,6 +253,13 @@ export default function AdminLearning() {
                       <TableRow key={lesson.id}>
                         <TableCell>{lesson.position}</TableCell>
                         <TableCell>{lesson.title}</TableCell>
+                        <TableCell>
+                          {lesson.activity_type ? (
+                            <Badge variant="secondary" className="text-[10px]">{lesson.activity_type}</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>{lesson.duration_minutes}min</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
