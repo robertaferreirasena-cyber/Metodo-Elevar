@@ -90,6 +90,10 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const selectedPersona = PERSONAS[persona] || PERSONAS["mentora-gi"];
+    
+    // Try to get prompt from knowledge base, fallback to hardcoded
+    const kbPrompt = await getKBPrompt(persona);
+    const systemPrompt = kbPrompt || selectedPersona.systemPrompt;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
