@@ -19,6 +19,12 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+      <OnboardingFlow
+        open={showOnboarding && !onboardingLoading}
+        currentStep={currentStep}
+        onUpdateStep={updateStep}
+        onComplete={completeOnboarding}
+      />
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2">
