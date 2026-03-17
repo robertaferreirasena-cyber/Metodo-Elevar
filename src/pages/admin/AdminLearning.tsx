@@ -332,6 +332,21 @@ export default function AdminLearning() {
             <div><Label>Título</Label><Input value={lessonForm.title} onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))} /></div>
             <div><Label>Conteúdo</Label><Textarea rows={6} value={lessonForm.content} onChange={e => setLessonForm(f => ({ ...f, content: e.target.value }))} /></div>
             <div><Label>URL do Vídeo (opcional)</Label><Input value={lessonForm.video_url} onChange={e => setLessonForm(f => ({ ...f, video_url: e.target.value }))} /></div>
+            <div>
+              <Label>Tipo de Atividade</Label>
+              <Select value={lessonForm.activity_type} onValueChange={v => setLessonForm(f => ({ ...f, activity_type: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione o tipo..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="whatsapp_private">WhatsApp - Vendas 1:1</SelectItem>
+                  <SelectItem value="whatsapp_group">WhatsApp - Grupos</SelectItem>
+                  <SelectItem value="persona">Raio-X Persona</SelectItem>
+                  <SelectItem value="content">Conteúdo / Copy</SelectItem>
+                  <SelectItem value="mentor">Mentora Gi</SelectItem>
+                  <SelectItem value="calculator">Calculadora</SelectItem>
+                  <SelectItem value="photo">Ensaio Fotográfico</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label>Duração (min)</Label><Input type="number" value={lessonForm.duration_minutes} onChange={e => setLessonForm(f => ({ ...f, duration_minutes: parseInt(e.target.value) || 5 }))} /></div>
               <div><Label>Posição</Label><Input type="number" value={lessonForm.position} onChange={e => setLessonForm(f => ({ ...f, position: parseInt(e.target.value) || 0 }))} /></div>
