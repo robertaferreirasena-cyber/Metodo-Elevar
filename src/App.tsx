@@ -51,6 +51,7 @@ import AccessBlocked from "./pages/AccessBlocked";
 import PhotoBoss from "./pages/PhotoBoss";
 import AdminCredentials from "./pages/AdminCredentials";
 import PriceCalculator from "./pages/PriceCalculator";
+import Gamification from "./pages/Gamification";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -384,6 +385,18 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <PriceCalculator />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Gamificação */}
+              <Route
+                path="/conquistas"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Gamification />
                     </AppLayout>
                   </ProtectedRoute>
                 }
