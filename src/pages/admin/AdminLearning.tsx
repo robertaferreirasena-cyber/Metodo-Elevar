@@ -148,9 +148,10 @@ export default function AdminLearning() {
     if (!selectedModuleId) return;
     try {
       if (editingLesson) {
-        await supabase.from('learning_lessons').update({
+        await (supabase.from('learning_lessons') as any).update({
           title: lessonForm.title, content: lessonForm.content,
           video_url: lessonForm.video_url || null, duration_minutes: lessonForm.duration_minutes, position: lessonForm.position,
+          activity_type: lessonForm.activity_type || null,
         }).eq('id', editingLesson.id);
         toast.success('Aula atualizada!');
       } else {
