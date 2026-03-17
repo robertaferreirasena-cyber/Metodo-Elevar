@@ -48,28 +48,12 @@ export default function AdminPayments() {
   };
 
   return (
+    <AdminLayout>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/admin">Painel Admin</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4" />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Pagamentos Kiwify</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Pagamentos Kiwify</h1>
-            <p className="text-muted-foreground">{orders.length} pagamentos • {pendingOrders.length} pendentes</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Pagamentos Kiwify</h1>
+          <p className="text-muted-foreground">{orders.length} pagamentos • {pendingOrders.length} pendentes</p>
         </div>
         <Button onClick={handleRefresh} variant="outline" className="gap-2">
           <RefreshCw className="h-4 w-4" />
