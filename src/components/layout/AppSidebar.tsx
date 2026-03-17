@@ -1,4 +1,4 @@
-import { Home, MessageCircle, Search, FileText, Users, Calendar, Layout, Heart, Clock, Lightbulb, LogOut, Brain, Download, MessageSquare, Settings, Camera, BookOpen, BarChart3, Contact, Kanban, ListTodo, Smartphone, MessagesSquare, Bot, CalendarDays, Sparkles, Calculator, Trophy, GraduationCap, BotMessageSquare } from "lucide-react";
+import { Home, MessageCircle, Search, FileText, Users, Calendar, Layout, Heart, Clock, Lightbulb, LogOut, Brain, Download, MessageSquare, Settings, Camera, BookOpen, Calculator, Trophy, GraduationCap, BotMessageSquare } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -182,59 +182,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive('/admin/whatsapp')} size="sm">
-                    <NavLink to="/admin/whatsapp" className="hover:bg-muted/50 py-1" activeClassName="bg-muted text-primary font-medium">
-                      <Smartphone className="mr-2 h-3.5 w-3.5" />
-                      <span className="text-xs">WhatsApp</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive('/admin/whatsapp-chat')} size="sm">
-                    <NavLink to="/admin/whatsapp-chat" className="hover:bg-muted/50 py-1" activeClassName="bg-muted text-primary font-medium">
-                      <MessagesSquare className="mr-2 h-3.5 w-3.5" />
-                      <span className="text-xs">Chat</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive('/admin/whatsapp-agents')} size="sm">
-                    <NavLink to="/admin/whatsapp-agents" className="hover:bg-muted/50 py-1" activeClassName="bg-muted text-primary font-medium">
-                      <Bot className="mr-2 h-3.5 w-3.5" />
-                      <span className="text-xs">Agentes IA</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive('/admin/whatsapp-schedule')} size="sm">
-                    <NavLink to="/admin/whatsapp-schedule" className="hover:bg-muted/50 py-1" activeClassName="bg-muted text-primary font-medium">
-                      <CalendarDays className="mr-2 h-3.5 w-3.5" />
-                      <span className="text-xs">Agenda</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive('/admin/whatsapp-analytics')} size="sm">
-                    <NavLink to="/admin/whatsapp-analytics" className="hover:bg-muted/50 py-1" activeClassName="bg-muted text-primary font-medium">
-                      <BarChart3 className="mr-2 h-3.5 w-3.5" />
-                      <span className="text-xs">Analytics</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive('/admin/whatsapp-organizer')} size="sm">
-                    <NavLink to="/admin/whatsapp-organizer" className="hover:bg-muted/50 flex items-center justify-between w-full py-1" activeClassName="bg-muted text-primary font-medium">
-                      <div className="flex items-center">
-                        <Sparkles className="mr-2 h-3.5 w-3.5" />
-                        <span className="text-xs">Organizador</span>
-                      </div>
-                      <Badge className="ml-1 bg-primary text-primary-foreground text-[8px] px-1 py-0 animate-pulse">
-                        NOVO
-                      </Badge>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={isActive('/admin/aprendizado')} size="sm">
                     <NavLink to="/admin/aprendizado" className="hover:bg-muted/50 flex items-center justify-between w-full py-1" activeClassName="bg-muted text-primary font-medium">
                       <div className="flex items-center">
@@ -247,30 +194,6 @@ export function AppSidebar() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-        {isAdmin && (
-          <SidebarGroup className="py-0.5 px-2">
-            <SidebarGroupLabel className="h-5 text-[10px] px-1">📊 CRM</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="gap-0.5">
-                {[
-                  { title: 'Dashboard', url: '/admin/crm', icon: BarChart3 },
-                  { title: 'Contatos', url: '/admin/crm/contatos', icon: Contact },
-                  { title: 'Pipeline', url: '/admin/crm/pipeline', icon: Kanban },
-                  { title: 'Atividades', url: '/admin/crm/atividades', icon: ListTodo },
-                ].map(item => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)} size="sm">
-                      <NavLink to={item.url} className="hover:bg-muted/50 py-1" activeClassName="bg-muted text-primary font-medium">
-                        <item.icon className="mr-2 h-3.5 w-3.5" />
-                        <span className="text-xs">{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

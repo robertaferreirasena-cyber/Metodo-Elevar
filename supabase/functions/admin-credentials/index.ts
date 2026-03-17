@@ -22,10 +22,6 @@ const knownFunctionNames = [
   'admin-create-user',
   'admin-manage-user',
   'send-scheduled-posts',
-  'uazapi-manager',
-  'whatsapp-webhook-receiver',
-  'whatsapp-ai-agent',
-  'whatsapp-followup-agent',
   'admin-credentials',
 ]
 

@@ -36,16 +36,6 @@ import Admin from "./pages/Admin";
 import AdminUsers from "./pages/AdminUsers";
 import AdminPayments from "./pages/AdminPayments";
 import AdminTokens from "./pages/AdminTokens";
-import CrmDashboard from "./pages/admin/CrmDashboard";
-import CrmContacts from "./pages/admin/CrmContacts";
-import CrmPipeline from "./pages/admin/CrmPipeline";
-import CrmActivities from "./pages/admin/CrmActivities";
-import WhatsAppInstances from "./pages/admin/WhatsAppInstances";
-import WhatsAppChat from "./pages/admin/WhatsAppChat";
-import WhatsAppAgents from "./pages/admin/WhatsAppAgents";
-import WhatsAppSchedule from "./pages/admin/WhatsAppSchedule";
-import WhatsAppAnalytics from "./pages/admin/WhatsAppAnalytics";
-import WhatsAppOrganizer from "./pages/admin/WhatsAppOrganizer";
 import AdminLearning from "./pages/admin/AdminLearning";
 import SubscriptionExpired from "./pages/SubscriptionExpired";
 import AccessBlocked from "./pages/AccessBlocked";
@@ -346,17 +336,6 @@ const App = () => (
                 }
               />
 
-              {/* CRM Admin Routes */}
-              <Route path="/admin/crm" element={<ProtectedRoute><AdminRoute><AppLayout><CrmDashboard /></AppLayout></AdminRoute></ProtectedRoute>} />
-              <Route path="/admin/crm/contatos" element={<ProtectedRoute><AdminRoute><AppLayout><CrmContacts /></AppLayout></AdminRoute></ProtectedRoute>} />
-              <Route path="/admin/crm/pipeline" element={<ProtectedRoute><AdminRoute><AppLayout><CrmPipeline /></AppLayout></AdminRoute></ProtectedRoute>} />
-              <Route path="/admin/crm/atividades" element={<ProtectedRoute><AdminRoute><AppLayout><CrmActivities /></AppLayout></AdminRoute></ProtectedRoute>} />
-              <Route path="/admin/whatsapp" element={<ProtectedRoute><AdminRoute><AppLayout><WhatsAppInstances /></AppLayout></AdminRoute></ProtectedRoute>} />
-              <Route path="/admin/whatsapp-chat" element={<ProtectedRoute><AdminRoute><AppLayout><WhatsAppChat /></AppLayout></AdminRoute></ProtectedRoute>} />
-              <Route path="/admin/whatsapp-agents" element={<ProtectedRoute><AdminRoute><AppLayout><WhatsAppAgents /></AppLayout></AdminRoute></ProtectedRoute>} />
-              <Route path="/admin/whatsapp-schedule" element={<ProtectedRoute><AdminRoute><AppLayout><WhatsAppSchedule /></AppLayout></AdminRoute></ProtectedRoute>} />
-              <Route path="/admin/whatsapp-analytics" element={<ProtectedRoute><AdminRoute><AppLayout><WhatsAppAnalytics /></AppLayout></AdminRoute></ProtectedRoute>} />
-              <Route path="/admin/whatsapp-organizer" element={<ProtectedRoute><AdminRoute><AppLayout><WhatsAppOrganizer /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin-credentials" element={<ProtectedRoute><AdminRoute><AppLayout><AdminCredentials /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin/aprendizado" element={<ProtectedRoute><AdminRoute><AppLayout><AdminLearning /></AppLayout></AdminRoute></ProtectedRoute>} />
 
