@@ -185,7 +185,7 @@ export default function AdminLearning() {
     setSelectedModuleId(moduleId);
     setEditingLesson(null);
     const moduleLessons = lessons.filter(l => l.module_id === moduleId);
-    setLessonForm({ title: '', content: '', video_url: '', duration_minutes: 5, position: moduleLessons.length });
+    setLessonForm({ title: '', content: '', video_url: '', duration_minutes: 5, position: moduleLessons.length, activity_type: '' });
     setLessonDialogOpen(true);
   };
 
