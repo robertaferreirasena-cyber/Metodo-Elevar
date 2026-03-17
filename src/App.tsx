@@ -358,6 +358,7 @@ const App = () => (
               <Route path="/admin/whatsapp-analytics" element={<ProtectedRoute><AdminRoute><AppLayout><WhatsAppAnalytics /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin/whatsapp-organizer" element={<ProtectedRoute><AdminRoute><AppLayout><WhatsAppOrganizer /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin-credentials" element={<ProtectedRoute><AdminRoute><AppLayout><AdminCredentials /></AppLayout></AdminRoute></ProtectedRoute>} />
+              <Route path="/admin/aprendizado" element={<ProtectedRoute><AdminRoute><AppLayout><AdminLearning /></AppLayout></AdminRoute></ProtectedRoute>} />
 
               {/* Legacy redirects */}
               <Route path="/estrategias" element={<Navigate to="/privado/estrategias" replace />} />
