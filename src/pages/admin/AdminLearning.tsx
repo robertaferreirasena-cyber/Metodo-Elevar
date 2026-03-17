@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, GraduationCap, Users, BookOpen, Bot, Save } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Module {
   id: string;
@@ -35,6 +36,7 @@ interface Lesson {
   position: number | null;
   duration_minutes: number | null;
   is_active: boolean | null;
+  activity_type: string | null;
 }
 
 interface StudentProgress {
@@ -59,7 +61,7 @@ export default function AdminLearning() {
   // Module form
   const [moduleForm, setModuleForm] = useState({ title: '', description: '', icon: '📖', category: 'instagram', position: 0 });
   // Lesson form
-  const [lessonForm, setLessonForm] = useState({ title: '', content: '', video_url: '', duration_minutes: 5, position: 0 });
+  const [lessonForm, setLessonForm] = useState({ title: '', content: '', video_url: '', duration_minutes: 5, position: 0, activity_type: '' });
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -146,15 +148,17 @@ export default function AdminLearning() {
     if (!selectedModuleId) return;
     try {
       if (editingLesson) {
-        await supabase.from('learning_lessons').update({
+        await (supabase.from('learning_lessons') as any).update({
           title: lessonForm.title, content: lessonForm.content,
           video_url: lessonForm.video_url || null, duration_minutes: lessonForm.duration_minutes, position: lessonForm.position,
+          activity_type: lessonForm.activity_type || null,
         }).eq('id', editingLesson.id);
         toast.success('Aula atualizada!');
       } else {
-        await supabase.from('learning_lessons').insert({
+        await (supabase.from('learning_lessons') as any).insert({
           module_id: selectedModuleId, title: lessonForm.title, content: lessonForm.content,
           video_url: lessonForm.video_url || null, duration_minutes: lessonForm.duration_minutes, position: lessonForm.position,
+          activity_type: lessonForm.activity_type || null,
         });
         toast.success('Aula criada!');
       }
@@ -173,7 +177,7 @@ export default function AdminLearning() {
 
   const openEditLesson = (lesson: Lesson) => {
     setEditingLesson(lesson);
-    setLessonForm({ title: lesson.title, content: lesson.content || '', video_url: lesson.video_url || '', duration_minutes: lesson.duration_minutes || 5, position: lesson.position || 0 });
+    setLessonForm({ title: lesson.title, content: lesson.content || '', video_url: lesson.video_url || '', duration_minutes: lesson.duration_minutes || 5, position: lesson.position || 0, activity_type: lesson.activity_type || '' });
     setLessonDialogOpen(true);
   };
 
@@ -181,7 +185,7 @@ export default function AdminLearning() {
     setSelectedModuleId(moduleId);
     setEditingLesson(null);
     const moduleLessons = lessons.filter(l => l.module_id === moduleId);
-    setLessonForm({ title: '', content: '', video_url: '', duration_minutes: 5, position: moduleLessons.length });
+    setLessonForm({ title: '', content: '', video_url: '', duration_minutes: 5, position: moduleLessons.length, activity_type: '' });
     setLessonDialogOpen(true);
   };
 
@@ -239,6 +243,7 @@ export default function AdminLearning() {
                     <TableRow>
                       <TableHead>Pos</TableHead>
                       <TableHead>Título</TableHead>
+                      <TableHead>Tipo Atividade</TableHead>
                       <TableHead>Duração</TableHead>
                       <TableHead>Ações</TableHead>
                     </TableRow>
@@ -248,6 +253,13 @@ export default function AdminLearning() {
                       <TableRow key={lesson.id}>
                         <TableCell>{lesson.position}</TableCell>
                         <TableCell>{lesson.title}</TableCell>
+                        <TableCell>
+                          {lesson.activity_type ? (
+                            <Badge variant="secondary" className="text-[10px]">{lesson.activity_type}</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>{lesson.duration_minutes}min</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -328,6 +340,21 @@ export default function AdminLearning() {
             <div><Label>Título</Label><Input value={lessonForm.title} onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))} /></div>
             <div><Label>Conteúdo</Label><Textarea rows={6} value={lessonForm.content} onChange={e => setLessonForm(f => ({ ...f, content: e.target.value }))} /></div>
             <div><Label>URL do Vídeo (opcional)</Label><Input value={lessonForm.video_url} onChange={e => setLessonForm(f => ({ ...f, video_url: e.target.value }))} /></div>
+            <div>
+              <Label>Tipo de Atividade</Label>
+              <Select value={lessonForm.activity_type} onValueChange={v => setLessonForm(f => ({ ...f, activity_type: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione o tipo..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="whatsapp_private">WhatsApp - Vendas 1:1</SelectItem>
+                  <SelectItem value="whatsapp_group">WhatsApp - Grupos</SelectItem>
+                  <SelectItem value="persona">Raio-X Persona</SelectItem>
+                  <SelectItem value="content">Conteúdo / Copy</SelectItem>
+                  <SelectItem value="mentor">Mentora Gi</SelectItem>
+                  <SelectItem value="calculator">Calculadora</SelectItem>
+                  <SelectItem value="photo">Ensaio Fotográfico</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label>Duração (min)</Label><Input type="number" value={lessonForm.duration_minutes} onChange={e => setLessonForm(f => ({ ...f, duration_minutes: parseInt(e.target.value) || 5 }))} /></div>
               <div><Label>Posição</Label><Input type="number" value={lessonForm.position} onChange={e => setLessonForm(f => ({ ...f, position: parseInt(e.target.value) || 0 }))} /></div>
