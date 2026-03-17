@@ -1,43 +1,29 @@
 
-# Phase 6: Post-Signup Onboarding Flow
 
-## Context
-Phase 5 (Admin Learning) is already implemented. No onboarding system exists yet. The user wants a guided tour after signup with initial profile configuration.
+# Plano: Remover "Usuarios" do Sidebar e Manter Dentro do Painel Admin
 
-## What to Build
+## Resumo
+Remover o link "Usuarios" que foi adicionado ao menu lateral (sidebar) e manter o acesso ao gerenciamento de usuarios exclusivamente atraves do card "Gerenciar Usuarios" dentro do Painel Administrativo (`/admin`).
 
-### 1. Database: `onboarding_status` table
-- `user_id` (uuid, references profiles, unique)
-- `completed` (boolean, default false)
-- `completed_at` (timestamptz)
-- `current_step` (integer, default 0)
-- `created_at` (timestamptz)
-- RLS: users can read/update/insert own row
-- Auto-create via trigger on new user signup (add to `handle_new_user`)
+## Alteracao
 
-### 2. Onboarding Dialog Component (`src/components/OnboardingFlow.tsx`)
-A multi-step modal dialog that appears on Dashboard when `completed = false`:
+### Sidebar (`src/components/layout/AppSidebar.tsx`)
+Remover o `SidebarMenuItem` de "Usuarios" que aponta para `/admin/usuarios`, revertendo a alteracao anterior. O menu Admin ficara assim:
 
-- **Step 1 - Welcome**: Welcome message, explain what the platform does (3-4 bullet points with icons)
-- **Step 2 - Profile Setup**: Quick name/niche fields (pulls from persona_profiles if exists, or pre-fills)
-- **Step 3 - Tour Highlights**: Visual cards showing key features: Mentora Gi, Calculadora, Aprendizado, Conquistas
-- **Step 4 - First Action**: CTA buttons to start with Mentora Gi or create Persona
+```text
+Admin
+  - Painel Admin
+  - WhatsApp
+  - Chat
+  - Agentes IA
+  - Agenda
+  - Analytics
+  - Organizador
+```
 
-Each step saves `current_step` to DB so users can resume if they close.
+O acesso a pagina de usuarios continua funcionando normalmente pelo card "Gerenciar Usuarios" dentro do dashboard admin (`/admin`), que ja inclui todas as funcionalidades: ativar/desativar acesso, promover/remover admin, permissoes, tags e emails vinculados.
 
-### 3. Hook: `src/hooks/useOnboarding.ts`
-- Fetch onboarding status for current user
-- `completeOnboarding()` — marks as done
-- `updateStep(step)` — saves progress
-- Auto-creates row if missing (upsert)
+### Detalhes tecnicos
+- Remover apenas as linhas 177-184 do arquivo `AppSidebar.tsx` (o bloco do SidebarMenuItem de Usuarios)
+- Nenhuma outra alteracao necessaria - a rota `/admin/usuarios` e a pagina `AdminUsers.tsx` continuam existindo e acessiveis pelo card no dashboard
 
-### 4. Integration
-- Import `OnboardingFlow` in `Dashboard.tsx`
-- Show dialog when `onboarding.completed === false`
-- After completion, never show again
-
-### Files to Create/Edit
-- **Migration**: Create `onboarding_status` table + update `handle_new_user` trigger
-- **Create**: `src/hooks/useOnboarding.ts`
-- **Create**: `src/components/OnboardingFlow.tsx`
-- **Edit**: `src/pages/Dashboard.tsx` — add onboarding trigger

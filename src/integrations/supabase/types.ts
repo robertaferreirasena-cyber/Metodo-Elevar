@@ -806,6 +806,41 @@ export type Database = {
           },
         ]
       }
+      onboarding_status: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_status_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       persona_profiles: {
         Row: {
           business_name: string | null

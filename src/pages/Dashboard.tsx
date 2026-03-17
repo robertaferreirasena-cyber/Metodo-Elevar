@@ -6,16 +6,25 @@ import { Badge } from "@/components/ui/badge";
 import { usePersonaProfile } from "@/hooks/usePersonaProfile";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import OnboardingFlow from "@/components/OnboardingFlow";
 
 export default function Dashboard() {
   // Executar verificação de limpeza automática a cada 48h
   useAutoCleanup();
   
   const { profile, loading: personaLoading, hasRaioX } = usePersonaProfile();
+  const { showOnboarding, currentStep, loading: onboardingLoading, updateStep, completeOnboarding } = useOnboarding();
   const raioX = profile?.generated_raio_x;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+      <OnboardingFlow
+        open={showOnboarding && !onboardingLoading}
+        currentStep={currentStep}
+        onUpdateStep={updateStep}
+        onComplete={completeOnboarding}
+      />
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center justify-center gap-2">
