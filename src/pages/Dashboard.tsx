@@ -10,8 +10,6 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import OnboardingFlow from "@/components/OnboardingFlow";
 
 export default function Dashboard() {
-  // Executar verificação de limpeza automática a cada 48h
-  useAutoCleanup();
   
   const { profile, loading: personaLoading, hasRaioX } = usePersonaProfile();
   const { showOnboarding, currentStep, loading: onboardingLoading, updateStep, completeOnboarding } = useOnboarding();
