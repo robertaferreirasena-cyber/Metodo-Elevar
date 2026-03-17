@@ -402,6 +402,18 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+
+              {/* Aprendizado */}
+              <Route
+                path="/aprendizado"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <LearningModules />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
