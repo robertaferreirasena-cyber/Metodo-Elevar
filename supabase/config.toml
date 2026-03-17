@@ -45,4 +45,6 @@ verify_jwt = false
 [functions.bulk-reset-password]
 verify_jwt = false
 
+[functions.ai-mentor-chat]
+verify_jwt = false
 
