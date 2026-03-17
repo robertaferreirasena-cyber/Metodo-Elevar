@@ -508,5 +508,6 @@ export default function AdminUsers() {
         </DialogContent>
       </Dialog>
     </div>
+    </AdminLayout>
   );
 }

@@ -229,5 +229,6 @@ export default function AdminPayments() {
         </TabsContent>
       </Tabs>
     </div>
+    </AdminLayout>
   );
 }

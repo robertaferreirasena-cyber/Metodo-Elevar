@@ -210,5 +210,6 @@ export default function AdminTokens() {
         </CardContent>
       </Card>
     </div>
+    </AdminLayout>
   );
 }
