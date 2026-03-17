@@ -37,6 +37,7 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminPayments from "./pages/AdminPayments";
 import AdminTokens from "./pages/AdminTokens";
 import AdminLearning from "./pages/admin/AdminLearning";
+import AdminKnowledgeBase from "./pages/admin/AdminKnowledgeBase";
 import SubscriptionExpired from "./pages/SubscriptionExpired";
 import AccessBlocked from "./pages/AccessBlocked";
 import PhotoBoss from "./pages/PhotoBoss";
