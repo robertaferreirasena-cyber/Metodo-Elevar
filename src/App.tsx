@@ -376,6 +376,18 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+
+              {/* Calculadora de Preços */}
+              <Route
+                path="/calculadora"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PriceCalculator />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />

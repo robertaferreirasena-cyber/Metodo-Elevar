@@ -59,6 +59,7 @@ const menuGroups = [
       { title: "Ideias", url: "/ideias", icon: Lightbulb },
       { title: "Comunidade", url: "/comunidade", icon: MessageSquare },
       { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera, isNew: true },
+      { title: "Calculadora", url: "/calculadora", icon: Calculator },
     ],
   },
   {
