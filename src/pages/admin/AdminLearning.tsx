@@ -155,9 +155,10 @@ export default function AdminLearning() {
         }).eq('id', editingLesson.id);
         toast.success('Aula atualizada!');
       } else {
-        await supabase.from('learning_lessons').insert({
+        await (supabase.from('learning_lessons') as any).insert({
           module_id: selectedModuleId, title: lessonForm.title, content: lessonForm.content,
           video_url: lessonForm.video_url || null, duration_minutes: lessonForm.duration_minutes, position: lessonForm.position,
+          activity_type: lessonForm.activity_type || null,
         });
         toast.success('Aula criada!');
       }
