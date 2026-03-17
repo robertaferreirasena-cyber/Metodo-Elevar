@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, CreditCard, MessageCircle, TrendingUp, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 export default function Admin() {
   const { users, orders, loading } = useAdminData();
