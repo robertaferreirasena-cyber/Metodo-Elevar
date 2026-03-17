@@ -234,6 +234,19 @@ export function AppSidebar() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive('/admin/aprendizado')} size="sm">
+                    <NavLink to="/admin/aprendizado" className="hover:bg-muted/50 flex items-center justify-between w-full py-1" activeClassName="bg-muted text-primary font-medium">
+                      <div className="flex items-center">
+                        <GraduationCap className="mr-2 h-3.5 w-3.5" />
+                        <span className="text-xs">Aprendizado</span>
+                      </div>
+                      <Badge className="ml-1 bg-primary text-primary-foreground text-[8px] px-1 py-0 animate-pulse">
+                        NOVO
+                      </Badge>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
