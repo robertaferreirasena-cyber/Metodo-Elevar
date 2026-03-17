@@ -52,12 +52,12 @@ const Index = () => {
 
                 {/* Title */}
                 <h1 className="text-3xl font-bold text-gradient-primary">
-                  IA Estrategista de Vendas
+                  Mentoria Elevar
                 </h1>
 
                 {/* Description */}
                 <p className="text-muted-foreground text-base">
-                  Crie estratégias personalizadas para vender mais via WhatsApp
+                  Sua plataforma exclusiva para elevar suas vendas pelo WhatsApp
                 </p>
               </div>
 
