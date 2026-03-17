@@ -24,18 +24,6 @@ verify_jwt = false
 [functions.send-scheduled-posts]
 verify_jwt = false
 
-[functions.uazapi-manager]
-verify_jwt = false
-
-[functions.whatsapp-webhook-receiver]
-verify_jwt = false
-
-[functions.whatsapp-ai-agent]
-verify_jwt = false
-
-[functions.whatsapp-followup-agent]
-verify_jwt = false
-
 [functions.admin-credentials]
 verify_jwt = false
 
@@ -47,4 +35,3 @@ verify_jwt = false
 
 [functions.ai-mentor-chat]
 verify_jwt = false
-

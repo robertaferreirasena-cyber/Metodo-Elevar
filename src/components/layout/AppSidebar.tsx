@@ -198,30 +198,6 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
-        {isAdmin && (
-          <SidebarGroup className="py-0.5 px-2">
-            <SidebarGroupLabel className="h-5 text-[10px] px-1">📊 CRM</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="gap-0.5">
-                {[
-                  { title: 'Dashboard', url: '/admin/crm', icon: BarChart3 },
-                  { title: 'Contatos', url: '/admin/crm/contatos', icon: Contact },
-                  { title: 'Pipeline', url: '/admin/crm/pipeline', icon: Kanban },
-                  { title: 'Atividades', url: '/admin/crm/atividades', icon: ListTodo },
-                ].map(item => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)} size="sm">
-                      <NavLink to={item.url} className="hover:bg-muted/50 py-1" activeClassName="bg-muted text-primary font-medium">
-                        <item.icon className="mr-2 h-3.5 w-3.5" />
-                        <span className="text-xs">{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
       </SidebarContent>
 
       <SidebarFooter className="p-2 border-t border-border">
