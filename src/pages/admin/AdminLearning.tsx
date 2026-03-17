@@ -61,7 +61,7 @@ export default function AdminLearning() {
   // Module form
   const [moduleForm, setModuleForm] = useState({ title: '', description: '', icon: '📖', category: 'instagram', position: 0 });
   // Lesson form
-  const [lessonForm, setLessonForm] = useState({ title: '', content: '', video_url: '', duration_minutes: 5, position: 0 });
+  const [lessonForm, setLessonForm] = useState({ title: '', content: '', video_url: '', duration_minutes: 5, position: 0, activity_type: '' });
 
   useEffect(() => { fetchAll(); }, []);
 
