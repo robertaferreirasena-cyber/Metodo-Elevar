@@ -53,6 +53,7 @@ import AdminCredentials from "./pages/AdminCredentials";
 import PriceCalculator from "./pages/PriceCalculator";
 import Gamification from "./pages/Gamification";
 import LearningModules from "./pages/LearningModules";
+import MentorChat from "./pages/MentorChat";
 
 const queryClient = new QueryClient({
   defaultOptions: {
