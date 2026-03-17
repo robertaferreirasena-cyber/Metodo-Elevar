@@ -16,15 +16,6 @@ import { ReactNode, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { usePersonaProfile } from "@/hooks/usePersonaProfile";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useOnboarding } from "@/hooks/useOnboarding";
-import OnboardingFlow from "@/components/OnboardingFlow";
-import { ReactNode } from "react";
 
 interface QuickToolProps {
   icon: ReactNode;
