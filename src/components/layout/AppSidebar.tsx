@@ -35,6 +35,7 @@ const mainItems = [
 const financeItems = [
   { title: "Central Financeira", url: "/financeiro", icon: DollarSign },
   { title: "Metas Elevar", url: "/metas-elevar", icon: Target },
+  { title: "Relatório Mensal", url: "/relatorio-financeiro", icon: FileText },
 ];
 
 const moreItems = [
