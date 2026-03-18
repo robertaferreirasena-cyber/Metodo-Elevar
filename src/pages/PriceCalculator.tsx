@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,16 +6,33 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Calculator, Download, Plus, Trash2, Package, Briefcase, BarChart3, HelpCircle, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import { Calculator, Download, Plus, Trash2, Package, Briefcase, BarChart3, HelpCircle, AlertTriangle, TrendingUp, TrendingDown, PieChart as PieChartIcon, Activity } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import FinishMissionButton from "@/components/learning/FinishMissionButton";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
 
 // ─── Types ───
 interface CostItem { id: string; name: string; value: number; }
 interface VariableCostItem { id: string; name: string; percent: number; }
 interface ServiceItem { id: string; name: string; hoursPerMonth: number; hourlyRate: number; fixedCosts: number; }
+
+interface FinancialData {
+  totalFixed: number;
+  totalVariablePercent: number;
+  totalVariableAmount: number;
+  proLabore: number;
+  taxPercent: number;
+  taxAmount: number;
+  monthlyRevenue: number;
+  totalExpenses: number;
+  realProfit: number;
+  realMargin: number;
+  breakEven: number;
+  illusoryRevenue: number;
+}
 
 // ─── Helper: Info tooltip ───
 function InfoTip({ text }: { text: string }) {
@@ -42,8 +59,26 @@ function MarginAlert({ margin }: { margin: number }) {
   );
 }
 
+// ─── Chart Colors ───
+const CHART_COLORS = [
+  "hsl(0, 72%, 51%)",    // red - fixed
+  "hsl(25, 95%, 53%)",   // orange - variable
+  "hsl(45, 93%, 47%)",   // amber - pro-labore
+  "hsl(280, 67%, 51%)",  // purple - taxes
+  "hsl(142, 71%, 45%)",  // green - profit
+];
+
+const CHART_COLORS_BAR = [
+  "hsl(142, 71%, 45%)",  // green - revenue
+  "hsl(0, 72%, 51%)",    // red - expenses
+  "hsl(217, 91%, 60%)",  // blue - profit
+];
+
+// ─── Currency formatter ───
+const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 // ═══════════════════════════════════════════
-// ABA 1 — PRODUTO (melhorada)
+// ABA 1 — PRODUTO
 // ═══════════════════════════════════════════
 function ProductCalculator() {
   const [productName, setProductName] = useState("");
@@ -152,59 +187,30 @@ function ProductCalculator() {
       </div>
 
       <Separator />
-
       <MarginAlert margin={realMargin} />
 
       <Card className="bg-primary/5 border-primary/20">
         <CardContent className="pt-4 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Custo Direto Unitário</span>
-            <span>R$ {totalDirectUnit.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Rateio Fixos/Unidade</span>
-            <span>R$ {fixedPerUnit.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm font-medium">
-            <span className="text-muted-foreground">Custo Unitário Total</span>
-            <span>R$ {unitCost.toFixed(2)}</span>
-          </div>
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo Direto Unitário</span><span>R$ {totalDirectUnit.toFixed(2)}</span></div>
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Rateio Fixos/Unidade</span><span>R$ {fixedPerUnit.toFixed(2)}</span></div>
+          <div className="flex justify-between text-sm font-medium"><span className="text-muted-foreground">Custo Unitário Total</span><span>R$ {unitCost.toFixed(2)}</span></div>
           <Separator />
-          <div className="flex justify-between font-bold text-lg">
-            <span>Preço de Venda</span>
-            <span className="text-primary">R$ {sellingPrice.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Impostos ({taxPercent}%)</span>
-            <span>- R$ {taxAmount.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Lucro Unitário</span>
-            <Badge variant={unitProfit > 0 ? "default" : "destructive"}>R$ {unitProfit.toFixed(2)}</Badge>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Margem Real</span>
-            <Badge variant={realMargin >= 20 ? "default" : "destructive"}>{realMargin.toFixed(1)}%</Badge>
-          </div>
+          <div className="flex justify-between font-bold text-lg"><span>Preço de Venda</span><span className="text-primary">R$ {sellingPrice.toFixed(2)}</span></div>
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Impostos ({taxPercent}%)</span><span>- R$ {taxAmount.toFixed(2)}</span></div>
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Lucro Unitário</span><Badge variant={unitProfit > 0 ? "default" : "destructive"}>R$ {unitProfit.toFixed(2)}</Badge></div>
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Margem Real</span><Badge variant={realMargin >= 20 ? "default" : "destructive"}>{realMargin.toFixed(1)}%</Badge></div>
           <Separator />
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Faturamento Mensal ({quantityPerMonth} un.)</span>
-            <span className="font-semibold">R$ {monthlyRevenue.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Lucro Mensal</span>
-            <span className="font-semibold text-primary">R$ {monthlyProfit.toFixed(2)}</span>
-          </div>
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Faturamento Mensal ({quantityPerMonth} un.)</span><span className="font-semibold">R$ {monthlyRevenue.toFixed(2)}</span></div>
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Lucro Mensal</span><span className="font-semibold text-primary">R$ {monthlyProfit.toFixed(2)}</span></div>
         </CardContent>
       </Card>
-
       <Button onClick={exportPDF} className="w-full"><Download className="h-4 w-4 mr-2" /> Exportar PDF</Button>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════
-// ABA 2 — SERVIÇO (melhorada)
+// ABA 2 — SERVIÇO
 // ═══════════════════════════════════════════
 function ServiceCalculator() {
   const [serviceName, setServiceName] = useState("");
@@ -310,16 +316,15 @@ function ServiceCalculator() {
           <div className="flex justify-between text-sm"><span className="text-muted-foreground">Valor Real/Hora ({totalHours}h)</span><Badge>R$ {realHourlyRate.toFixed(2)}/h</Badge></div>
         </CardContent>
       </Card>
-
       <Button onClick={exportPDF} className="w-full"><Download className="h-4 w-4 mr-2" /> Exportar PDF</Button>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════
-// ABA 3 — MAPA FINANCEIRO (nova)
+// ABA 3 — MAPA FINANCEIRO (com gráficos)
 // ═══════════════════════════════════════════
-function FinancialMap() {
+function FinancialMap({ onDataChange }: { onDataChange: (data: FinancialData) => void }) {
   const [fixedCosts, setFixedCosts] = useState<CostItem[]>([
     { id: "1", name: "Aluguel", value: 0 },
     { id: "2", name: "Internet", value: 0 },
@@ -354,6 +359,24 @@ function FinancialMap() {
   const breakEven = (totalVariablePercent + taxPercent) < 100
     ? (totalFixed + proLabore) / (1 - (totalVariablePercent + taxPercent) / 100)
     : 0;
+
+  // Push data to parent for dashboard
+  useMemo(() => {
+    onDataChange({ totalFixed, totalVariablePercent, totalVariableAmount, proLabore, taxPercent, taxAmount, monthlyRevenue, totalExpenses, realProfit, realMargin, breakEven, illusoryRevenue });
+  }, [totalFixed, totalVariablePercent, totalVariableAmount, proLabore, taxPercent, taxAmount, monthlyRevenue, totalExpenses, realProfit, realMargin, breakEven, illusoryRevenue]);
+
+  // Pie chart data for cost distribution
+  const pieData = useMemo(() => {
+    if (monthlyRevenue <= 0) return [];
+    const items = [
+      { name: "Custos Fixos", value: totalFixed },
+      { name: "Custos Variáveis", value: totalVariableAmount },
+      { name: "Pró-labore", value: proLabore },
+      { name: "Impostos", value: taxAmount },
+      { name: "Lucro Real", value: Math.max(0, realProfit) },
+    ].filter(i => i.value > 0);
+    return items;
+  }, [totalFixed, totalVariableAmount, proLabore, taxAmount, realProfit, monthlyRevenue]);
 
   const exportPDF = () => {
     const doc = new jsPDF();
@@ -442,46 +465,40 @@ function FinancialMap() {
       </div>
 
       <Separator />
-
       <MarginAlert margin={realMargin} />
 
-      {/* Reality Check Card */}
+      {/* Raio-X Card */}
       <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-background to-primary/5">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            🔍 Raio-X Financeiro
-          </CardTitle>
+          <CardTitle className="text-sm flex items-center gap-2">🔍 Raio-X Financeiro</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            {/* What you earn */}
             <Card className="p-3 border-emerald-500/30 bg-emerald-500/5">
               <div className="flex items-center gap-1 mb-2">
                 <TrendingUp className="h-4 w-4 text-emerald-600" />
                 <p className="text-xs font-semibold text-emerald-700">O que você fatura</p>
               </div>
-              <p className="text-xl font-bold text-emerald-600">R$ {monthlyRevenue.toFixed(2)}</p>
+              <p className="text-xl font-bold text-emerald-600">{fmt(monthlyRevenue)}</p>
             </Card>
-            {/* What actually stays */}
             <Card className={`p-3 ${realProfit >= 0 ? "border-emerald-500/30 bg-emerald-500/5" : "border-destructive/30 bg-destructive/5"}`}>
               <div className="flex items-center gap-1 mb-2">
                 {realProfit >= 0 ? <TrendingUp className="h-4 w-4 text-emerald-600" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
                 <p className={`text-xs font-semibold ${realProfit >= 0 ? "text-emerald-700" : "text-destructive"}`}>O que sobra de verdade</p>
               </div>
-              <p className={`text-xl font-bold ${realProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>R$ {realProfit.toFixed(2)}</p>
+              <p className={`text-xl font-bold ${realProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>{fmt(realProfit)}</p>
             </Card>
           </div>
 
-          {/* Breakdown */}
           <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Custos Fixos</span><span>- R$ {totalFixed.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Custos Variáveis ({totalVariablePercent}%)</span><span>- R$ {totalVariableAmount.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Pró-labore</span><span>- R$ {proLabore.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Impostos ({taxPercent}%)</span><span>- R$ {taxAmount.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Custos Fixos</span><span>- {fmt(totalFixed)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Custos Variáveis ({totalVariablePercent}%)</span><span>- {fmt(totalVariableAmount)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Pró-labore</span><span>- {fmt(proLabore)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Impostos ({taxPercent}%)</span><span>- {fmt(taxAmount)}</span></div>
             <Separator />
             <div className="flex justify-between font-bold">
               <span>Lucro Real</span>
-              <span className={realProfit >= 0 ? "text-primary" : "text-destructive"}>R$ {realProfit.toFixed(2)}</span>
+              <span className={realProfit >= 0 ? "text-primary" : "text-destructive"}>{fmt(realProfit)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Margem Real</span>
@@ -491,23 +508,21 @@ function FinancialMap() {
 
           <Separator />
 
-          {/* Illusory revenue */}
           {monthlyRevenue > 0 && (
             <div className="p-3 rounded-lg bg-muted/50 border border-dashed border-muted-foreground/20 space-y-1">
               <p className="text-xs font-semibold text-muted-foreground">💡 Faturamento Ilusório</p>
               <p className="text-sm">
-                Do seu faturamento de <strong>R$ {monthlyRevenue.toFixed(2)}</strong>, cerca de{" "}
-                <strong className="text-destructive">R$ {illusoryRevenue.toFixed(2)}</strong> ({monthlyRevenue > 0 ? ((illusoryRevenue / monthlyRevenue) * 100).toFixed(0) : 0}%) são custos disfarçados.
+                Do seu faturamento de <strong>{fmt(monthlyRevenue)}</strong>, cerca de{" "}
+                <strong className="text-destructive">{fmt(illusoryRevenue)}</strong> ({monthlyRevenue > 0 ? ((illusoryRevenue / monthlyRevenue) * 100).toFixed(0) : 0}%) são custos disfarçados.
               </p>
             </div>
           )}
 
-          {/* Break-even */}
           {breakEven > 0 && (
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-1">
               <p className="text-xs font-semibold text-primary">📍 Ponto de Equilíbrio</p>
               <p className="text-sm">
-                Você precisa faturar no mínimo <strong className="text-primary">R$ {breakEven.toFixed(2)}</strong>/mês para cobrir todos os custos.
+                Você precisa faturar no mínimo <strong className="text-primary">{fmt(breakEven)}</strong>/mês para cobrir todos os custos.
               </p>
               {monthlyRevenue > 0 && (
                 <p className="text-xs text-muted-foreground">
@@ -521,15 +536,280 @@ function FinancialMap() {
         </CardContent>
       </Card>
 
+      {/* ── PIE CHART: Distribuição do Faturamento ── */}
+      {pieData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <PieChartIcon className="h-4 w-4 text-primary" />
+              Distribuição do Faturamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {pieData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    formatter={(value: number) => fmt(value)}
+                    contentStyle={{ borderRadius: "8px", fontSize: "12px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap gap-3 justify-center mt-2">
+              {pieData.map((item, i) => (
+                <div key={item.name} className="flex items-center gap-1.5 text-xs">
+                  <div className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                  <span className="text-muted-foreground">{item.name}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Button onClick={exportPDF} className="w-full"><Download className="h-4 w-4 mr-2" /> Exportar PDF</Button>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════
-// MAIN — 3 abas
+// ABA 4 — DASHBOARD FINANCEIRO
+// ═══════════════════════════════════════════
+function FinancialDashboard({ data }: { data: FinancialData }) {
+  const { totalFixed, totalVariableAmount, proLabore, taxAmount, monthlyRevenue, totalExpenses, realProfit, realMargin, breakEven } = data;
+
+  const hasData = monthlyRevenue > 0;
+
+  const healthStatus = useMemo(() => {
+    if (!hasData) return { label: "Sem dados", color: "text-muted-foreground", bg: "bg-muted", icon: "⚪" };
+    if (realMargin >= 20) return { label: "Saudável", color: "text-emerald-700", bg: "bg-emerald-500/10", icon: "🟢" };
+    if (realMargin >= 10) return { label: "Atenção", color: "text-amber-700", bg: "bg-amber-500/10", icon: "🟡" };
+    return { label: "Crítico", color: "text-destructive", bg: "bg-destructive/10", icon: "🔴" };
+  }, [realMargin, hasData]);
+
+  const pieData = useMemo(() => {
+    if (!hasData) return [];
+    return [
+      { name: "Custos Fixos", value: totalFixed },
+      { name: "Custos Variáveis", value: totalVariableAmount },
+      { name: "Pró-labore", value: proLabore },
+      { name: "Impostos", value: taxAmount },
+    ].filter(i => i.value > 0);
+  }, [totalFixed, totalVariableAmount, proLabore, taxAmount, hasData]);
+
+  const barData = useMemo(() => {
+    if (!hasData) return [];
+    return [
+      { name: "Faturamento", valor: monthlyRevenue },
+      { name: "Despesas", valor: totalExpenses },
+      { name: "Lucro", valor: Math.max(0, realProfit) },
+    ];
+  }, [monthlyRevenue, totalExpenses, realProfit, hasData]);
+
+  const breakEvenProgress = useMemo(() => {
+    if (!hasData || breakEven <= 0) return 0;
+    return Math.min((monthlyRevenue / breakEven) * 100, 150);
+  }, [monthlyRevenue, breakEven, hasData]);
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Dashboard Financeiro", 20, 25);
+    doc.setFontSize(11);
+    let y = 40;
+    doc.text(`Faturamento: ${fmt(monthlyRevenue)}`, 20, y); y += 7;
+    doc.text(`Total Despesas: ${fmt(totalExpenses)}`, 20, y); y += 7;
+    doc.text(`Lucro Real: ${fmt(realProfit)}`, 20, y); y += 7;
+    doc.text(`Margem Real: ${realMargin.toFixed(1)}%`, 20, y); y += 10;
+    doc.text(`Custos Fixos: ${fmt(totalFixed)}`, 20, y); y += 7;
+    doc.text(`Custos Variaveis: ${fmt(totalVariableAmount)}`, 20, y); y += 7;
+    doc.text(`Pro-labore: ${fmt(proLabore)}`, 20, y); y += 7;
+    doc.text(`Impostos: ${fmt(taxAmount)}`, 20, y); y += 10;
+    doc.text(`Ponto de Equilibrio: ${fmt(breakEven)}`, 20, y); y += 7;
+    doc.text(`Saude Financeira: ${healthStatus.label}`, 20, y);
+    doc.save("dashboard-financeiro.pdf");
+    toast.success("PDF exportado!");
+  };
+
+  if (!hasData) {
+    return (
+      <div className="text-center py-12 space-y-3">
+        <BarChart3 className="h-12 w-12 text-muted-foreground/40 mx-auto" />
+        <p className="text-muted-foreground text-sm">Preencha os dados na aba <strong>Mapa Financeiro</strong> para visualizar o dashboard.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="p-3 border-emerald-500/20">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Faturamento</p>
+          <p className="text-lg font-bold text-foreground">{fmt(monthlyRevenue)}</p>
+        </Card>
+        <Card className="p-3 border-destructive/20">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Total Despesas</p>
+          <p className="text-lg font-bold text-foreground">{fmt(totalExpenses)}</p>
+        </Card>
+        <Card className={`p-3 ${realProfit >= 0 ? "border-emerald-500/20" : "border-destructive/20"}`}>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Lucro Real</p>
+          <p className={`text-lg font-bold ${realProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>{fmt(realProfit)}</p>
+        </Card>
+        <Card className={`p-3 ${healthStatus.bg}`}>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Margem Real</p>
+          <p className={`text-lg font-bold ${healthStatus.color}`}>{realMargin.toFixed(1)}%</p>
+        </Card>
+      </div>
+
+      {/* Health Status */}
+      <Card className={`p-4 ${healthStatus.bg} border-2`}>
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{healthStatus.icon}</span>
+          <div>
+            <p className={`font-bold ${healthStatus.color}`}>Saúde Financeira: {healthStatus.label}</p>
+            <p className="text-xs text-muted-foreground">
+              {realMargin >= 20 && "Seu negócio está com margem saudável. Continue otimizando custos."}
+              {realMargin >= 10 && realMargin < 20 && "Margem abaixo de 20%. Analise possibilidades de redução de custos ou aumento de preço."}
+              {realMargin < 10 && "Margem crítica. É urgente revisar sua estrutura de custos e precificação."}
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Bar Chart: Revenue vs Expenses vs Profit */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            Faturamento vs Despesas vs Lucro
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={barData} barSize={40}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                <XAxis dataKey="name" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
+                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                <RechartsTooltip
+                  formatter={(value: number) => fmt(value)}
+                  contentStyle={{ borderRadius: "8px", fontSize: "12px" }}
+                />
+                <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
+                  {barData.map((_, index) => (
+                    <Cell key={`bar-${index}`} fill={CHART_COLORS_BAR[index]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pie Chart: Expense Composition */}
+      {pieData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <PieChartIcon className="h-4 w-4 text-primary" />
+              Composição das Despesas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={85}
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {pieData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    formatter={(value: number) => fmt(value)}
+                    contentStyle={{ borderRadius: "8px", fontSize: "12px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap gap-3 justify-center mt-2">
+              {pieData.map((item, i) => (
+                <div key={item.name} className="flex items-center gap-1.5 text-xs">
+                  <div className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                  <span className="text-muted-foreground">{item.name}: {fmt(item.value)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Break-even Progress */}
+      {breakEven > 0 && (
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              Ponto de Equilíbrio
+            </p>
+            <Badge variant={monthlyRevenue >= breakEven ? "default" : "destructive"}>
+              {monthlyRevenue >= breakEven ? "Acima ✅" : "Abaixo ⚠️"}
+            </Badge>
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>R$ 0</span>
+              <span>Meta: {fmt(breakEven)}</span>
+            </div>
+            <Progress value={Math.min(breakEvenProgress, 100)} className="h-3" />
+            <p className="text-xs text-muted-foreground text-center">
+              Seu faturamento atual é <strong>{breakEvenProgress.toFixed(0)}%</strong> do ponto de equilíbrio
+            </p>
+          </div>
+        </Card>
+      )}
+
+      <Button onClick={exportPDF} className="w-full"><Download className="h-4 w-4 mr-2" /> Exportar Dashboard PDF</Button>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// MAIN — 4 abas
 // ═══════════════════════════════════════════
 export default function PriceCalculator() {
+  const [financialData, setFinancialData] = useState<FinancialData>({
+    totalFixed: 0, totalVariablePercent: 0, totalVariableAmount: 0, proLabore: 0,
+    taxPercent: 0, taxAmount: 0, monthlyRevenue: 0, totalExpenses: 0,
+    realProfit: 0, realMargin: 0, breakEven: 0, illusoryRevenue: 0,
+  });
+
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -547,19 +827,23 @@ export default function PriceCalculator() {
 
       <Tabs defaultValue="product">
         <TabsList className="w-full">
-          <TabsTrigger value="product" className="flex-1 gap-1">
+          <TabsTrigger value="product" className="flex-1 gap-1 text-[11px] px-1">
             <Package className="h-3.5 w-3.5" /> Produto
           </TabsTrigger>
-          <TabsTrigger value="service" className="flex-1 gap-1">
+          <TabsTrigger value="service" className="flex-1 gap-1 text-[11px] px-1">
             <Briefcase className="h-3.5 w-3.5" /> Serviço
           </TabsTrigger>
-          <TabsTrigger value="financial" className="flex-1 gap-1">
+          <TabsTrigger value="financial" className="flex-1 gap-1 text-[11px] px-1">
             <BarChart3 className="h-3.5 w-3.5" /> Mapa
+          </TabsTrigger>
+          <TabsTrigger value="dashboard" className="flex-1 gap-1 text-[11px] px-1">
+            <PieChartIcon className="h-3.5 w-3.5" /> Financeiro
           </TabsTrigger>
         </TabsList>
         <TabsContent value="product"><ProductCalculator /></TabsContent>
         <TabsContent value="service"><ServiceCalculator /></TabsContent>
-        <TabsContent value="financial"><FinancialMap /></TabsContent>
+        <TabsContent value="financial"><FinancialMap onDataChange={setFinancialData} /></TabsContent>
+        <TabsContent value="dashboard"><FinancialDashboard data={financialData} /></TabsContent>
       </Tabs>
     </div>
   );
