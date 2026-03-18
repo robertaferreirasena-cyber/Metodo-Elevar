@@ -174,15 +174,16 @@ function EncontrosTab() {
           }));
 
           return (
-            <MissionChecklist
-              key={mod.id}
-              module={mod}
-              missions={missions}
-              progressPercent={prog}
-              onToggle={toggleLessonComplete}
-              isExpanded={expandedModuleId === mod.id}
-              onToggleExpand={() => setExpandedModuleId(expandedModuleId === mod.id ? null : mod.id)}
-            />
+            <div key={mod.id} id={`module-${mod.id}`}>
+              <MissionChecklist
+                module={mod}
+                missions={missions}
+                progressPercent={prog}
+                onToggle={toggleLessonComplete}
+                isExpanded={expandedModuleId === mod.id}
+                onToggleExpand={() => setExpandedModuleId(expandedModuleId === mod.id ? null : mod.id)}
+              />
+            </div>
           );
         })}
       </div>
