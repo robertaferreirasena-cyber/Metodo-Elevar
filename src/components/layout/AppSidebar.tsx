@@ -32,10 +32,14 @@ const mainItems = [
   { title: "Conquistas", url: "/conquistas", icon: Trophy },
 ];
 
+const financeItems = [
+  { title: "Central Financeira", url: "/financeiro", icon: DollarSign },
+  { title: "Metas Elevar", url: "/metas-elevar", icon: Target },
+];
+
 const moreItems = [
   { title: "Raio-X Persona", url: "/persona", icon: Brain },
   { title: "Ideias", url: "/ideias", icon: Lightbulb },
-  { title: "Calculadora", url: "/calculadora", icon: Calculator },
   { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera },
   { title: "Comunidade", url: "/comunidade", icon: MessageSquare },
   { title: "Favoritos", url: "/favoritos", icon: Heart },
