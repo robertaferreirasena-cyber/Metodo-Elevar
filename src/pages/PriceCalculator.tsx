@@ -624,9 +624,25 @@ function FinancialMap({ onDataChange, onSave, onLoad, savedData, saving }: {
 // ABA 4 — DASHBOARD FINANCEIRO
 // ═══════════════════════════════════════════
 function FinancialDashboard({ data }: { data: FinancialData }) {
-  const { totalFixed, totalVariableAmount, proLabore, taxAmount, monthlyRevenue, totalExpenses, realProfit, realMargin, breakEven } = data;
+  const { totalFixed, totalVariablePercent, totalVariableAmount, proLabore, taxPercent: dataTaxPercent, taxAmount, monthlyRevenue, totalExpenses, realProfit, realMargin, breakEven } = data;
 
-  const hasData = monthlyRevenue > 0;
+  // Simulation slider
+  const [simEnabled, setSimEnabled] = useState(false);
+  const [simRevenue, setSimRevenue] = useState(monthlyRevenue);
+  
+  useEffect(() => {
+    if (!simEnabled) setSimRevenue(monthlyRevenue);
+  }, [monthlyRevenue, simEnabled]);
+
+  // Use simulated or real values
+  const activeRevenue = simEnabled ? simRevenue : monthlyRevenue;
+  const simVariableAmount = activeRevenue * (totalVariablePercent / 100);
+  const simTaxAmount = activeRevenue * (dataTaxPercent / 100);
+  const simTotalExpenses = totalFixed + simVariableAmount + proLabore + simTaxAmount;
+  const simRealProfit = activeRevenue - simTotalExpenses;
+  const simRealMargin = activeRevenue > 0 ? (simRealProfit / activeRevenue) * 100 : 0;
+
+  const hasData = monthlyRevenue > 0 || simEnabled;
 
   const healthStatus = useMemo(() => {
     if (!hasData) return { label: "Sem dados", color: "text-muted-foreground", bg: "bg-muted", icon: "⚪" };
