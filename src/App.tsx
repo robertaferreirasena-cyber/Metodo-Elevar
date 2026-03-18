@@ -44,6 +44,7 @@ import PhotoBoss from "./pages/PhotoBoss";
 import AdminCredentials from "./pages/AdminCredentials";
 import PriceCalculator from "./pages/PriceCalculator";
 import SalesGoals from "./pages/SalesGoals";
+import FinancialReport from "./pages/FinancialReport";
 import Gamification from "./pages/Gamification";
 import LearningModules from "./pages/LearningModules";
 import MentorChat from "./pages/MentorChat";
