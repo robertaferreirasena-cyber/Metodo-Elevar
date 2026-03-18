@@ -445,6 +445,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </PersonaProvider>
       </GlobalErrorHandler>
     </QueryClientProvider>
   </ErrorBoundary>
