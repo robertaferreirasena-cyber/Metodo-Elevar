@@ -891,11 +891,66 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
 // MAIN — 4 abas
 // ═══════════════════════════════════════════
 export default function PriceCalculator() {
+  const { user } = useAuth();
   const [financialData, setFinancialData] = useState<FinancialData>({
     totalFixed: 0, totalVariablePercent: 0, totalVariableAmount: 0, proLabore: 0,
     taxPercent: 0, taxAmount: 0, monthlyRevenue: 0, totalExpenses: 0,
     realProfit: 0, realMargin: 0, breakEven: 0, illusoryRevenue: 0,
   });
+  const [savedMapData, setSavedMapData] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Load saved financial data on mount
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("financial_snapshots")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("snapshot_type", "financial_map")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.data) {
+          setSavedMapData(data.data);
+        }
+      });
+  }, [user]);
+
+  const handleSaveMap = async (mapData: any) => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { data: existing } = await supabase
+        .from("financial_snapshots")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("snapshot_type", "financial_map")
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from("financial_snapshots")
+          .update({ data: mapData })
+          .eq("id", existing.id);
+      } else {
+        await supabase
+          .from("financial_snapshots")
+          .insert({ user_id: user.id, snapshot_type: "financial_map", data: mapData, label: "Mapa Financeiro" });
+      }
+      toast.success("Dados financeiros salvos! 💾");
+    } catch (err) {
+      toast.error("Erro ao salvar dados");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLoadMap = () => {
+    // Already loaded via useEffect
+    toast.info("Dados carregados do banco");
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
@@ -903,7 +958,7 @@ export default function PriceCalculator() {
         <div className="flex items-center gap-2">
           <Calculator className="h-6 w-6 text-primary" />
           <div>
-            <h1 className="text-xl font-bold text-foreground">Calculadora Financeira</h1>
+            <h1 className="text-xl font-bold text-foreground">Central Financeira</h1>
             <p className="text-xs text-muted-foreground">
               Precifique com precisão e entenda a saúde financeira do seu negócio
             </p>
@@ -929,7 +984,15 @@ export default function PriceCalculator() {
         </TabsList>
         <TabsContent value="product"><ProductCalculator /></TabsContent>
         <TabsContent value="service"><ServiceCalculator /></TabsContent>
-        <TabsContent value="financial"><FinancialMap onDataChange={setFinancialData} /></TabsContent>
+        <TabsContent value="financial">
+          <FinancialMap 
+            onDataChange={setFinancialData} 
+            onSave={handleSaveMap} 
+            onLoad={handleLoadMap} 
+            savedData={savedMapData} 
+            saving={saving} 
+          />
+        </TabsContent>
         <TabsContent value="dashboard"><FinancialDashboard data={financialData} /></TabsContent>
       </Tabs>
     </div>
