@@ -718,6 +718,7 @@ function RaioXView({ profile, onEdit, onRegenerate, isRegenerating }: RaioXViewP
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </Button>
+          <FinishMissionButton />
           <Button 
             variant="outline" 
             size="sm" 
