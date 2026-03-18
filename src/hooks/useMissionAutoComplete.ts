@@ -5,6 +5,7 @@ const PENDING_KEY = "pending_mission_complete";
 /** Save a mission ID to be auto-completed when returning to /aprendizado */
 export function markMissionPending(lessonId: string) {
   localStorage.setItem(PENDING_KEY, lessonId);
+  localStorage.setItem("coming_from_learning", "true");
 }
 
 /** Check and consume pending mission. Returns lessonId or null. */

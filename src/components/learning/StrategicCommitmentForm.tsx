@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import FinishMissionButton from "@/components/learning/FinishMissionButton";
 import { CheckCircle2, FileSignature } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,10 +71,10 @@ export default function StrategicCommitmentForm() {
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <FileSignature className="h-5 w-5 text-primary" />
-          <CardTitle className="text-base">Compromisso Estratégico ELEVAR</CardTitle>
+          <CardTitle className="text-base">Definir Metas Anual e Trimestral</CardTitle>
           {saved && <Badge className="bg-emerald-500/20 text-emerald-600 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />Preenchido</Badge>}
         </div>
-        <p className="text-xs text-muted-foreground">Assine seu compromisso com a execução do Método ELEVAR. Comprometa-se com as entregas e prazos da mentoria.</p>
+        <p className="text-xs text-muted-foreground">Defina suas metas de faturamento e identifique seus desafios para o Método ELEVAR.</p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -115,19 +116,12 @@ export default function StrategicCommitmentForm() {
             rows={2}
           />
         </div>
-        <div>
-          <Label className="text-xs">✍️ Seu Compromisso</Label>
-          <Textarea
-            placeholder="Eu me comprometo a executar todas as missões do Método ELEVAR com disciplina e constância..."
-            value={form.commitment_text}
-            onChange={e => setForm(f => ({ ...f, commitment_text: e.target.value }))}
-            className="mt-1"
-            rows={3}
-          />
+        <div className="flex gap-2">
+          <Button onClick={handleSave} disabled={saving} className="flex-1">
+            {saving ? "Salvando..." : saved ? "Atualizar Metas" : "Salvar Metas 🎯"}
+          </Button>
+          <FinishMissionButton />
         </div>
-        <Button onClick={handleSave} disabled={saving} className="w-full">
-          {saving ? "Salvando..." : saved ? "Atualizar Compromisso" : "Formalizar Compromisso 🎯"}
-        </Button>
       </CardContent>
     </Card>
   );

@@ -48,7 +48,7 @@ import LearningModules from "./pages/LearningModules";
 import MentorChat from "./pages/MentorChat";
 import WhatsAppHub from "./pages/WhatsAppHub";
 import MentoraHub from "./pages/MentoraHub";
-
+import FormalizeCommitment from "./pages/FormalizeCommitment";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -435,6 +435,18 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <MentorChat />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Compromisso Estratégico */}
+              <Route
+                path="/compromisso"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <FormalizeCommitment />
                     </AppLayout>
                   </ProtectedRoute>
                 }
