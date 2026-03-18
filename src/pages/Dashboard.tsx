@@ -323,6 +323,18 @@ export default function Dashboard() {
             href="/conquistas"
             color="bg-amber-500/10"
           />
+          <QuickHub
+            icon={<DollarSign className="h-5 w-5 text-emerald-600" />}
+            label="Financeiro"
+            href="/financeiro"
+            color="bg-emerald-600/10"
+          />
+          <QuickHub
+            icon={<Target className="h-5 w-5 text-orange-500" />}
+            label="Metas Elevar"
+            href="/metas-elevar"
+            color="bg-orange-500/10"
+          />
         </div>
       </div>
 
