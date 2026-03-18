@@ -1,20 +1,55 @@
-# Plano: Acesso 4 Meses + Admin Completo + Base de Conhecimento
 
-## Status: ✅ Implementado
 
-## O que foi feito
+## Plano: Painel de Estratégia com Acompanhamento no Dashboard de Missões
 
-### 1. Acesso de 4 Meses
-- `handle_new_user()` agora define `expires_at = NOW() + 4 months`
-- Subscriptions existentes sem `expires_at` atualizadas para `started_at + 4 meses`
+### Problema
+O aluno não tem uma visão clara do fluxo estratégico integrado. As missões existem mas falta:
+1. Um card de "Plano Estratégico" sempre visível no dashboard mostrando onde o aluno está no fluxo
+2. Avisos/alertas guiando o próximo passo
+3. Salvamento automático do progresso com indicadores visuais de etapa atual
 
-### 2. Admin com Menu de Abas
-- `AdminLayout.tsx` com navegação horizontal: Dashboard, Usuários, Pagamentos, Tokens, Credenciais, Aprendizado, Base IA
-- Todas as páginas admin envolvidas com AdminLayout
-- Breadcrumbs removidos em favor das abas
+### Mudanças Planejadas
 
-### 3. Base de Conhecimento IA
-- Tabela `agent_knowledge_base` (agent_key, agent_name, system_prompt)
-- Página `/admin/base-conhecimento` para editar prompts dos agentes
-- Edge functions (ai-mentor-chat, sales-strategist, conversation-analyzer, sequence-generator) consultam a tabela com fallback para prompts hardcoded
-- Cache de 5 minutos para evitar queries excessivas
+#### 1. Componente `StrategicPlanTracker` (novo)
+Criar `src/components/learning/StrategicPlanTracker.tsx` - um card fixo no topo do dashboard de missões que:
+- Mostra o encontro atual (baseado no primeiro módulo incompleto)
+- Exibe a próxima missão pendente com botão direto de ação
+- Mostra um stepper visual com os 10 encontros (0-9) como etapas
+- Indica claramente: "Você está no Encontro X, Missão Y de Z"
+- Salva o último encontro visitado em `localStorage` para manter contexto
+
+#### 2. Sistema de Avisos/Alertas no Dashboard
+No `LearningModules.tsx` (aba Encontros), adicionar:
+- Alert banner no topo quando há missões pendentes: "Você tem X missões pendentes no Encontro Y. Continue de onde parou!"
+- Toast automático ao entrar na página se houver missão incompleta
+- Destaque visual (auto-expand) do encontro atual incompleto
+- Aviso quando o aluno pula encontros: "Recomendamos completar o Encontro X antes de avançar"
+
+#### 3. Dashboard Principal (`Dashboard.tsx`) - Card de Acompanhamento
+Adicionar um card compacto no Dashboard principal mostrando:
+- Encontro atual + progresso visual (stepper)
+- Próxima missão com link direto
+- Botão "Continuar Método ELEVAR" que leva ao encontro correto
+
+#### 4. Lógica de Fluxo Sequencial
+- Calcular automaticamente o "encontro atual" = primeiro módulo com progresso < 100%
+- Auto-expandir o encontro atual ao abrir a página
+- Salvar estado do fluxo (encontro atual, última missão feita) via `strategic_commitments` existente ou `localStorage`
+
+### Arquivos a Criar/Editar
+
+| Arquivo | Acao |
+|---------|------|
+| `src/components/learning/StrategicPlanTracker.tsx` | **Criar** - Stepper visual + próxima missão + status |
+| `src/pages/LearningModules.tsx` | **Editar** - Adicionar tracker, alertas, auto-expand do encontro atual |
+| `src/pages/Dashboard.tsx` | **Editar** - Card de acompanhamento do Método ELEVAR com stepper |
+| `src/hooks/useLearning.ts` | **Editar** - Adicionar helpers: `getCurrentModule()`, `getNextMission()` |
+
+### Detalhes Tecnicos
+
+- **Stepper visual**: Linha horizontal com circulos para cada encontro (0-9), preenchidos conforme progresso, com o atual destacado
+- **Auto-expand**: Ao montar `EncontrosTab`, calcular primeiro modulo incompleto e setar como `expandedModuleId`
+- **Alerta**: Usar componente `Alert` do shadcn com icone e mensagem contextual
+- **Sem nova tabela**: Usa dados ja existentes de `learning_modules`, `user_module_progress` e `strategic_commitments`
+- **Performance**: Calculos derivados dos dados ja carregados pelo `useLearning`, sem queries adicionais
+
