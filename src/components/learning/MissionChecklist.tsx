@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ExternalLink, CheckCircle2 } from "lucide-react";
+import { ExternalLink, CheckCircle2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { markMissionPending } from "@/hooks/useMissionAutoComplete";
 import { usePersonaContext } from "@/contexts/PersonaContext";
+import confetti from "canvas-confetti";
 
 interface Mission {
   id: string;
@@ -62,6 +63,38 @@ const MENTOR_PROMPTS: Record<string, string> = {
   "Entregar Plano Estratégico ELEVAR 180 dias": "Me ajude a construir meu Plano Estratégico ELEVAR de 180 dias para dobrar o faturamento: time ideal, etapas, indicadores e visão de longo prazo.",
 };
 
+const fireSmallConfetti = () => {
+  confetti({
+    particleCount: 60,
+    spread: 55,
+    origin: { y: 0.7 },
+    colors: ['#10b981', '#6366f1', '#f59e0b'],
+  });
+};
+
+const fireBigConfetti = () => {
+  const duration = 2000;
+  const end = Date.now() + duration;
+  const frame = () => {
+    confetti({
+      particleCount: 4,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0 },
+      colors: ['#10b981', '#6366f1', '#f59e0b', '#ec4899'],
+    });
+    confetti({
+      particleCount: 4,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1 },
+      colors: ['#10b981', '#6366f1', '#f59e0b', '#ec4899'],
+    });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  };
+  frame();
+};
+
 export default function MissionChecklist({
   module, missions, progressPercent, onToggle, isExpanded, onToggleExpand
 }: MissionChecklistProps) {
@@ -75,6 +108,14 @@ export default function MissionChecklist({
     // PersonaProvider not mounted yet — safe fallback
   }
 
+  const handleToggleWithConfetti = (missionId: string) => {
+    const mission = missions.find(m => m.id === missionId);
+    if (mission && !mission.completed) {
+      fireSmallConfetti();
+    }
+    onToggle(missionId);
+  };
+
   const handleExecuteMission = (mission: Mission) => {
     const config = mission.activity_type ? ACTIVITY_CONFIG[mission.activity_type] : null;
     if (!config || !config.route) return;
@@ -87,7 +128,6 @@ export default function MissionChecklist({
 
     if (mission.activity_type === "mentor" || config.route === "/mentora") {
       let prompt = MENTOR_PROMPTS[mission.title] || `Me ajude com a missão: ${mission.title}. ${mission.content || ""}`;
-      // Enrich with persona data
       if (personaContext?.enrichPrompt) {
         prompt = personaContext.enrichPrompt(prompt);
       }
@@ -95,6 +135,13 @@ export default function MissionChecklist({
     } else {
       navigate(config.route);
     }
+  };
+
+  const handleViewMission = (mission: Mission) => {
+    const config = mission.activity_type ? ACTIVITY_CONFIG[mission.activity_type] : null;
+    if (!config || !config.route) return;
+    // Navigate without marking as pending — just view
+    navigate(config.route);
   };
 
   return (
@@ -148,7 +195,7 @@ export default function MissionChecklist({
               >
                 <Checkbox
                   checked={mission.completed}
-                  onCheckedChange={() => onToggle(mission.id)}
+                  onCheckedChange={() => handleToggleWithConfetti(mission.id)}
                   className="mt-0.5"
                 />
                 <div className="flex-1 min-w-0">
@@ -168,14 +215,27 @@ export default function MissionChecklist({
                   </div>
                 </div>
                 {hasRoute && (
-                  <Button
-                    size="sm"
-                    variant={mission.completed ? "ghost" : "default"}
-                    className="shrink-0 gap-1 text-xs"
-                    onClick={(e) => { e.stopPropagation(); handleExecuteMission(mission); }}
-                  >
-                    Executar <ExternalLink className="h-3 w-3" />
-                  </Button>
+                  <div className="flex gap-1 shrink-0">
+                    {mission.completed ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1 text-xs"
+                        onClick={(e) => { e.stopPropagation(); handleViewMission(mission); }}
+                      >
+                        <Eye className="h-3 w-3" /> Visualizar
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="gap-1 text-xs"
+                        onClick={(e) => { e.stopPropagation(); handleExecuteMission(mission); }}
+                      >
+                        Executar <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             );
@@ -191,8 +251,9 @@ export default function MissionChecklist({
                 onClick={(e) => {
                   e.stopPropagation();
                   localStorage.setItem(`elevar_completed_${module.id}`, new Date().toISOString());
+                  fireBigConfetti();
                   toast.success(`🎉 Encontro "${module.title}" finalizado com sucesso!`, {
-                    description: "Parabéns! Continue para o próximo encontro do Método ELEVAR.",
+                    description: "Parabéns! Continue para o próximo encontro do Método ELEVAR. 🚀",
                     duration: 5000,
                   });
                 }}

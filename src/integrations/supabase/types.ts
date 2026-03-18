@@ -889,34 +889,43 @@ export type Database = {
       strategic_commitments: {
         Row: {
           annual_goal: string | null
+          annual_revenue: string | null
           commitment_text: string | null
           created_at: string | null
           current_revenue: string | null
+          generated_copy: string | null
           id: string
           main_challenge: string | null
           quarterly_goal: string | null
+          signature_name: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           annual_goal?: string | null
+          annual_revenue?: string | null
           commitment_text?: string | null
           created_at?: string | null
           current_revenue?: string | null
+          generated_copy?: string | null
           id?: string
           main_challenge?: string | null
           quarterly_goal?: string | null
+          signature_name?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           annual_goal?: string | null
+          annual_revenue?: string | null
           commitment_text?: string | null
           created_at?: string | null
           current_revenue?: string | null
+          generated_copy?: string | null
           id?: string
           main_challenge?: string | null
           quarterly_goal?: string | null
+          signature_name?: string | null
           updated_at?: string | null
           user_id?: string
         }

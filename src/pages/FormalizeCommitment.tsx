@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FileSignature, Loader2, CheckCircle2, ArrowLeft, Sparkles } from "lucide-react";
@@ -10,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { clearComingFromLearning } from "@/components/learning/FinishMissionButton";
+import confetti from "canvas-confetti";
 
 export default function FormalizeCommitment() {
   const { user } = useAuth();
@@ -20,6 +22,7 @@ export default function FormalizeCommitment() {
   const [signed, setSigned] = useState(false);
   const [copy, setCopy] = useState("");
   const [commitmentText, setCommitmentText] = useState("");
+  const [signatureName, setSignatureName] = useState("");
   const [userData, setUserData] = useState<{
     name: string;
     niche: string;
@@ -57,13 +60,25 @@ export default function FormalizeCommitment() {
 
     setUserData(data);
 
-    if ((commitmentRes.data as any)?.commitment_text) {
-      setCommitmentText((commitmentRes.data as any).commitment_text);
+    const existingCopy = (commitmentRes.data as any)?.generated_copy;
+    const existingCommitment = (commitmentRes.data as any)?.commitment_text;
+    const existingSignature = (commitmentRes.data as any)?.signature_name;
+
+    if (existingCommitment) {
+      setCommitmentText(existingCommitment);
       setSigned(true);
     }
+    if (existingSignature) {
+      setSignatureName(existingSignature);
+    }
 
-    setLoading(false);
-    generateCopy(data);
+    if (existingCopy) {
+      setCopy(existingCopy);
+      setLoading(false);
+    } else {
+      setLoading(false);
+      generateCopy(data);
+    }
   };
 
   const generateCopy = async (data: typeof userData) => {
@@ -73,7 +88,18 @@ export default function FormalizeCommitment() {
         body: data,
       });
       if (error) throw error;
-      setCopy(result.copy || "");
+      const generatedCopy = result.copy || "";
+      setCopy(generatedCopy);
+
+      // Save generated copy to DB so we never call the API again
+      if (user && generatedCopy) {
+        const { data: existing } = await (supabase.from("strategic_commitments" as any).select("id").eq("user_id", user.id).maybeSingle() as any);
+        if (existing) {
+          await (supabase.from("strategic_commitments" as any) as any).update({ generated_copy: generatedCopy }).eq("user_id", user.id);
+        } else {
+          await (supabase.from("strategic_commitments" as any) as any).insert({ user_id: user.id, generated_copy: generatedCopy });
+        }
+      }
     } catch (e) {
       console.error("Error generating copy:", e);
       setCopy(`Querida ${data.name || "Empreendedora"},\n\nVocê está dando um passo decisivo ao iniciar o Método ELEVAR. Com sua meta de faturar ${data.annual_goal || "mais"} por ano, e com a determinação de superar o desafio de "${data.main_challenge || "crescer seu negócio"}", você está pronta para transformar sua realidade.\n\nO Método ELEVAR é um caminho de 10 encontros práticos onde você vai executar, medir e crescer. Cada missão foi desenhada para gerar resultado real no seu negócio.\n\nComprometa-se com a execução. O resultado é consequência.`);
@@ -87,11 +113,19 @@ export default function FormalizeCommitment() {
       toast.error("Escreva seu compromisso pessoal antes de assinar.");
       return;
     }
+    if (!signatureName.trim()) {
+      toast.error("Assine com seu nome completo.");
+      return;
+    }
     setSigning(true);
     try {
-      const payload = { commitment_text: commitmentText, user_id: user.id, updated_at: new Date().toISOString() };
+      const payload = { 
+        commitment_text: commitmentText, 
+        signature_name: signatureName,
+        user_id: user.id, 
+        updated_at: new Date().toISOString() 
+      };
       
-      // Check if record exists
       const { data: existing } = await (supabase.from("strategic_commitments" as any).select("id").eq("user_id", user.id).maybeSingle() as any);
       
       if (existing) {
@@ -101,16 +135,24 @@ export default function FormalizeCommitment() {
       }
 
       setSigned(true);
+
+      // 🎉 Confetti celebration!
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.6 },
+        colors: ['#10b981', '#6366f1', '#f59e0b', '#ec4899'],
+      });
+
       toast.success("🎯 Compromisso formalizado com sucesso!", {
         description: "Sua jornada no Método ELEVAR está oficialmente iniciada!",
         duration: 5000,
       });
 
-      // Return to learning after a brief delay
       setTimeout(() => {
         clearComingFromLearning();
         navigate("/aprendizado");
-      }, 2000);
+      }, 2500);
     } catch {
       toast.error("Erro ao salvar compromisso");
     } finally {
@@ -179,8 +221,8 @@ export default function FormalizeCommitment() {
         </CardContent>
       </Card>
 
-      {/* AI Generated Copy */}
-      <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/30">
+      {/* AI Generated Copy - Letter Style */}
+      <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary/5 shadow-lg">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -197,7 +239,10 @@ export default function FormalizeCommitment() {
               <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
             </div>
           ) : (
-            <div className="prose prose-sm max-w-none text-foreground/90 whitespace-pre-line leading-relaxed">
+            <div 
+              className="prose prose-sm max-w-none text-foreground/90 whitespace-pre-line leading-relaxed p-4 rounded-lg border border-dashed border-primary/20 bg-background/50"
+              style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
+            >
               {copy}
             </div>
           )}
@@ -226,14 +271,45 @@ export default function FormalizeCommitment() {
             disabled={signed}
             className={signed ? "opacity-70" : ""}
           />
+          
+          {/* Signature Name Input */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">✍️ Assine com seu nome completo:</p>
+            <Input
+              placeholder="Digite seu nome completo"
+              value={signatureName}
+              onChange={(e) => setSignatureName(e.target.value)}
+              disabled={signed}
+              className={`text-lg ${signed ? "opacity-70" : ""}`}
+              style={{ fontFamily: "'Georgia', 'Palatino', cursive, serif", fontStyle: "italic" }}
+            />
+            {signatureName && (
+              <div className="mt-3 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5 text-center">
+                <p className="text-xs text-muted-foreground mb-1">Assinatura:</p>
+                <p 
+                  className="text-xl text-primary"
+                  style={{ fontFamily: "'Georgia', 'Palatino', cursive, serif", fontStyle: "italic" }}
+                >
+                  {signatureName}
+                </p>
+              </div>
+            )}
+          </div>
+
           {!signed && (
             <Button 
               onClick={handleSign} 
-              disabled={signing || !commitmentText.trim()} 
+              disabled={signing || !commitmentText.trim() || !signatureName.trim()} 
               className="w-full gap-2"
             >
               {signing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSignature className="h-4 w-4" />}
               {signing ? "Assinando..." : "Assinar Compromisso 🎯"}
+            </Button>
+          )}
+
+          {signed && (
+            <Button variant="outline" onClick={() => navigate("/aprendizado")} className="w-full gap-2">
+              <ArrowLeft className="h-4 w-4" /> Voltar ao Aprendizado
             </Button>
           )}
         </CardContent>
