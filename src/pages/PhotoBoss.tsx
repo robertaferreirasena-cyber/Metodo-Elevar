@@ -443,9 +443,9 @@ export default function PhotoBoss() {
             <ShieldCheck className="w-10 h-10 text-primary" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold">GARANTIA DE 7 DIAS</h2>
-          <Badge className="bg-primary text-primary-foreground">100% INCONDICIONAL</Badge>
+          <Badge className="bg-primary text-primary-foreground">TOTALMENTE INCONDICIONAL</Badge>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Se por qualquer motivo você não conseguir criar fotos profissionais impressionantes usando o PhotoBoss, ou se não estiver 100% satisfeito com os resultados, basta enviar um e-mail solicitando reembolso.
+            Se por qualquer motivo você não conseguir criar fotos profissionais impressionantes usando o PhotoBoss, ou se não estiver totalmente satisfeito com os resultados, basta enviar um e-mail solicitando reembolso.
           </p>
           <p className="text-white font-semibold">
             Devolvemos cada centavo. Sem perguntas. Sem burocracia.

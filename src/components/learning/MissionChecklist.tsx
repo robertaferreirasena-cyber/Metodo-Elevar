@@ -57,7 +57,7 @@ const MENTOR_PROMPTS: Record<string, string> = {
   "Estruturar campanha diferenciada": "Me ajude a planejar uma campanha que comunique minha diferenciação competitiva no mercado, com posicionamento acima da média.",
   "Criar checklist de processos": "Me ajude a documentar os processos-chave do meu negócio em um checklist com indicadores de controle e rotina de liderança.",
   "Testar ausência estratégica": "Me ajude a planejar um teste de ausência: como simular 1 dia sem operar e avaliar o que funciona sem mim.",
-  "Entregar Plano Estratégico ELEVAR 180 dias": "Me ajude a construir meu Plano Estratégico ELEVAR de 180 dias para escalar até 100K+: time ideal, etapas, indicadores e visão de longo prazo.",
+  "Entregar Plano Estratégico ELEVAR 180 dias": "Me ajude a construir meu Plano Estratégico ELEVAR de 180 dias para dobrar o faturamento: time ideal, etapas, indicadores e visão de longo prazo.",
 };
 
 export default function MissionChecklist({

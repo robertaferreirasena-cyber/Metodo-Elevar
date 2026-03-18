@@ -143,7 +143,7 @@ const scripts: Script[] = [
       "🎉 Seja bem-vindo(a) à [empresa]!",
       "Estou muito feliz que você decidiu [benefício]!",
       "Seus próximos passos são: [instruções claras]",
-      "Qualquer dúvida, é só me chamar aqui! Estou 100% disponível pra você 💜"
+      "Qualquer dúvida, é só me chamar aqui! Estou totalmente disponível pra você 💜"
     ]
   },
   {
