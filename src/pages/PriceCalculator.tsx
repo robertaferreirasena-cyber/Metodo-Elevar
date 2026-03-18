@@ -655,11 +655,11 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
     if (!hasData) return [];
     return [
       { name: "Custos Fixos", value: totalFixed },
-      { name: "Custos Variáveis", value: totalVariableAmount },
+      { name: "Custos Variáveis", value: simVariableAmount },
       { name: "Pró-labore", value: proLabore },
-      { name: "Impostos", value: taxAmount },
+      { name: "Impostos", value: simTaxAmount },
     ].filter(i => i.value > 0);
-  }, [totalFixed, totalVariableAmount, proLabore, taxAmount, hasData]);
+  }, [totalFixed, simVariableAmount, proLabore, simTaxAmount, hasData]);
 
   const barData = useMemo(() => {
     if (!hasData) return [];
