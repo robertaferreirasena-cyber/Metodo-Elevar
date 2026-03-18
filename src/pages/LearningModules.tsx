@@ -106,6 +106,29 @@ function EncontrosTab() {
 
   return (
     <div className="space-y-4 mt-4">
+      {/* Strategic Plan Tracker - Always Visible */}
+      <StrategicPlanTracker
+        modules={modules}
+        getModuleProgress={getModuleProgress}
+        currentModuleId={currentModule?.id ?? null}
+        nextMission={nextMission}
+        totalProgress={totalProgress}
+        onGoToCurrentModule={handleGoToCurrentModule}
+      />
+
+      {/* Alert: pending missions warning */}
+      {currentModule && nextMission && (
+        <Alert className="border-amber-500/30 bg-amber-500/5">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-xs text-foreground">
+            <strong>Encontro {currentModule.position}:</strong> Você tem {getPendingCount(currentModule.id)} missão(ões) pendente(s).{" "}
+            <button className="text-primary underline font-medium" onClick={handleGoToCurrentModule}>
+              Continue de onde parou →
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Persona Summary Card */}
       {persona && persona.hasProfile && (
         <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
@@ -130,20 +153,6 @@ function EncontrosTab() {
           </CardContent>
         </Card>
       )}
-
-      {/* Overall Progress */}
-      <Card className="border-primary/20">
-        <CardContent className="pt-4 pb-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">Progresso Geral do Método ELEVAR</span>
-            <span className="text-sm text-primary font-bold">{totalProgress}%</span>
-          </div>
-          <Progress value={totalProgress} className="h-2" />
-          <p className="text-xs text-muted-foreground mt-2">
-            {totalProgress === 100 ? "🎉 Parabéns! Você completou todo o Método ELEVAR!" : "Complete as missões de cada encontro para avançar."}
-          </p>
-        </CardContent>
-      </Card>
 
       {/* Strategic Commitment (Encontro 0 special) */}
       {modules.length > 0 && modules[0].position === 0 && (
