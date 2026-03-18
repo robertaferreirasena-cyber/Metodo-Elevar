@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { FileSignature, Loader2, CheckCircle2, ArrowLeft, Sparkles } from "lucide-react";
+import { FileSignature, Loader2, CheckCircle2, ArrowLeft, Sparkles, Download } from "lucide-react";
+import jsPDF from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -160,6 +161,96 @@ export default function FormalizeCommitment() {
     }
   };
 
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const maxWidth = pageWidth - margin * 2;
+    let y = 30;
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Contrato de Compromisso", pageWidth / 2, y, { align: "center" });
+    y += 8;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Metodo ELEVAR", pageWidth / 2, y, { align: "center" });
+    y += 15;
+
+    // Strategic data
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Dados Estrategicos", margin, y);
+    y += 7;
+    doc.setFont("helvetica", "normal");
+    const fields = [
+      ["Nome", userData.name],
+      ["Nicho", userData.niche],
+      ["Negocio", userData.business_name],
+      ["Meta Anual", userData.annual_goal],
+      ["Meta Trimestral", userData.quarterly_goal],
+      ["Faturamento Atual", userData.current_revenue],
+      ["Principal Desafio", userData.main_challenge],
+    ].filter(([, v]) => v);
+
+    fields.forEach(([label, value]) => {
+      doc.text(`${label}: ${value}`, margin, y);
+      y += 6;
+    });
+    y += 5;
+
+    // Divider
+    doc.setDrawColor(180);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 10;
+
+    // AI Copy
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Carta de Compromisso", margin, y);
+    y += 7;
+    doc.setFont("helvetica", "normal");
+    const copyLines = doc.splitTextToSize(copy, maxWidth);
+    copyLines.forEach((line: string) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.text(line, margin, y);
+      y += 5;
+    });
+    y += 8;
+
+    // Personal commitment
+    if (commitmentText) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Compromisso Pessoal:", margin, y);
+      y += 7;
+      doc.setFont("helvetica", "normal");
+      const commitLines = doc.splitTextToSize(commitmentText, maxWidth);
+      commitLines.forEach((line: string) => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.text(line, margin, y);
+        y += 5;
+      });
+      y += 10;
+    }
+
+    // Signature
+    if (y > 250) { doc.addPage(); y = 20; }
+    doc.setDrawColor(180);
+    doc.line(margin, y, margin + 80, y);
+    y += 6;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "italic");
+    doc.text(signatureName, margin, y);
+    y += 6;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, margin, y);
+
+    doc.save("contrato-compromisso-elevar.pdf");
+    toast.success("PDF do contrato baixado com sucesso!");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -308,9 +399,14 @@ export default function FormalizeCommitment() {
           )}
 
           {signed && (
-            <Button variant="outline" onClick={() => navigate("/aprendizado")} className="w-full gap-2">
-              <ArrowLeft className="h-4 w-4" /> Voltar ao Aprendizado
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button onClick={exportPDF} className="w-full gap-2" variant="default">
+                <Download className="h-4 w-4" /> Baixar Contrato em PDF
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/aprendizado")} className="w-full gap-2">
+                <ArrowLeft className="h-4 w-4" /> Voltar ao Aprendizado
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
