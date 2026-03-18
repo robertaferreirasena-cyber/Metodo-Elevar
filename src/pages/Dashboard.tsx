@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLearning } from "@/hooks/useLearning";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSalesReminder } from "@/hooks/useSalesReminder";
 
 // Activity type to route mapping
 const activityRoutes: Record<string, { route: string; label: string }> = {
