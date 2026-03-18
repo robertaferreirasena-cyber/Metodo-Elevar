@@ -681,16 +681,17 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
     doc.text("Dashboard Financeiro", 20, 25);
     doc.setFontSize(11);
     let y = 40;
-    doc.text(`Faturamento: ${fmt(monthlyRevenue)}`, 20, y); y += 7;
-    doc.text(`Total Despesas: ${fmt(totalExpenses)}`, 20, y); y += 7;
-    doc.text(`Lucro Real: ${fmt(realProfit)}`, 20, y); y += 7;
-    doc.text(`Margem Real: ${realMargin.toFixed(1)}%`, 20, y); y += 10;
+    doc.text(`Faturamento: ${fmt(activeRevenue)}`, 20, y); y += 7;
+    doc.text(`Total Despesas: ${fmt(simTotalExpenses)}`, 20, y); y += 7;
+    doc.text(`Lucro Real: ${fmt(simRealProfit)}`, 20, y); y += 7;
+    doc.text(`Margem Real: ${simRealMargin.toFixed(1)}%`, 20, y); y += 10;
     doc.text(`Custos Fixos: ${fmt(totalFixed)}`, 20, y); y += 7;
-    doc.text(`Custos Variaveis: ${fmt(totalVariableAmount)}`, 20, y); y += 7;
+    doc.text(`Custos Variaveis: ${fmt(simVariableAmount)}`, 20, y); y += 7;
     doc.text(`Pro-labore: ${fmt(proLabore)}`, 20, y); y += 7;
-    doc.text(`Impostos: ${fmt(taxAmount)}`, 20, y); y += 10;
+    doc.text(`Impostos: ${fmt(simTaxAmount)}`, 20, y); y += 10;
     doc.text(`Ponto de Equilibrio: ${fmt(breakEven)}`, 20, y); y += 7;
     doc.text(`Saude Financeira: ${healthStatus.label}`, 20, y);
+    if (simEnabled) { y += 10; doc.text(`(Simulacao com faturamento de ${fmt(simRevenue)})`, 20, y); }
     doc.save("dashboard-financeiro.pdf");
     toast.success("PDF exportado!");
   };
