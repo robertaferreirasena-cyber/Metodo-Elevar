@@ -71,10 +71,10 @@ export default function StrategicCommitmentForm() {
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <FileSignature className="h-5 w-5 text-primary" />
-          <CardTitle className="text-base">Compromisso Estratégico ELEVAR</CardTitle>
+          <CardTitle className="text-base">Definir Metas Anual e Trimestral</CardTitle>
           {saved && <Badge className="bg-emerald-500/20 text-emerald-600 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />Preenchido</Badge>}
         </div>
-        <p className="text-xs text-muted-foreground">Assine seu compromisso com a execução do Método ELEVAR. Comprometa-se com as entregas e prazos da mentoria.</p>
+        <p className="text-xs text-muted-foreground">Defina suas metas de faturamento e identifique seus desafios para o Método ELEVAR.</p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
