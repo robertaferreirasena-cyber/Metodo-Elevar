@@ -48,9 +48,20 @@ export default function LearningModules() {
 }
 
 function EncontrosTab() {
-  const { modules, loading, getModuleLessons, getModuleProgress, toggleLessonComplete, totalProgress, progress } = useLearning();
-  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
+  const { modules, loading, getModuleLessons, getModuleProgress, toggleLessonComplete, totalProgress, progress, getCurrentModule, getNextMission, getPendingCount } = useLearning();
   const navigate = useNavigate();
+
+  const currentModule = getCurrentModule();
+  const nextMission = getNextMission();
+
+  // Auto-expand the current incomplete module
+  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentModule && !expandedModuleId) {
+      setExpandedModuleId(currentModule.id);
+    }
+  }, [currentModule?.id]);
 
   let persona: ReturnType<typeof usePersonaContext> | null = null;
   try {
@@ -68,6 +79,16 @@ function EncontrosTab() {
     }
   });
 
+  // Show toast on mount if pending missions
+  useEffect(() => {
+    if (!loading && currentModule && nextMission) {
+      const pending = getPendingCount(currentModule.id);
+      if (pending > 0) {
+        toast.info(`📋 Você tem ${pending} missão(ões) pendente(s) no ${currentModule.title}. Continue de onde parou!`, { duration: 5000 });
+      }
+    }
+  }, [loading]);
+
   if (loading) {
     return (
       <div className="space-y-4 mt-4">
@@ -75,6 +96,13 @@ function EncontrosTab() {
       </div>
     );
   }
+
+  const handleGoToCurrentModule = () => {
+    if (currentModule) {
+      setExpandedModuleId(currentModule.id);
+      document.getElementById(`module-${currentModule.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
 
   return (
     <div className="space-y-4 mt-4">
