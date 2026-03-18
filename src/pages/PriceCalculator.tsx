@@ -707,23 +707,61 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
 
   return (
     <div className="space-y-4">
+      {/* Simulation Slider */}
+      <Card className="p-4 border-primary/30 bg-primary/5">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">Simulador de Faturamento</span>
+          </div>
+          <Button 
+            variant={simEnabled ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setSimEnabled(!simEnabled)}
+            className="text-xs"
+          >
+            {simEnabled ? "Desativar" : "Ativar Simulação"}
+          </Button>
+        </div>
+        {simEnabled && (
+          <div className="space-y-2 mt-3">
+            <Slider
+              value={[simRevenue]}
+              onValueChange={(v) => setSimRevenue(v[0])}
+              min={0}
+              max={Math.max(monthlyRevenue * 3, 50000)}
+              step={500}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>R$ 0</span>
+              <span className="font-bold text-primary text-sm">{fmt(simRevenue)}</span>
+              <span>{fmt(Math.max(monthlyRevenue * 3, 50000))}</span>
+            </div>
+          </div>
+        )}
+      </Card>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="p-3 border-emerald-500/20">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Faturamento</p>
-          <p className="text-lg font-bold text-foreground">{fmt(monthlyRevenue)}</p>
+          <p className="text-lg font-bold text-foreground">{fmt(activeRevenue)}</p>
+          {simEnabled && activeRevenue !== monthlyRevenue && (
+            <p className="text-[10px] text-muted-foreground">Real: {fmt(monthlyRevenue)}</p>
+          )}
         </Card>
         <Card className="p-3 border-destructive/20">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Total Despesas</p>
-          <p className="text-lg font-bold text-foreground">{fmt(totalExpenses)}</p>
+          <p className="text-lg font-bold text-foreground">{fmt(simTotalExpenses)}</p>
         </Card>
-        <Card className={`p-3 ${realProfit >= 0 ? "border-emerald-500/20" : "border-destructive/20"}`}>
+        <Card className={`p-3 ${simRealProfit >= 0 ? "border-emerald-500/20" : "border-destructive/20"}`}>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Lucro Real</p>
-          <p className={`text-lg font-bold ${realProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>{fmt(realProfit)}</p>
+          <p className={`text-lg font-bold ${simRealProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>{fmt(simRealProfit)}</p>
         </Card>
         <Card className={`p-3 ${healthStatus.bg}`}>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Margem Real</p>
-          <p className={`text-lg font-bold ${healthStatus.color}`}>{realMargin.toFixed(1)}%</p>
+          <p className={`text-lg font-bold ${healthStatus.color}`}>{simRealMargin.toFixed(1)}%</p>
         </Card>
       </div>
 
