@@ -1,4 +1,4 @@
-import { Home, Smartphone, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target } from "lucide-react";
+import { Home, Smartphone, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target, FileText } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,6 +35,7 @@ const mainItems = [
 const financeItems = [
   { title: "Central Financeira", url: "/financeiro", icon: DollarSign },
   { title: "Metas Elevar", url: "/metas-elevar", icon: Target },
+  { title: "Relatório Mensal", url: "/relatorio-financeiro", icon: FileText },
 ];
 
 const moreItems = [
