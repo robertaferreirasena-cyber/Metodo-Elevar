@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Bot, Send, Plus, Trash2, MessageCircle, Sparkles, ChevronLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const SUGGESTIONS = [
 ];
 
 export default function MentorChat() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     conversations, currentConversationId, messages, isStreaming,
     persona, setPersona, loadingHistory,
@@ -36,6 +38,20 @@ export default function MentorChat() {
   const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const promptProcessedRef = useRef(false);
+
+  // Handle pre-filled prompt from URL
+  useEffect(() => {
+    const promptParam = searchParams.get("prompt");
+    if (promptParam && !promptProcessedRef.current) {
+      promptProcessedRef.current = true;
+      setInput(promptParam);
+      // Clean URL
+      setSearchParams({}, { replace: true });
+      // Auto-focus the textarea
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
