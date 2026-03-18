@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,11 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Calculator, Download, Plus, Trash2, Package, Briefcase, BarChart3, HelpCircle, AlertTriangle, TrendingUp, TrendingDown, PieChart as PieChartIcon, Activity } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Calculator, Download, Plus, Trash2, Package, Briefcase, BarChart3, HelpCircle, AlertTriangle, TrendingUp, TrendingDown, PieChart as PieChartIcon, Activity, Save, CloudDownload, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import FinishMissionButton from "@/components/learning/FinishMissionButton";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 // ─── Types ───
 interface CostItem { id: string; name: string; value: number; }
@@ -324,7 +327,13 @@ function ServiceCalculator() {
 // ═══════════════════════════════════════════
 // ABA 3 — MAPA FINANCEIRO (com gráficos)
 // ═══════════════════════════════════════════
-function FinancialMap({ onDataChange }: { onDataChange: (data: FinancialData) => void }) {
+function FinancialMap({ onDataChange, onSave, onLoad, savedData, saving }: { 
+  onDataChange: (data: FinancialData) => void;
+  onSave: (mapData: any) => void;
+  onLoad: () => void;
+  savedData: any | null;
+  saving: boolean;
+}) {
   const [fixedCosts, setFixedCosts] = useState<CostItem[]>([
     { id: "1", name: "Aluguel", value: 0 },
     { id: "2", name: "Internet", value: 0 },
@@ -339,6 +348,19 @@ function FinancialMap({ onDataChange }: { onDataChange: (data: FinancialData) =>
   const [proLabore, setProLabore] = useState(0);
   const [monthlyRevenue, setMonthlyRevenue] = useState(0);
   const [taxPercent, setTaxPercent] = useState(10);
+  const [loaded, setLoaded] = useState(false);
+
+  // Load saved data
+  useEffect(() => {
+    if (savedData && !loaded) {
+      if (savedData.fixedCosts) setFixedCosts(savedData.fixedCosts);
+      if (savedData.variableCosts) setVariableCosts(savedData.variableCosts);
+      if (savedData.proLabore !== undefined) setProLabore(savedData.proLabore);
+      if (savedData.monthlyRevenue !== undefined) setMonthlyRevenue(savedData.monthlyRevenue);
+      if (savedData.taxPercent !== undefined) setTaxPercent(savedData.taxPercent);
+      setLoaded(true);
+    }
+  }, [savedData, loaded]);
 
   const addFixed = () => setFixedCosts([...fixedCosts, { id: Date.now().toString(), name: "", value: 0 }]);
   const removeFixed = (id: string) => { if (fixedCosts.length > 1) setFixedCosts(fixedCosts.filter(c => c.id !== id)); };
@@ -583,7 +605,17 @@ function FinancialMap({ onDataChange }: { onDataChange: (data: FinancialData) =>
         </Card>
       )}
 
-      <Button onClick={exportPDF} className="w-full"><Download className="h-4 w-4 mr-2" /> Exportar PDF</Button>
+      <div className="flex gap-2">
+        <Button onClick={exportPDF} className="flex-1"><Download className="h-4 w-4 mr-2" /> Exportar PDF</Button>
+        <Button 
+          variant="secondary" 
+          onClick={() => onSave({ fixedCosts, variableCosts, proLabore, monthlyRevenue, taxPercent })} 
+          disabled={saving}
+          className="gap-2"
+        >
+          <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Salvar"}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -592,40 +624,56 @@ function FinancialMap({ onDataChange }: { onDataChange: (data: FinancialData) =>
 // ABA 4 — DASHBOARD FINANCEIRO
 // ═══════════════════════════════════════════
 function FinancialDashboard({ data }: { data: FinancialData }) {
-  const { totalFixed, totalVariableAmount, proLabore, taxAmount, monthlyRevenue, totalExpenses, realProfit, realMargin, breakEven } = data;
+  const { totalFixed, totalVariablePercent, totalVariableAmount, proLabore, taxPercent: dataTaxPercent, taxAmount, monthlyRevenue, totalExpenses, realProfit, realMargin, breakEven } = data;
 
-  const hasData = monthlyRevenue > 0;
+  // Simulation slider
+  const [simEnabled, setSimEnabled] = useState(false);
+  const [simRevenue, setSimRevenue] = useState(monthlyRevenue);
+  
+  useEffect(() => {
+    if (!simEnabled) setSimRevenue(monthlyRevenue);
+  }, [monthlyRevenue, simEnabled]);
+
+  // Use simulated or real values
+  const activeRevenue = simEnabled ? simRevenue : monthlyRevenue;
+  const simVariableAmount = activeRevenue * (totalVariablePercent / 100);
+  const simTaxAmount = activeRevenue * (dataTaxPercent / 100);
+  const simTotalExpenses = totalFixed + simVariableAmount + proLabore + simTaxAmount;
+  const simRealProfit = activeRevenue - simTotalExpenses;
+  const simRealMargin = activeRevenue > 0 ? (simRealProfit / activeRevenue) * 100 : 0;
+
+  const hasData = monthlyRevenue > 0 || simEnabled;
 
   const healthStatus = useMemo(() => {
     if (!hasData) return { label: "Sem dados", color: "text-muted-foreground", bg: "bg-muted", icon: "⚪" };
-    if (realMargin >= 20) return { label: "Saudável", color: "text-emerald-700", bg: "bg-emerald-500/10", icon: "🟢" };
-    if (realMargin >= 10) return { label: "Atenção", color: "text-amber-700", bg: "bg-amber-500/10", icon: "🟡" };
+    if (simRealMargin >= 20) return { label: "Saudável", color: "text-emerald-700", bg: "bg-emerald-500/10", icon: "🟢" };
+    if (simRealMargin >= 10) return { label: "Atenção", color: "text-amber-700", bg: "bg-amber-500/10", icon: "🟡" };
     return { label: "Crítico", color: "text-destructive", bg: "bg-destructive/10", icon: "🔴" };
-  }, [realMargin, hasData]);
+  }, [simRealMargin, hasData]);
 
   const pieData = useMemo(() => {
     if (!hasData) return [];
     return [
       { name: "Custos Fixos", value: totalFixed },
-      { name: "Custos Variáveis", value: totalVariableAmount },
+      { name: "Custos Variáveis", value: simVariableAmount },
       { name: "Pró-labore", value: proLabore },
-      { name: "Impostos", value: taxAmount },
+      { name: "Impostos", value: simTaxAmount },
     ].filter(i => i.value > 0);
-  }, [totalFixed, totalVariableAmount, proLabore, taxAmount, hasData]);
+  }, [totalFixed, simVariableAmount, proLabore, simTaxAmount, hasData]);
 
   const barData = useMemo(() => {
     if (!hasData) return [];
     return [
-      { name: "Faturamento", valor: monthlyRevenue },
-      { name: "Despesas", valor: totalExpenses },
-      { name: "Lucro", valor: Math.max(0, realProfit) },
+      { name: "Faturamento", valor: activeRevenue },
+      { name: "Despesas", valor: simTotalExpenses },
+      { name: "Lucro", valor: Math.max(0, simRealProfit) },
     ];
-  }, [monthlyRevenue, totalExpenses, realProfit, hasData]);
+  }, [activeRevenue, simTotalExpenses, simRealProfit, hasData]);
 
   const breakEvenProgress = useMemo(() => {
     if (!hasData || breakEven <= 0) return 0;
-    return Math.min((monthlyRevenue / breakEven) * 100, 150);
-  }, [monthlyRevenue, breakEven, hasData]);
+    return Math.min((activeRevenue / breakEven) * 100, 150);
+  }, [activeRevenue, breakEven, hasData]);
 
   const exportPDF = () => {
     const doc = new jsPDF();
@@ -633,16 +681,17 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
     doc.text("Dashboard Financeiro", 20, 25);
     doc.setFontSize(11);
     let y = 40;
-    doc.text(`Faturamento: ${fmt(monthlyRevenue)}`, 20, y); y += 7;
-    doc.text(`Total Despesas: ${fmt(totalExpenses)}`, 20, y); y += 7;
-    doc.text(`Lucro Real: ${fmt(realProfit)}`, 20, y); y += 7;
-    doc.text(`Margem Real: ${realMargin.toFixed(1)}%`, 20, y); y += 10;
+    doc.text(`Faturamento: ${fmt(activeRevenue)}`, 20, y); y += 7;
+    doc.text(`Total Despesas: ${fmt(simTotalExpenses)}`, 20, y); y += 7;
+    doc.text(`Lucro Real: ${fmt(simRealProfit)}`, 20, y); y += 7;
+    doc.text(`Margem Real: ${simRealMargin.toFixed(1)}%`, 20, y); y += 10;
     doc.text(`Custos Fixos: ${fmt(totalFixed)}`, 20, y); y += 7;
-    doc.text(`Custos Variaveis: ${fmt(totalVariableAmount)}`, 20, y); y += 7;
+    doc.text(`Custos Variaveis: ${fmt(simVariableAmount)}`, 20, y); y += 7;
     doc.text(`Pro-labore: ${fmt(proLabore)}`, 20, y); y += 7;
-    doc.text(`Impostos: ${fmt(taxAmount)}`, 20, y); y += 10;
+    doc.text(`Impostos: ${fmt(simTaxAmount)}`, 20, y); y += 10;
     doc.text(`Ponto de Equilibrio: ${fmt(breakEven)}`, 20, y); y += 7;
     doc.text(`Saude Financeira: ${healthStatus.label}`, 20, y);
+    if (simEnabled) { y += 10; doc.text(`(Simulacao com faturamento de ${fmt(simRevenue)})`, 20, y); }
     doc.save("dashboard-financeiro.pdf");
     toast.success("PDF exportado!");
   };
@@ -658,23 +707,61 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
 
   return (
     <div className="space-y-4">
+      {/* Simulation Slider */}
+      <Card className="p-4 border-primary/30 bg-primary/5">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">Simulador de Faturamento</span>
+          </div>
+          <Button 
+            variant={simEnabled ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setSimEnabled(!simEnabled)}
+            className="text-xs"
+          >
+            {simEnabled ? "Desativar" : "Ativar Simulação"}
+          </Button>
+        </div>
+        {simEnabled && (
+          <div className="space-y-2 mt-3">
+            <Slider
+              value={[simRevenue]}
+              onValueChange={(v) => setSimRevenue(v[0])}
+              min={0}
+              max={Math.max(monthlyRevenue * 3, 50000)}
+              step={500}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>R$ 0</span>
+              <span className="font-bold text-primary text-sm">{fmt(simRevenue)}</span>
+              <span>{fmt(Math.max(monthlyRevenue * 3, 50000))}</span>
+            </div>
+          </div>
+        )}
+      </Card>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="p-3 border-emerald-500/20">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Faturamento</p>
-          <p className="text-lg font-bold text-foreground">{fmt(monthlyRevenue)}</p>
+          <p className="text-lg font-bold text-foreground">{fmt(activeRevenue)}</p>
+          {simEnabled && activeRevenue !== monthlyRevenue && (
+            <p className="text-[10px] text-muted-foreground">Real: {fmt(monthlyRevenue)}</p>
+          )}
         </Card>
         <Card className="p-3 border-destructive/20">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Total Despesas</p>
-          <p className="text-lg font-bold text-foreground">{fmt(totalExpenses)}</p>
+          <p className="text-lg font-bold text-foreground">{fmt(simTotalExpenses)}</p>
         </Card>
-        <Card className={`p-3 ${realProfit >= 0 ? "border-emerald-500/20" : "border-destructive/20"}`}>
+        <Card className={`p-3 ${simRealProfit >= 0 ? "border-emerald-500/20" : "border-destructive/20"}`}>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Lucro Real</p>
-          <p className={`text-lg font-bold ${realProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>{fmt(realProfit)}</p>
+          <p className={`text-lg font-bold ${simRealProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>{fmt(simRealProfit)}</p>
         </Card>
         <Card className={`p-3 ${healthStatus.bg}`}>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Margem Real</p>
-          <p className={`text-lg font-bold ${healthStatus.color}`}>{realMargin.toFixed(1)}%</p>
+          <p className={`text-lg font-bold ${healthStatus.color}`}>{simRealMargin.toFixed(1)}%</p>
         </Card>
       </div>
 
@@ -685,9 +772,9 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
           <div>
             <p className={`font-bold ${healthStatus.color}`}>Saúde Financeira: {healthStatus.label}</p>
             <p className="text-xs text-muted-foreground">
-              {realMargin >= 20 && "Seu negócio está com margem saudável. Continue otimizando custos."}
-              {realMargin >= 10 && realMargin < 20 && "Margem abaixo de 20%. Analise possibilidades de redução de custos ou aumento de preço."}
-              {realMargin < 10 && "Margem crítica. É urgente revisar sua estrutura de custos e precificação."}
+              {simRealMargin >= 20 && "Seu negócio está com margem saudável. Continue otimizando custos."}
+              {simRealMargin >= 10 && simRealMargin < 20 && "Margem abaixo de 20%. Analise possibilidades de redução de custos ou aumento de preço."}
+              {simRealMargin < 10 && "Margem crítica. É urgente revisar sua estrutura de custos e precificação."}
             </p>
           </div>
         </div>
@@ -778,9 +865,9 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
               <Activity className="h-4 w-4 text-primary" />
               Ponto de Equilíbrio
             </p>
-            <Badge variant={monthlyRevenue >= breakEven ? "default" : "destructive"}>
-              {monthlyRevenue >= breakEven ? "Acima ✅" : "Abaixo ⚠️"}
-            </Badge>
+          <Badge variant={activeRevenue >= breakEven ? "default" : "destructive"}>
+            {activeRevenue >= breakEven ? "Acima ✅" : "Abaixo ⚠️"}
+          </Badge>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-muted-foreground">
@@ -804,11 +891,66 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
 // MAIN — 4 abas
 // ═══════════════════════════════════════════
 export default function PriceCalculator() {
+  const { user } = useAuth();
   const [financialData, setFinancialData] = useState<FinancialData>({
     totalFixed: 0, totalVariablePercent: 0, totalVariableAmount: 0, proLabore: 0,
     taxPercent: 0, taxAmount: 0, monthlyRevenue: 0, totalExpenses: 0,
     realProfit: 0, realMargin: 0, breakEven: 0, illusoryRevenue: 0,
   });
+  const [savedMapData, setSavedMapData] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Load saved financial data on mount
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("financial_snapshots")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("snapshot_type", "financial_map")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.data) {
+          setSavedMapData(data.data);
+        }
+      });
+  }, [user]);
+
+  const handleSaveMap = async (mapData: any) => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { data: existing } = await supabase
+        .from("financial_snapshots")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("snapshot_type", "financial_map")
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from("financial_snapshots")
+          .update({ data: mapData })
+          .eq("id", existing.id);
+      } else {
+        await supabase
+          .from("financial_snapshots")
+          .insert({ user_id: user.id, snapshot_type: "financial_map", data: mapData, label: "Mapa Financeiro" });
+      }
+      toast.success("Dados financeiros salvos! 💾");
+    } catch (err) {
+      toast.error("Erro ao salvar dados");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLoadMap = () => {
+    // Already loaded via useEffect
+    toast.info("Dados carregados do banco");
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
@@ -816,7 +958,7 @@ export default function PriceCalculator() {
         <div className="flex items-center gap-2">
           <Calculator className="h-6 w-6 text-primary" />
           <div>
-            <h1 className="text-xl font-bold text-foreground">Calculadora Financeira</h1>
+            <h1 className="text-xl font-bold text-foreground">Central Financeira</h1>
             <p className="text-xs text-muted-foreground">
               Precifique com precisão e entenda a saúde financeira do seu negócio
             </p>
@@ -842,7 +984,15 @@ export default function PriceCalculator() {
         </TabsList>
         <TabsContent value="product"><ProductCalculator /></TabsContent>
         <TabsContent value="service"><ServiceCalculator /></TabsContent>
-        <TabsContent value="financial"><FinancialMap onDataChange={setFinancialData} /></TabsContent>
+        <TabsContent value="financial">
+          <FinancialMap 
+            onDataChange={setFinancialData} 
+            onSave={handleSaveMap} 
+            onLoad={handleLoadMap} 
+            savedData={savedMapData} 
+            saving={saving} 
+          />
+        </TabsContent>
         <TabsContent value="dashboard"><FinancialDashboard data={financialData} /></TabsContent>
       </Tabs>
     </div>

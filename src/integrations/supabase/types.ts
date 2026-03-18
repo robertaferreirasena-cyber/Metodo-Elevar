@@ -362,6 +362,44 @@ export type Database = {
           },
         ]
       }
+      financial_snapshots: {
+        Row: {
+          created_at: string | null
+          data: Json
+          id: string
+          label: string | null
+          snapshot_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json
+          id?: string
+          label?: string | null
+          snapshot_type?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          id?: string
+          label?: string | null
+          snapshot_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_snapshots_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kiwify_orders: {
         Row: {
           amount: number | null
