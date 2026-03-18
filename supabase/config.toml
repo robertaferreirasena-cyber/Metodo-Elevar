@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.ai-mentor-chat]
 verify_jwt = false
+
+[functions.generate-commitment-copy]
+verify_jwt = false
