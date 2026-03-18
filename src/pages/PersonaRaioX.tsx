@@ -34,7 +34,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import { usePersonaProfile, type PersonaFormData, type RaioXData } from "@/hooks/usePersonaProfile";
 import { toast } from "sonner";
-
+import FinishMissionButton from "@/components/learning/FinishMissionButton";
 const NICHES = [
   "Moda & Acessórios",
   "Beleza & Estética",

@@ -116,19 +116,12 @@ export default function StrategicCommitmentForm() {
             rows={2}
           />
         </div>
-        <div>
-          <Label className="text-xs">✍️ Seu Compromisso</Label>
-          <Textarea
-            placeholder="Eu me comprometo a executar todas as missões do Método ELEVAR com disciplina e constância..."
-            value={form.commitment_text}
-            onChange={e => setForm(f => ({ ...f, commitment_text: e.target.value }))}
-            className="mt-1"
-            rows={3}
-          />
+        <div className="flex gap-2">
+          <Button onClick={handleSave} disabled={saving} className="flex-1">
+            {saving ? "Salvando..." : saved ? "Atualizar Metas" : "Salvar Metas 🎯"}
+          </Button>
+          <FinishMissionButton />
         </div>
-        <Button onClick={handleSave} disabled={saving} className="w-full">
-          {saving ? "Salvando..." : saved ? "Atualizar Compromisso" : "Formalizar Compromisso 🎯"}
-        </Button>
       </CardContent>
     </Card>
   );

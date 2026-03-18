@@ -439,6 +439,18 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+
+              {/* Compromisso Estratégico */}
+              <Route
+                path="/compromisso"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <FormalizeCommitment />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
