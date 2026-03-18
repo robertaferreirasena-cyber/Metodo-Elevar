@@ -33,7 +33,7 @@ interface MissionChecklistProps {
 }
 
 const ACTIVITY_CONFIG: Record<string, { route: string; label: string }> = {
-  compromisso: { route: "", label: "Compromisso" },
+  compromisso: { route: "/compromisso", label: "Compromisso Estratégico" },
   persona: { route: "/persona", label: "Raio-X Persona" },
   calculator: { route: "/calculadora", label: "Calculadora de Preços" },
   mentor: { route: "/mentora", label: "Mentora Gi" },
