@@ -87,12 +87,20 @@ export function useCommunity() {
         .from('community_poll_votes')
         .select('*');
 
+      // Fetch admin user IDs in one query
+      const uniqueUserIds = [...new Set((messagesData || []).map(m => m.user_id))];
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin')
+        .in('user_id', uniqueUserIds);
+      const adminUserIds = new Set((adminRoles || []).map(r => r.user_id));
+
       // Process messages with reactions, polls, and replies
       const messagesWithExtras = await Promise.all(
         (messagesData || []).map(async (msg) => {
           // Check if admin
-          const { data: adminCheck } = await supabase
-            .rpc('is_admin', { check_user_id: msg.user_id });
+          const adminCheck = adminUserIds.has(msg.user_id);
 
           // Process reactions
           const msgReactions = (reactionsData || []).filter(r => r.message_id === msg.id);

@@ -1366,7 +1366,9 @@ export type Database = {
         Args: { p_function_type?: string; p_user_id: string }
         Returns: boolean
       }
-      is_admin: { Args: { check_user_id: string }; Returns: boolean }
+      is_admin:
+        | { Args: never; Returns: boolean }
+        | { Args: { check_user_id: string }; Returns: boolean }
       track_token_usage: {
         Args: { p_feature: string; p_tokens: number; p_user_id: string }
         Returns: undefined
