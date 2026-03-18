@@ -49,7 +49,7 @@ const MENTOR_PROMPTS: Record<string, string> = {
   "Delegar 1 função humana": "Me ajude a identificar a melhor tarefa operacional para delegar a um membro da equipe e como estruturar essa delegação com clareza.",
   "Delegar 1 função tecnológica": "Me ajude a identificar um processo no meu negócio que pode ser automatizado com tecnologia. Sugira ferramentas e como implementar.",
   "Criar rotina estratégica semanal": "Me ajude a criar uma agenda semanal estratégica de líder: blocos para reuniões, análise de métricas, planejamento e execução.",
-  "Definir meta trimestral progressiva": "Me ajude a estruturar uma projeção de crescimento: 30K → 50K → 70K → 100K+ por mês. Quais ações concretas para cada fase?",
+  "Definir meta trimestral progressiva": "Me ajude a estruturar uma projeção de crescimento para dobrar o faturamento: 30K → 50K → 70K e além. Quais ações concretas para cada fase?",
   "Organizar projeção de crescimento": "Me ajude a planejar os investimentos necessários e estratégia de tráfego para atingir minha meta de escala.",
   "Ajustar campanha ativa": "Me ajude a analisar minha campanha atual e identificar ajustes estratégicos baseados em dados para melhorar resultados.",
   "Documentar aprendizados": "Me ajude a organizar os principais aprendizados do meu último mês de vendas: o que funcionou, o que precisa melhorar, e próximos passos.",
