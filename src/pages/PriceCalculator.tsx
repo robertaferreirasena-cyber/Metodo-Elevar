@@ -646,10 +646,10 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
 
   const healthStatus = useMemo(() => {
     if (!hasData) return { label: "Sem dados", color: "text-muted-foreground", bg: "bg-muted", icon: "⚪" };
-    if (realMargin >= 20) return { label: "Saudável", color: "text-emerald-700", bg: "bg-emerald-500/10", icon: "🟢" };
-    if (realMargin >= 10) return { label: "Atenção", color: "text-amber-700", bg: "bg-amber-500/10", icon: "🟡" };
+    if (simRealMargin >= 20) return { label: "Saudável", color: "text-emerald-700", bg: "bg-emerald-500/10", icon: "🟢" };
+    if (simRealMargin >= 10) return { label: "Atenção", color: "text-amber-700", bg: "bg-amber-500/10", icon: "🟡" };
     return { label: "Crítico", color: "text-destructive", bg: "bg-destructive/10", icon: "🔴" };
-  }, [realMargin, hasData]);
+  }, [simRealMargin, hasData]);
 
   const pieData = useMemo(() => {
     if (!hasData) return [];
