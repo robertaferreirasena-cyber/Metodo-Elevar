@@ -34,9 +34,10 @@ interface MissionChecklistProps {
 const ACTIVITY_CONFIG: Record<string, { route: string; label: string }> = {
   compromisso: { route: "", label: "Compromisso" },
   persona: { route: "/persona", label: "Raio-X Persona" },
-  calculadora: { route: "/calculadora", label: "Calculadora de Preços" },
+  calculator: { route: "/calculadora", label: "Calculadora de Preços" },
   mentor: { route: "/mentora", label: "Mentora Gi" },
-  foto: { route: "/ensaio-fotografico", label: "PhotoBoss" },
+  content: { route: "/mentora", label: "Conteúdo / Copy" },
+  photo: { route: "/ensaio-fotografico", label: "PhotoBoss" },
   whatsapp_private: { route: "/privado", label: "WhatsApp Privado" },
   whatsapp_group: { route: "/grupo", label: "WhatsApp Grupo" },
 };
