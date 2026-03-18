@@ -38,7 +38,7 @@ export default function LearningModules() {
         </TabsList>
 
         <TabsContent value="encontros"><EncontrosTab /></TabsContent>
-        <TabsContent value="carousel"><CarouselCreator /></TabsContent>
+        <TabsContent value="carousel"><CarouselEditor /></TabsContent>
         <TabsContent value="profile"><ProfileGenerator /></TabsContent>
       </Tabs>
     </div>
