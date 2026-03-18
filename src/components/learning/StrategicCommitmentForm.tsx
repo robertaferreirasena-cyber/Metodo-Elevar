@@ -52,7 +52,10 @@ export default function StrategicCommitmentForm() {
         await (supabase.from("strategic_commitments" as any) as any).insert(payload);
       }
       setSaved(true);
-      toast.success("Compromisso salvo com sucesso! 🎯");
+      toast.success("Compromisso salvo com sucesso! 🎯", {
+        description: "Seu compromisso estratégico foi registrado. Continue com as missões do Método ELEVAR!",
+        duration: 5000,
+      });
     } catch {
       toast.error("Erro ao salvar compromisso");
     } finally {
@@ -70,7 +73,7 @@ export default function StrategicCommitmentForm() {
           <CardTitle className="text-base">Compromisso Estratégico ELEVAR</CardTitle>
           {saved && <Badge className="bg-emerald-500/20 text-emerald-600 text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" />Preenchido</Badge>}
         </div>
-        <p className="text-xs text-muted-foreground">Formalize seu compromisso com a execução do Método ELEVAR e defina suas metas.</p>
+        <p className="text-xs text-muted-foreground">Assine seu compromisso com a execução do Método ELEVAR. Comprometa-se com as entregas e prazos da mentoria.</p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
