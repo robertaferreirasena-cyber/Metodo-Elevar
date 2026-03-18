@@ -179,6 +179,31 @@ export default function MissionChecklist({
               </div>
             );
           })}
+
+          {/* Finalizar Encontro */}
+          {progressPercent === 100 ? (
+            <div className="mt-3 p-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 text-center space-y-2">
+              <p className="text-sm font-semibold text-emerald-600">🎉 Todas as missões deste encontro foram concluídas!</p>
+              <Button
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  localStorage.setItem(`elevar_completed_${module.id}`, new Date().toISOString());
+                  toast.success(`🎉 Encontro "${module.title}" finalizado com sucesso!`, {
+                    description: "Parabéns! Continue para o próximo encontro do Método ELEVAR.",
+                    duration: 5000,
+                  });
+                }}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" /> Finalizar Encontro
+              </Button>
+            </div>
+          ) : (
+            <p className="text-[10px] text-muted-foreground text-center pt-2">
+              Complete todas as missões para finalizar este encontro.
+            </p>
+          )}
         </CardContent>
       )}
     </Card>
