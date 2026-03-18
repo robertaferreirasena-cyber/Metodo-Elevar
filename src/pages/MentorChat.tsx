@@ -40,6 +40,19 @@ export default function MentorChat() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const promptProcessedRef = useRef(false);
 
+  // Handle pre-filled prompt from URL
+  useEffect(() => {
+    const promptParam = searchParams.get("prompt");
+    if (promptParam && !promptProcessedRef.current) {
+      promptProcessedRef.current = true;
+      setInput(promptParam);
+      // Clean URL
+      setSearchParams({}, { replace: true });
+      // Auto-focus the textarea
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    }
+  }, [searchParams, setSearchParams]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
