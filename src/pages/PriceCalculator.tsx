@@ -621,18 +621,117 @@ function FinancialMap({ onDataChange, onSave, onLoad, savedData, saving }: {
 }
 
 // ═══════════════════════════════════════════
+// Scenario Types
+// ═══════════════════════════════════════════
+interface FinancialScenario {
+  id: string;
+  label: string;
+  revenue: number;
+  fixedCosts: number;
+  variablePercent: number;
+  proLabore: number;
+  taxPercent: number;
+  createdAt: string;
+}
+
+// ═══════════════════════════════════════════
 // ABA 4 — DASHBOARD FINANCEIRO
 // ═══════════════════════════════════════════
 function FinancialDashboard({ data }: { data: FinancialData }) {
+  const { user } = useAuth();
   const { totalFixed, totalVariablePercent, totalVariableAmount, proLabore, taxPercent: dataTaxPercent, taxAmount, monthlyRevenue, totalExpenses, realProfit, realMargin, breakEven } = data;
 
   // Simulation slider
   const [simEnabled, setSimEnabled] = useState(false);
   const [simRevenue, setSimRevenue] = useState(monthlyRevenue);
   
+  // Scenarios
+  const [scenarios, setScenarios] = useState<FinancialScenario[]>([]);
+  const [scenarioName, setScenarioName] = useState("");
+  const [showScenarios, setShowScenarios] = useState(false);
+  const [loadingScenarios, setLoadingScenarios] = useState(false);
+
   useEffect(() => {
     if (!simEnabled) setSimRevenue(monthlyRevenue);
   }, [monthlyRevenue, simEnabled]);
+
+  // Load scenarios on mount
+  useEffect(() => {
+    if (!user) return;
+    loadScenarios();
+  }, [user]);
+
+  const loadScenarios = async () => {
+    if (!user) return;
+    setLoadingScenarios(true);
+    try {
+      const { data: snapshots } = await supabase
+        .from("financial_snapshots")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("snapshot_type", "scenario")
+        .order("created_at", { ascending: false });
+
+      if (snapshots) {
+        setScenarios(snapshots.map(s => ({
+          id: s.id,
+          label: s.label || "Sem nome",
+          ...(s.data as any),
+          createdAt: s.created_at || "",
+        })));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingScenarios(false);
+    }
+  };
+
+  const saveScenario = async () => {
+    if (!user) return;
+    const label = scenarioName.trim() || `Cenário ${scenarios.length + 1}`;
+    const scenarioData = {
+      revenue: activeRevenue,
+      fixedCosts: totalFixed,
+      variablePercent: totalVariablePercent,
+      proLabore,
+      taxPercent: dataTaxPercent,
+    };
+    try {
+      await supabase
+        .from("financial_snapshots")
+        .insert({
+          user_id: user.id,
+          snapshot_type: "scenario",
+          label,
+          data: scenarioData as any,
+        });
+      toast.success(`Cenário "${label}" salvo!`);
+      setScenarioName("");
+      await loadScenarios();
+    } catch (err) {
+      toast.error("Erro ao salvar cenário");
+    }
+  };
+
+  const deleteScenario = async (id: string) => {
+    try {
+      await supabase.from("financial_snapshots").delete().eq("id", id);
+      setScenarios(prev => prev.filter(s => s.id !== id));
+      toast.success("Cenário removido");
+    } catch (err) {
+      toast.error("Erro ao remover");
+    }
+  };
+
+  const calcScenario = (s: FinancialScenario) => {
+    const varAmt = s.revenue * (s.variablePercent / 100);
+    const taxAmt = s.revenue * (s.taxPercent / 100);
+    const expenses = s.fixedCosts + varAmt + s.proLabore + taxAmt;
+    const profit = s.revenue - expenses;
+    const margin = s.revenue > 0 ? (profit / s.revenue) * 100 : 0;
+    return { expenses, profit, margin };
+  };
 
   // Use simulated or real values
   const activeRevenue = simEnabled ? simRevenue : monthlyRevenue;
@@ -675,6 +774,17 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
     return Math.min((activeRevenue / breakEven) * 100, 150);
   }, [activeRevenue, breakEven, hasData]);
 
+  // Comparison bar data for scenarios
+  const comparisonData = useMemo(() => {
+    if (scenarios.length === 0) return [];
+    const current = { name: "Atual", faturamento: activeRevenue, lucro: simRealProfit, margem: simRealMargin };
+    const scenarioItems = scenarios.map(s => {
+      const c = calcScenario(s);
+      return { name: s.label.substring(0, 12), faturamento: s.revenue, lucro: c.profit, margem: c.margin };
+    });
+    return [current, ...scenarioItems];
+  }, [scenarios, activeRevenue, simRealProfit, simRealMargin]);
+
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(18);
@@ -692,6 +802,21 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
     doc.text(`Ponto de Equilibrio: ${fmt(breakEven)}`, 20, y); y += 7;
     doc.text(`Saude Financeira: ${healthStatus.label}`, 20, y);
     if (simEnabled) { y += 10; doc.text(`(Simulacao com faturamento de ${fmt(simRevenue)})`, 20, y); }
+
+    // Include scenarios in PDF
+    if (scenarios.length > 0) {
+      y += 14;
+      doc.setFontSize(13);
+      doc.text("Cenarios Comparativos", 20, y); y += 8;
+      doc.setFontSize(10);
+      scenarios.forEach(s => {
+        const c = calcScenario(s);
+        doc.text(`${s.label}: Faturamento ${fmt(s.revenue)} | Lucro ${fmt(c.profit)} | Margem ${c.margin.toFixed(1)}%`, 20, y);
+        y += 6;
+        if (y > 270) { doc.addPage(); y = 20; }
+      });
+    }
+
     doc.save("dashboard-financeiro.pdf");
     toast.success("PDF exportado!");
   };
@@ -778,6 +903,89 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
             </p>
           </div>
         </div>
+      </Card>
+
+      {/* ── SCENARIOS SECTION ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center justify-between">
+            <span className="flex items-center gap-2">📊 Cenários Financeiros</span>
+            <Button variant="outline" size="sm" onClick={() => setShowScenarios(!showScenarios)} className="text-xs">
+              {showScenarios ? "Ocultar" : "Gerenciar"}
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        {showScenarios && (
+          <CardContent className="space-y-4">
+            {/* Save current as scenario */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome do cenário (ex: Otimista)"
+                value={scenarioName}
+                onChange={e => setScenarioName(e.target.value)}
+                className="flex-1"
+              />
+              <Button size="sm" onClick={saveScenario} className="gap-1 shrink-0">
+                <Save className="h-3.5 w-3.5" /> Salvar Cenário
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Salva o cenário atual (faturamento {simEnabled ? "simulado" : "real"} de {fmt(activeRevenue)}) para comparação futura.
+            </p>
+
+            {/* Saved scenarios list */}
+            {scenarios.length > 0 && (
+              <div className="space-y-2">
+                <Separator />
+                <p className="text-xs font-semibold text-muted-foreground">Cenários Salvos</p>
+                {scenarios.map(s => {
+                  const c = calcScenario(s);
+                  return (
+                    <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{s.label}</p>
+                        <div className="flex gap-3 text-[10px] text-muted-foreground mt-0.5">
+                          <span>Fat: {fmt(s.revenue)}</span>
+                          <span className={c.profit >= 0 ? "text-emerald-600" : "text-destructive"}>
+                            Lucro: {fmt(c.profit)}
+                          </span>
+                          <span>Margem: {c.margin.toFixed(1)}%</span>
+                        </div>
+                      </div>
+                      <Button size="icon" variant="ghost" onClick={() => deleteScenario(s.id)} className="text-destructive h-8 w-8 shrink-0">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Comparison Chart */}
+            {comparisonData.length > 1 && (
+              <>
+                <Separator />
+                <p className="text-xs font-semibold text-muted-foreground">Comparativo de Cenários</p>
+                <div className="w-full h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={comparisonData} barSize={24}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                      <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                      <RechartsTooltip
+                        formatter={(value: number, name: string) => [fmt(value), name === "faturamento" ? "Faturamento" : name === "lucro" ? "Lucro" : name]}
+                        contentStyle={{ borderRadius: "8px", fontSize: "11px" }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: "11px" }} />
+                      <Bar dataKey="faturamento" name="Faturamento" fill="hsl(142, 71%, 45%)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="lucro" name="Lucro" fill="hsl(217, 91%, 60%)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+          </CardContent>
+        )}
       </Card>
 
       {/* Bar Chart: Revenue vs Expenses vs Profit */}

@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLearning } from "@/hooks/useLearning";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSalesReminder } from "@/hooks/useSalesReminder";
 
 // Activity type to route mapping
 const activityRoutes: Record<string, { route: string; label: string }> = {
@@ -60,6 +61,7 @@ export default function Dashboard() {
   const { profile, user } = useAuth();
   const { modules, lessons, progress, loading: learningLoading, totalProgress, getModuleProgress } = useLearning();
   const navigate = useNavigate();
+  useSalesReminder(user?.id);
 
   const [xpData, setXpData] = useState<{ total_xp: number; level: number; streak_days: number } | null>(null);
 
