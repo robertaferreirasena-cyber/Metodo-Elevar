@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, CheckCircle2, Circle, Clock, Play, Palette, UserCircle, GraduationCap } from "lucide-react";
+import { GraduationCap, BookOpen, Palette, UserCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useLearning } from "@/hooks/useLearning";
+import MissionChecklist from "@/components/learning/MissionChecklist";
+import StrategicCommitmentForm from "@/components/learning/StrategicCommitmentForm";
 
 export default function LearningModules() {
   return (
@@ -20,19 +22,19 @@ export default function LearningModules() {
           <GraduationCap className="h-6 w-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Módulos de Aprendizado</h1>
-          <p className="text-sm text-muted-foreground">Cursos, simuladores e ferramentas criativas</p>
+          <h1 className="text-2xl font-bold text-foreground">Método ELEVAR</h1>
+          <p className="text-sm text-muted-foreground">10 Encontros para escalar até 100K+ com autonomia</p>
         </div>
       </div>
 
-      <Tabs defaultValue="modules" className="w-full">
+      <Tabs defaultValue="encontros" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="modules"><BookOpen className="h-4 w-4 mr-1" /> Módulos</TabsTrigger>
+          <TabsTrigger value="encontros"><BookOpen className="h-4 w-4 mr-1" /> Encontros</TabsTrigger>
           <TabsTrigger value="carousel"><Palette className="h-4 w-4 mr-1" /> Carrossel</TabsTrigger>
           <TabsTrigger value="profile"><UserCircle className="h-4 w-4 mr-1" /> Perfil</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="modules"><ModulesTab /></TabsContent>
+        <TabsContent value="encontros"><EncontrosTab /></TabsContent>
         <TabsContent value="carousel"><CarouselCreator /></TabsContent>
         <TabsContent value="profile"><ProfileGenerator /></TabsContent>
       </Tabs>
@@ -40,9 +42,9 @@ export default function LearningModules() {
   );
 }
 
-function ModulesTab() {
-  const { modules, loading, selectedModuleId, setSelectedModuleId, getModuleLessons, getModuleProgress, toggleLessonComplete, totalProgress, progress } = useLearning();
-  const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
+function EncontrosTab() {
+  const { modules, loading, getModuleLessons, getModuleProgress, toggleLessonComplete, totalProgress, progress } = useLearning();
+  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -52,110 +54,54 @@ function ModulesTab() {
     );
   }
 
-  const selectedModule = modules.find(m => m.id === selectedModuleId);
-  const moduleLessons = selectedModuleId ? getModuleLessons(selectedModuleId) : [];
-
   return (
     <div className="space-y-4 mt-4">
       {/* Overall Progress */}
       <Card className="border-primary/20">
         <CardContent className="pt-4 pb-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">Progresso Geral</span>
+            <span className="text-sm font-medium text-foreground">Progresso Geral do Método ELEVAR</span>
             <span className="text-sm text-primary font-bold">{totalProgress}%</span>
           </div>
           <Progress value={totalProgress} className="h-2" />
+          <p className="text-xs text-muted-foreground mt-2">
+            {totalProgress === 100 ? "🎉 Parabéns! Você completou todo o Método ELEVAR!" : "Complete as missões de cada encontro para avançar."}
+          </p>
         </CardContent>
       </Card>
 
-      {/* Module Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      {/* Strategic Commitment (Encontro 0 special) */}
+      {modules.length > 0 && modules[0].position === 0 && (
+        <StrategicCommitmentForm />
+      )}
+
+      {/* Encontros List */}
+      <div className="space-y-3">
         {modules.map(mod => {
+          const moduleLessons = getModuleLessons(mod.id);
           const prog = getModuleProgress(mod.id);
-          const isSelected = mod.id === selectedModuleId;
+          const missions = moduleLessons.map(l => ({
+            id: l.id,
+            title: l.title,
+            content: l.content,
+            activity_type: (l as any).activity_type as string | null,
+            duration_minutes: l.duration_minutes,
+            completed: !!progress.find(p => p.lesson_id === l.id && p.completed),
+          }));
+
           return (
-            <Card
+            <MissionChecklist
               key={mod.id}
-              className={`cursor-pointer transition-all hover:shadow-md ${isSelected ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/50'}`}
-              onClick={() => setSelectedModuleId(mod.id)}
-            >
-              <CardContent className="pt-4 pb-3">
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{mod.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm text-foreground truncate">{mod.title}</h3>
-                    <p className="text-xs text-muted-foreground line-clamp-1">{mod.description}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Progress value={prog} className="h-1.5 flex-1" />
-                      <span className="text-[10px] text-muted-foreground">{prog}%</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              module={mod}
+              missions={missions}
+              progressPercent={prog}
+              onToggle={toggleLessonComplete}
+              isExpanded={expandedModuleId === mod.id}
+              onToggleExpand={() => setExpandedModuleId(expandedModuleId === mod.id ? null : mod.id)}
+            />
           );
         })}
       </div>
-
-      {/* Selected Module Lessons */}
-      {selectedModule && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <span>{selectedModule.icon}</span> {selectedModule.title}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">{selectedModule.description}</p>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {moduleLessons.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">Nenhuma aula disponível ainda.</p>
-            ) : (
-              moduleLessons.map(lesson => {
-                const isCompleted = progress.find(p => p.lesson_id === lesson.id && p.completed);
-                const isExpanded = expandedLesson === lesson.id;
-                return (
-                  <div key={lesson.id} className="border rounded-lg overflow-hidden">
-                    <div
-                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => setExpandedLesson(isExpanded ? null : lesson.id)}
-                    >
-                      <button
-                        onClick={e => { e.stopPropagation(); toggleLessonComplete(lesson.id); }}
-                        className="shrink-0"
-                      >
-                        {isCompleted ? (
-                          <CheckCircle2 className="h-5 w-5 text-primary" />
-                        ) : (
-                          <Circle className="h-5 w-5 text-muted-foreground" />
-                        )}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                          {lesson.title}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span className="text-xs">{lesson.duration_minutes}min</span>
-                      </div>
-                    </div>
-                    {isExpanded && lesson.content && (
-                      <div className="px-3 pb-3 pt-0 border-t">
-                        <p className="text-sm text-muted-foreground mt-2">{lesson.content}</p>
-                        {lesson.video_url && (
-                          <Button size="sm" variant="outline" className="mt-2 gap-1">
-                            <Play className="h-3 w-3" /> Assistir Aula
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
@@ -170,7 +116,6 @@ function CarouselCreator() {
   const generate = () => {
     if (!topic.trim()) { toast.error("Informe o tema do carrossel"); return; }
     setGenerating(true);
-    // Simulated generation
     setTimeout(() => {
       const generated = Array.from({ length: slides }, (_, i) => {
         if (i === 0) return `🎯 ${topic.toUpperCase()}\n\nVocê sabia que a maioria das pessoas erra nesse ponto?\n\nDeslize para descobrir →`;
@@ -302,7 +247,6 @@ function ProfileGenerator() {
               </Button>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">⭐ Destaques Sugeridos</CardTitle>
@@ -315,7 +259,6 @@ function ProfileGenerator() {
               </div>
             </CardContent>
           </Card>
-
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="pt-4">
               <p className="text-sm text-foreground">{result.cta}</p>
