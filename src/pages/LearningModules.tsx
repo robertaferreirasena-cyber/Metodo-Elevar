@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GraduationCap, BookOpen, Palette, UserCircle } from "lucide-react";
+import { GraduationCap, BookOpen, Palette, UserCircle, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { useLearning } from "@/hooks/useLearning";
 import MissionChecklist from "@/components/learning/MissionChecklist";
 import StrategicCommitmentForm from "@/components/learning/StrategicCommitmentForm";
+import { usePersonaContext } from "@/contexts/PersonaContext";
+import { useMissionAutoComplete } from "@/hooks/useMissionAutoComplete";
+import { useNavigate } from "react-router-dom";
 
 export default function LearningModules() {
   return (
