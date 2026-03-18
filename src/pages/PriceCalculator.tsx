@@ -664,11 +664,11 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
   const barData = useMemo(() => {
     if (!hasData) return [];
     return [
-      { name: "Faturamento", valor: monthlyRevenue },
-      { name: "Despesas", valor: totalExpenses },
-      { name: "Lucro", valor: Math.max(0, realProfit) },
+      { name: "Faturamento", valor: activeRevenue },
+      { name: "Despesas", valor: simTotalExpenses },
+      { name: "Lucro", valor: Math.max(0, simRealProfit) },
     ];
-  }, [monthlyRevenue, totalExpenses, realProfit, hasData]);
+  }, [activeRevenue, simTotalExpenses, simRealProfit, hasData]);
 
   const breakEvenProgress = useMemo(() => {
     if (!hasData || breakEven <= 0) return 0;
