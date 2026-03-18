@@ -354,6 +354,7 @@ export default function AdminLearning() {
                   <SelectItem value="mentor">Mentora Gi</SelectItem>
                   <SelectItem value="calculator">Calculadora</SelectItem>
                   <SelectItem value="photo">Ensaio Fotográfico</SelectItem>
+                  <SelectItem value="compromisso">Compromisso Estratégico</SelectItem>
                 </SelectContent>
               </Select>
             </div>

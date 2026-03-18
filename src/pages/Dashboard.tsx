@@ -27,6 +27,7 @@ const activityRoutes: Record<string, { route: string; label: string }> = {
   mentor: { route: '/mentora-hub', label: 'Mentora Gi' },
   calculator: { route: '/calculadora', label: 'Calculadora' },
   photo: { route: '/ensaio-fotografico', label: 'Ensaio Fotográfico' },
+  compromisso: { route: '/aprendizado', label: 'Compromisso Estratégico' },
 };
 
 interface QuickHubProps {

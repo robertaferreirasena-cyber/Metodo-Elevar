@@ -52,7 +52,10 @@ export default function StrategicCommitmentForm() {
         await (supabase.from("strategic_commitments" as any) as any).insert(payload);
       }
       setSaved(true);
-      toast.success("Compromisso salvo com sucesso! 🎯");
+      toast.success("Compromisso salvo com sucesso! 🎯", {
+        description: "Seu compromisso estratégico foi registrado. Continue com as missões do Método ELEVAR!",
+        duration: 5000,
+      });
     } catch {
       toast.error("Erro ao salvar compromisso");
     } finally {
