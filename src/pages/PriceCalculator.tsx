@@ -772,9 +772,9 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
           <div>
             <p className={`font-bold ${healthStatus.color}`}>Saúde Financeira: {healthStatus.label}</p>
             <p className="text-xs text-muted-foreground">
-              {realMargin >= 20 && "Seu negócio está com margem saudável. Continue otimizando custos."}
-              {realMargin >= 10 && realMargin < 20 && "Margem abaixo de 20%. Analise possibilidades de redução de custos ou aumento de preço."}
-              {realMargin < 10 && "Margem crítica. É urgente revisar sua estrutura de custos e precificação."}
+              {simRealMargin >= 20 && "Seu negócio está com margem saudável. Continue otimizando custos."}
+              {simRealMargin >= 10 && simRealMargin < 20 && "Margem abaixo de 20%. Analise possibilidades de redução de custos ou aumento de preço."}
+              {simRealMargin < 10 && "Margem crítica. É urgente revisar sua estrutura de custos e precificação."}
             </p>
           </div>
         </div>
