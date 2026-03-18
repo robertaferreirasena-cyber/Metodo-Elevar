@@ -92,10 +92,13 @@ function GlobalErrorHandler({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+import { PersonaProvider } from "@/contexts/PersonaContext";
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <GlobalErrorHandler>
+        <PersonaProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
