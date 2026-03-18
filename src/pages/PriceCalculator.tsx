@@ -605,7 +605,17 @@ function FinancialMap({ onDataChange, onSave, onLoad, savedData, saving }: {
         </Card>
       )}
 
-      <Button onClick={exportPDF} className="w-full"><Download className="h-4 w-4 mr-2" /> Exportar PDF</Button>
+      <div className="flex gap-2">
+        <Button onClick={exportPDF} className="flex-1"><Download className="h-4 w-4 mr-2" /> Exportar PDF</Button>
+        <Button 
+          variant="secondary" 
+          onClick={() => onSave({ fixedCosts, variableCosts, proLabore, monthlyRevenue, taxPercent })} 
+          disabled={saving}
+          className="gap-2"
+        >
+          <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Salvar"}
+        </Button>
+      </div>
     </div>
   );
 }
