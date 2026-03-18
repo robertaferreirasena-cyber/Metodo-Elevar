@@ -672,8 +672,8 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
 
   const breakEvenProgress = useMemo(() => {
     if (!hasData || breakEven <= 0) return 0;
-    return Math.min((monthlyRevenue / breakEven) * 100, 150);
-  }, [monthlyRevenue, breakEven, hasData]);
+    return Math.min((activeRevenue / breakEven) * 100, 150);
+  }, [activeRevenue, breakEven, hasData]);
 
   const exportPDF = () => {
     const doc = new jsPDF();
