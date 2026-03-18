@@ -24,6 +24,16 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           maxWidth: isSquare ? 480 : 640,
         }}
       >
+        {/* Decorative quote marks for testimonial style */}
+        {slide.accentColor === "#F59E0B" && (
+          <div
+            className="absolute top-6 left-8 text-6xl leading-none font-serif select-none pointer-events-none"
+            style={{ color: slide.accentColor, opacity: 0.3 }}
+          >
+            &ldquo;
+          </div>
+        )}
+
         {/* Content */}
         <div
           className="absolute inset-0 flex flex-col justify-center p-8 md:p-12"
