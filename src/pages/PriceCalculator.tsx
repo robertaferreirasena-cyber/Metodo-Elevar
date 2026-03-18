@@ -327,7 +327,13 @@ function ServiceCalculator() {
 // ═══════════════════════════════════════════
 // ABA 3 — MAPA FINANCEIRO (com gráficos)
 // ═══════════════════════════════════════════
-function FinancialMap({ onDataChange }: { onDataChange: (data: FinancialData) => void }) {
+function FinancialMap({ onDataChange, onSave, onLoad, savedData, saving }: { 
+  onDataChange: (data: FinancialData) => void;
+  onSave: (mapData: any) => void;
+  onLoad: () => void;
+  savedData: any | null;
+  saving: boolean;
+}) {
   const [fixedCosts, setFixedCosts] = useState<CostItem[]>([
     { id: "1", name: "Aluguel", value: 0 },
     { id: "2", name: "Internet", value: 0 },
@@ -342,6 +348,19 @@ function FinancialMap({ onDataChange }: { onDataChange: (data: FinancialData) =>
   const [proLabore, setProLabore] = useState(0);
   const [monthlyRevenue, setMonthlyRevenue] = useState(0);
   const [taxPercent, setTaxPercent] = useState(10);
+  const [loaded, setLoaded] = useState(false);
+
+  // Load saved data
+  useEffect(() => {
+    if (savedData && !loaded) {
+      if (savedData.fixedCosts) setFixedCosts(savedData.fixedCosts);
+      if (savedData.variableCosts) setVariableCosts(savedData.variableCosts);
+      if (savedData.proLabore !== undefined) setProLabore(savedData.proLabore);
+      if (savedData.monthlyRevenue !== undefined) setMonthlyRevenue(savedData.monthlyRevenue);
+      if (savedData.taxPercent !== undefined) setTaxPercent(savedData.taxPercent);
+      setLoaded(true);
+    }
+  }, [savedData, loaded]);
 
   const addFixed = () => setFixedCosts([...fixedCosts, { id: Date.now().toString(), name: "", value: 0 }]);
   const removeFixed = (id: string) => { if (fixedCosts.length > 1) setFixedCosts(fixedCosts.filter(c => c.id !== id)); };
