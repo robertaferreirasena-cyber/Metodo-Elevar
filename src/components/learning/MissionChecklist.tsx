@@ -49,7 +49,7 @@ const MENTOR_PROMPTS: Record<string, string> = {
   "Delegar 1 função humana": "Me ajude a identificar a melhor tarefa operacional para delegar a um membro da equipe e como estruturar essa delegação com clareza.",
   "Delegar 1 função tecnológica": "Me ajude a identificar um processo no meu negócio que pode ser automatizado com tecnologia. Sugira ferramentas e como implementar.",
   "Criar rotina estratégica semanal": "Me ajude a criar uma agenda semanal estratégica de líder: blocos para reuniões, análise de métricas, planejamento e execução.",
-  "Definir meta trimestral progressiva": "Me ajude a estruturar uma projeção de crescimento: 30K → 50K → 70K → 100K+ por mês. Quais ações concretas para cada fase?",
+  "Definir meta trimestral progressiva": "Me ajude a estruturar uma projeção de crescimento para dobrar o faturamento: 30K → 50K → 70K e além. Quais ações concretas para cada fase?",
   "Organizar projeção de crescimento": "Me ajude a planejar os investimentos necessários e estratégia de tráfego para atingir minha meta de escala.",
   "Ajustar campanha ativa": "Me ajude a analisar minha campanha atual e identificar ajustes estratégicos baseados em dados para melhorar resultados.",
   "Documentar aprendizados": "Me ajude a organizar os principais aprendizados do meu último mês de vendas: o que funcionou, o que precisa melhorar, e próximos passos.",
@@ -57,7 +57,7 @@ const MENTOR_PROMPTS: Record<string, string> = {
   "Estruturar campanha diferenciada": "Me ajude a planejar uma campanha que comunique minha diferenciação competitiva no mercado, com posicionamento acima da média.",
   "Criar checklist de processos": "Me ajude a documentar os processos-chave do meu negócio em um checklist com indicadores de controle e rotina de liderança.",
   "Testar ausência estratégica": "Me ajude a planejar um teste de ausência: como simular 1 dia sem operar e avaliar o que funciona sem mim.",
-  "Entregar Plano Estratégico ELEVAR 180 dias": "Me ajude a construir meu Plano Estratégico ELEVAR de 180 dias para escalar até 100K+: time ideal, etapas, indicadores e visão de longo prazo.",
+  "Entregar Plano Estratégico ELEVAR 180 dias": "Me ajude a construir meu Plano Estratégico ELEVAR de 180 dias para dobrar o faturamento: time ideal, etapas, indicadores e visão de longo prazo.",
 };
 
 export default function MissionChecklist({

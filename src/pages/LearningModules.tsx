@@ -23,7 +23,7 @@ export default function LearningModules() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Método ELEVAR</h1>
-          <p className="text-sm text-muted-foreground">10 Encontros para escalar até 100K+ com autonomia</p>
+          <p className="text-sm text-muted-foreground">10 Encontros para Dobrar o Faturamento com autonomia</p>
         </div>
       </div>
 
