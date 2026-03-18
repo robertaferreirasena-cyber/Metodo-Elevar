@@ -27,6 +27,7 @@ const SUGGESTIONS = [
 ];
 
 export default function MentorChat() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     conversations, currentConversationId, messages, isStreaming,
     persona, setPersona, loadingHistory,
@@ -37,6 +38,7 @@ export default function MentorChat() {
   const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const promptProcessedRef = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
