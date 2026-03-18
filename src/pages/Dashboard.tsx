@@ -1,6 +1,7 @@
 import {
   Smartphone, BotMessageSquare, GraduationCap, Trophy, ArrowRight,
-  Brain, Target, AlertTriangle, Zap, TrendingUp, BookOpen, Sparkles
+  Brain, Target, AlertTriangle, Zap, TrendingUp, BookOpen, Sparkles,
+  MapPin, CheckCircle2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
