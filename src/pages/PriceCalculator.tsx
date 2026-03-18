@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Calculator, Download, Plus, Trash2, Package, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
+import FinishMissionButton from "@/components/learning/FinishMissionButton";
 
 interface CostItem {
   id: string;
