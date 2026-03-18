@@ -43,6 +43,7 @@ import AccessBlocked from "./pages/AccessBlocked";
 import PhotoBoss from "./pages/PhotoBoss";
 import AdminCredentials from "./pages/AdminCredentials";
 import PriceCalculator from "./pages/PriceCalculator";
+import SalesGoals from "./pages/SalesGoals";
 import Gamification from "./pages/Gamification";
 import LearningModules from "./pages/LearningModules";
 import MentorChat from "./pages/MentorChat";
@@ -392,13 +393,26 @@ const App = () => (
                 }
               />
 
-              {/* Calculadora de Preços */}
+              {/* Central Financeira */}
               <Route
-                path="/calculadora"
+                path="/financeiro"
                 element={
                   <ProtectedRoute>
                     <AppLayout>
                       <PriceCalculator />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/calculadora" element={<Navigate to="/financeiro" replace />} />
+
+              {/* Metas Elevar */}
+              <Route
+                path="/metas-elevar"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <SalesGoals />
                     </AppLayout>
                   </ProtectedRoute>
                 }

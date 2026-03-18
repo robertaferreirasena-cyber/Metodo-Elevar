@@ -1,4 +1,4 @@
-import { Home, Smartphone, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Calculator, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown } from "lucide-react";
+import { Home, Smartphone, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,10 +32,14 @@ const mainItems = [
   { title: "Conquistas", url: "/conquistas", icon: Trophy },
 ];
 
+const financeItems = [
+  { title: "Central Financeira", url: "/financeiro", icon: DollarSign },
+  { title: "Metas Elevar", url: "/metas-elevar", icon: Target },
+];
+
 const moreItems = [
   { title: "Raio-X Persona", url: "/persona", icon: Brain },
   { title: "Ideias", url: "/ideias", icon: Lightbulb },
-  { title: "Calculadora", url: "/calculadora", icon: Calculator },
   { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera },
   { title: "Comunidade", url: "/comunidade", icon: MessageSquare },
   { title: "Favoritos", url: "/favoritos", icon: Heart },
@@ -105,6 +109,29 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
+                      className="hover:bg-muted/50 flex items-center w-full py-1"
+                      activeClassName="bg-muted text-primary font-medium"
+                    >
+                      <item.icon className="mr-2 h-3.5 w-3.5" />
+                      <span className="text-xs">{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Financeiro Section */}
+        <SidebarGroup className="py-0.5 px-2">
+          <SidebarGroupLabel className="h-5 text-[10px] px-1">💰 Financeiro</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-0.5">
+              {financeItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} size="sm">
+                    <NavLink
+                      to={item.url}
                       className="hover:bg-muted/50 flex items-center w-full py-1"
                       activeClassName="bg-muted text-primary font-medium"
                     >

@@ -1,6 +1,6 @@
 import {
   Smartphone, BotMessageSquare, GraduationCap, Trophy, ArrowRight,
-  Brain, Target, AlertTriangle, Zap, TrendingUp, BookOpen, Sparkles,
+  Brain, Target, AlertTriangle, Zap, TrendingUp, BookOpen, Sparkles, DollarSign,
   MapPin, CheckCircle2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -25,7 +25,7 @@ const activityRoutes: Record<string, { route: string; label: string }> = {
   persona: { route: '/persona', label: 'Raio-X Persona' },
   content: { route: '/mentora-hub', label: 'Mentora Gi' },
   mentor: { route: '/mentora-hub', label: 'Mentora Gi' },
-  calculator: { route: '/calculadora', label: 'Calculadora' },
+  calculator: { route: '/financeiro', label: 'Financeiro' },
   photo: { route: '/ensaio-fotografico', label: 'Ensaio Fotográfico' },
   compromisso: { route: '/aprendizado', label: 'Compromisso Estratégico' },
 };
@@ -322,6 +322,18 @@ export default function Dashboard() {
             label="Conquistas"
             href="/conquistas"
             color="bg-amber-500/10"
+          />
+          <QuickHub
+            icon={<DollarSign className="h-5 w-5 text-emerald-600" />}
+            label="Financeiro"
+            href="/financeiro"
+            color="bg-emerald-600/10"
+          />
+          <QuickHub
+            icon={<Target className="h-5 w-5 text-orange-500" />}
+            label="Metas Elevar"
+            href="/metas-elevar"
+            color="bg-orange-500/10"
           />
         </div>
       </div>
