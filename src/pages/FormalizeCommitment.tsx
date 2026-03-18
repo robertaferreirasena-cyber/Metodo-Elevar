@@ -309,9 +309,14 @@ export default function FormalizeCommitment() {
           )}
 
           {signed && (
-            <Button variant="outline" onClick={() => navigate("/aprendizado")} className="w-full gap-2">
-              <ArrowLeft className="h-4 w-4" /> Voltar ao Aprendizado
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button onClick={exportPDF} className="w-full gap-2" variant="default">
+                <Download className="h-4 w-4" /> Baixar Contrato em PDF
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/aprendizado")} className="w-full gap-2">
+                <ArrowLeft className="h-4 w-4" /> Voltar ao Aprendizado
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
