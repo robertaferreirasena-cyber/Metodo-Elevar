@@ -479,6 +479,18 @@ Deno.serve(async (req) => {
         );
       }
 
+      case 'reset_password': {
+        const defaultPassword = 'mentoragi123';
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+          password: defaultPassword,
+        });
+        if (error) throw error;
+        return new Response(
+          JSON.stringify({ success: true, message: 'Senha resetada para padrão', tempPassword: defaultPassword }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       case 'demote_admin': {
         // Prevent self-demotion
         if (userId === caller.id) {
