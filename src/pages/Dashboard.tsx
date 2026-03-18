@@ -61,6 +61,7 @@ export default function Dashboard() {
   const { profile, user } = useAuth();
   const { modules, lessons, progress, loading: learningLoading, totalProgress, getModuleProgress } = useLearning();
   const navigate = useNavigate();
+  useSalesReminder(user?.id);
 
   const [xpData, setXpData] = useState<{ total_xp: number; level: number; streak_days: number } | null>(null);
 
