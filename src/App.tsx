@@ -419,6 +419,18 @@ const App = () => (
                 }
               />
 
+              {/* Relatório Financeiro */}
+              <Route
+                path="/relatorio-financeiro"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <FinancialReport />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Gamificação */}
               <Route
                 path="/conquistas"
