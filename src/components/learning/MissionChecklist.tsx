@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import { markMissionPending } from "@/hooks/useMissionAutoComplete";
+import { usePersonaContext } from "@/contexts/PersonaContext";
 
 interface Mission {
   id: string;
@@ -29,9 +31,8 @@ interface MissionChecklistProps {
   onToggleExpand: () => void;
 }
 
-// Maps activity_type to route + label + mentor prompt context
-const ACTIVITY_CONFIG: Record<string, { route: string; label: string; mentorPrompt?: string }> = {
-  compromisso: { route: "", label: "Compromisso", mentorPrompt: "" },
+const ACTIVITY_CONFIG: Record<string, { route: string; label: string }> = {
+  compromisso: { route: "", label: "Compromisso" },
   persona: { route: "/persona", label: "Raio-X Persona" },
   calculadora: { route: "/calculadora", label: "Calculadora de Preços" },
   mentor: { route: "/mentora", label: "Mentora Gi" },
@@ -40,7 +41,6 @@ const ACTIVITY_CONFIG: Record<string, { route: string; label: string; mentorProm
   whatsapp_group: { route: "/grupo", label: "WhatsApp Grupo" },
 };
 
-// Pre-filled prompts per mission title for Mentora Gi
 const MENTOR_PROMPTS: Record<string, string> = {
   "Listar 5 tarefas delegáveis": "Me ajude a listar 5 tarefas operacionais que eu executo no meu negócio mas que poderiam ser delegadas. Para cada tarefa, sugira como delegar (para quem ou qual ferramenta).",
   "Atualizar Instagram completamente": "Me ajude a refazer meu perfil do Instagram com posicionamento premium: bio estratégica, destaques, e um plano de conteúdo para feed e stories.",
@@ -65,13 +65,30 @@ export default function MissionChecklist({
 }: MissionChecklistProps) {
   const navigate = useNavigate();
   const completedCount = missions.filter(m => m.completed).length;
+  
+  let personaContext: ReturnType<typeof usePersonaContext> | null = null;
+  try {
+    personaContext = usePersonaContext();
+  } catch {
+    // PersonaProvider not mounted yet — safe fallback
+  }
 
   const handleExecuteMission = (mission: Mission) => {
     const config = mission.activity_type ? ACTIVITY_CONFIG[mission.activity_type] : null;
     if (!config || !config.route) return;
 
+    // Auto-mark as completed when executing
+    if (!mission.completed) {
+      markMissionPending(mission.id);
+      onToggle(mission.id);
+    }
+
     if (mission.activity_type === "mentor" || config.route === "/mentora") {
-      const prompt = MENTOR_PROMPTS[mission.title] || `Me ajude com a missão: ${mission.title}. ${mission.content || ""}`;
+      let prompt = MENTOR_PROMPTS[mission.title] || `Me ajude com a missão: ${mission.title}. ${mission.content || ""}`;
+      // Enrich with persona data
+      if (personaContext?.enrichPrompt) {
+        prompt = personaContext.enrichPrompt(prompt);
+      }
       navigate(`/mentora?prompt=${encodeURIComponent(prompt)}`);
     } else {
       navigate(config.route);
@@ -106,6 +123,16 @@ export default function MissionChecklist({
 
       {isExpanded && (
         <CardContent className="pt-0 space-y-2">
+          {/* Persona context hint */}
+          {personaContext?.hasProfile && (
+            <div className="p-2 rounded-md bg-primary/5 border border-primary/10 mb-2">
+              <p className="text-[10px] text-primary font-medium">
+                🎯 Persona ativa: {personaContext.formData.business_name || personaContext.formData.niche || "Configurada"} 
+                {personaContext.hasRaioX && " • Raio-X disponível"}
+              </p>
+            </div>
+          )}
+
           {missions.map(mission => {
             const config = mission.activity_type ? ACTIVITY_CONFIG[mission.activity_type] : null;
             const hasRoute = config && config.route;

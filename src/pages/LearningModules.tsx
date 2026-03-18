@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GraduationCap, BookOpen, Palette, UserCircle } from "lucide-react";
+import { GraduationCap, BookOpen, Palette, UserCircle, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { useLearning } from "@/hooks/useLearning";
 import MissionChecklist from "@/components/learning/MissionChecklist";
 import StrategicCommitmentForm from "@/components/learning/StrategicCommitmentForm";
+import { usePersonaContext } from "@/contexts/PersonaContext";
+import { useMissionAutoComplete } from "@/hooks/useMissionAutoComplete";
+import { useNavigate } from "react-router-dom";
 
 export default function LearningModules() {
   return (
@@ -45,6 +48,23 @@ export default function LearningModules() {
 function EncontrosTab() {
   const { modules, loading, getModuleLessons, getModuleProgress, toggleLessonComplete, totalProgress, progress } = useLearning();
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  let persona: ReturnType<typeof usePersonaContext> | null = null;
+  try {
+    persona = usePersonaContext();
+  } catch {
+    // fallback
+  }
+
+  // Auto-complete pending missions when returning to this page
+  useMissionAutoComplete((lessonId) => {
+    const alreadyDone = progress.find(p => p.lesson_id === lessonId && p.completed);
+    if (!alreadyDone) {
+      toggleLessonComplete(lessonId);
+      toast.success("✅ Missão marcada como concluída automaticamente!");
+    }
+  });
 
   if (loading) {
     return (
@@ -56,6 +76,31 @@ function EncontrosTab() {
 
   return (
     <div className="space-y-4 mt-4">
+      {/* Persona Summary Card */}
+      {persona && persona.hasProfile && (
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  {persona.formData.business_name || "Meu Negócio"} — {persona.formData.niche || "Nicho"}
+                </span>
+                {persona.hasRaioX && (
+                  <Badge className="bg-primary/20 text-primary text-[10px]">Raio-X ✓</Badge>
+                )}
+              </div>
+              <Button size="sm" variant="ghost" className="text-xs" onClick={() => navigate("/persona")}>
+                Ver Persona
+              </Button>
+            </div>
+            {persona.formData.main_pain && (
+              <p className="text-xs text-muted-foreground mt-1">🎯 Dor principal: {persona.formData.main_pain}</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Overall Progress */}
       <Card className="border-primary/20">
         <CardContent className="pt-4 pb-3">
