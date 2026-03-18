@@ -101,6 +101,36 @@ export function useLearning() {
     return Math.round((completed / lessons.length) * 100);
   })();
 
+  /** First module with progress < 100% */
+  const getCurrentModule = () => {
+    if (!modules.length) return null;
+    return modules.find(m => getModuleProgress(m.id) < 100) || modules[modules.length - 1];
+  };
+
+  /** First incomplete lesson across all modules (ordered by module position then lesson position) */
+  const getNextMission = () => {
+    const sortedLessons = [...lessons].sort((a, b) => {
+      const modA = modules.find(m => m.id === a.module_id);
+      const modB = modules.find(m => m.id === b.module_id);
+      const posA = (modA?.position ?? 0) * 1000 + a.position;
+      const posB = (modB?.position ?? 0) * 1000 + b.position;
+      return posA - posB;
+    });
+    const next = sortedLessons.find(l => {
+      const p = progress.find(pr => pr.lesson_id === l.id);
+      return !p || !p.completed;
+    });
+    if (!next) return null;
+    const mod = modules.find(m => m.id === next.module_id);
+    return { lesson: next, module: mod ?? null };
+  };
+
+  /** Count pending missions for a given module */
+  const getPendingCount = (moduleId: string) => {
+    const moduleLessons = getModuleLessons(moduleId);
+    return moduleLessons.filter(l => !progress.find(p => p.lesson_id === l.id && p.completed)).length;
+  };
+
   return {
     modules,
     lessons,
@@ -112,5 +142,8 @@ export function useLearning() {
     getModuleLessons,
     getModuleProgress,
     totalProgress,
+    getCurrentModule,
+    getNextMission,
+    getPendingCount,
   };
 }

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { GraduationCap, BookOpen, Palette, UserCircle, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { GraduationCap, BookOpen, Palette, UserCircle, Sparkles, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useLearning } from "@/hooks/useLearning";
 import MissionChecklist from "@/components/learning/MissionChecklist";
 import StrategicCommitmentForm from "@/components/learning/StrategicCommitmentForm";
+import StrategicPlanTracker from "@/components/learning/StrategicPlanTracker";
 import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useMissionAutoComplete } from "@/hooks/useMissionAutoComplete";
 import { useNavigate } from "react-router-dom";
@@ -46,9 +48,20 @@ export default function LearningModules() {
 }
 
 function EncontrosTab() {
-  const { modules, loading, getModuleLessons, getModuleProgress, toggleLessonComplete, totalProgress, progress } = useLearning();
-  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
+  const { modules, loading, getModuleLessons, getModuleProgress, toggleLessonComplete, totalProgress, progress, getCurrentModule, getNextMission, getPendingCount } = useLearning();
   const navigate = useNavigate();
+
+  const currentModule = getCurrentModule();
+  const nextMission = getNextMission();
+
+  // Auto-expand the current incomplete module
+  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentModule && !expandedModuleId) {
+      setExpandedModuleId(currentModule.id);
+    }
+  }, [currentModule?.id]);
 
   let persona: ReturnType<typeof usePersonaContext> | null = null;
   try {
@@ -66,6 +79,16 @@ function EncontrosTab() {
     }
   });
 
+  // Show toast on mount if pending missions
+  useEffect(() => {
+    if (!loading && currentModule && nextMission) {
+      const pending = getPendingCount(currentModule.id);
+      if (pending > 0) {
+        toast.info(`📋 Você tem ${pending} missão(ões) pendente(s) no ${currentModule.title}. Continue de onde parou!`, { duration: 5000 });
+      }
+    }
+  }, [loading]);
+
   if (loading) {
     return (
       <div className="space-y-4 mt-4">
@@ -74,8 +97,38 @@ function EncontrosTab() {
     );
   }
 
+  const handleGoToCurrentModule = () => {
+    if (currentModule) {
+      setExpandedModuleId(currentModule.id);
+      document.getElementById(`module-${currentModule.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
   return (
     <div className="space-y-4 mt-4">
+      {/* Strategic Plan Tracker - Always Visible */}
+      <StrategicPlanTracker
+        modules={modules}
+        getModuleProgress={getModuleProgress}
+        currentModuleId={currentModule?.id ?? null}
+        nextMission={nextMission}
+        totalProgress={totalProgress}
+        onGoToCurrentModule={handleGoToCurrentModule}
+      />
+
+      {/* Alert: pending missions warning */}
+      {currentModule && nextMission && (
+        <Alert className="border-amber-500/30 bg-amber-500/5">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-xs text-foreground">
+            <strong>Encontro {currentModule.position}:</strong> Você tem {getPendingCount(currentModule.id)} missão(ões) pendente(s).{" "}
+            <button className="text-primary underline font-medium" onClick={handleGoToCurrentModule}>
+              Continue de onde parou →
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Persona Summary Card */}
       {persona && persona.hasProfile && (
         <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
@@ -101,20 +154,6 @@ function EncontrosTab() {
         </Card>
       )}
 
-      {/* Overall Progress */}
-      <Card className="border-primary/20">
-        <CardContent className="pt-4 pb-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">Progresso Geral do Método ELEVAR</span>
-            <span className="text-sm text-primary font-bold">{totalProgress}%</span>
-          </div>
-          <Progress value={totalProgress} className="h-2" />
-          <p className="text-xs text-muted-foreground mt-2">
-            {totalProgress === 100 ? "🎉 Parabéns! Você completou todo o Método ELEVAR!" : "Complete as missões de cada encontro para avançar."}
-          </p>
-        </CardContent>
-      </Card>
-
       {/* Strategic Commitment (Encontro 0 special) */}
       {modules.length > 0 && modules[0].position === 0 && (
         <StrategicCommitmentForm />
@@ -135,15 +174,16 @@ function EncontrosTab() {
           }));
 
           return (
-            <MissionChecklist
-              key={mod.id}
-              module={mod}
-              missions={missions}
-              progressPercent={prog}
-              onToggle={toggleLessonComplete}
-              isExpanded={expandedModuleId === mod.id}
-              onToggleExpand={() => setExpandedModuleId(expandedModuleId === mod.id ? null : mod.id)}
-            />
+            <div key={mod.id} id={`module-${mod.id}`}>
+              <MissionChecklist
+                module={mod}
+                missions={missions}
+                progressPercent={prog}
+                onToggle={toggleLessonComplete}
+                isExpanded={expandedModuleId === mod.id}
+                onToggleExpand={() => setExpandedModuleId(expandedModuleId === mod.id ? null : mod.id)}
+              />
+            </div>
           );
         })}
       </div>

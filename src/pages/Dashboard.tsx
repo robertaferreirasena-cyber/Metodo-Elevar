@@ -1,6 +1,7 @@
 import {
   Smartphone, BotMessageSquare, GraduationCap, Trophy, ArrowRight,
-  Brain, Target, AlertTriangle, Zap, TrendingUp, BookOpen, Sparkles
+  Brain, Target, AlertTriangle, Zap, TrendingUp, BookOpen, Sparkles,
+  MapPin, CheckCircle2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -141,6 +142,67 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ELEVAR Method Tracker Card */}
+      {!learningLoading && modules.length > 0 && (() => {
+        const currentMod = modules.find(m => {
+          const prog = getModuleProgress(m.id);
+          return prog < 100;
+        }) || modules[modules.length - 1];
+        const currentIndex = modules.indexOf(currentMod);
+
+        return (
+          <Card className="border-primary/30 bg-gradient-to-r from-primary/5 via-background to-background">
+            <CardContent className="py-4 px-5">
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-primary uppercase tracking-wider">Método ELEVAR</span>
+                <Badge variant="outline" className="text-[10px] ml-auto">{totalProgress}%</Badge>
+              </div>
+
+              {/* Mini stepper */}
+              <div className="flex items-center gap-1 mb-3">
+                {modules.map((mod, i) => {
+                  const prog = getModuleProgress(mod.id);
+                  const isDone = prog === 100;
+                  const isCurrent = mod.id === currentMod.id;
+                  return (
+                    <div key={mod.id} className="flex items-center">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold ${
+                        isDone ? "bg-emerald-500 text-white"
+                          : isCurrent ? "bg-primary text-primary-foreground ring-1 ring-primary/30"
+                            : "bg-muted text-muted-foreground"
+                      }`}>
+                        {isDone ? <CheckCircle2 className="h-3 w-3" /> : mod.position}
+                      </div>
+                      {i < modules.length - 1 && <div className={`w-2 h-0.5 ${isDone ? "bg-emerald-500" : "bg-muted"}`} />}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Current status */}
+              {nextActivity ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">
+                      Encontro {currentMod.position} • {currentMod.title}
+                    </p>
+                    <p className="text-sm font-medium text-foreground truncate mt-0.5">
+                      {nextActivity.lesson.title}
+                    </p>
+                  </div>
+                  <Button size="sm" className="shrink-0 gap-1" onClick={() => navigate('/aprendizado')}>
+                    Continuar <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-sm font-medium text-center text-emerald-600">🎉 Método completo!</p>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Next Activity - THE CORE */}
       {learningLoading ? (
