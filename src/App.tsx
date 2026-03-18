@@ -393,13 +393,26 @@ const App = () => (
                 }
               />
 
-              {/* Calculadora de Preços */}
+              {/* Central Financeira */}
               <Route
-                path="/calculadora"
+                path="/financeiro"
                 element={
                   <ProtectedRoute>
                     <AppLayout>
                       <PriceCalculator />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/calculadora" element={<Navigate to="/financeiro" replace />} />
+
+              {/* Metas Elevar */}
+              <Route
+                path="/metas-elevar"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <SalesGoals />
                     </AppLayout>
                   </ProtectedRoute>
                 }

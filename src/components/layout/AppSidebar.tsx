@@ -122,6 +122,29 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Financeiro Section */}
+        <SidebarGroup className="py-0.5 px-2">
+          <SidebarGroupLabel className="h-5 text-[10px] px-1">💰 Financeiro</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-0.5">
+              {financeItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} size="sm">
+                    <NavLink
+                      to={item.url}
+                      className="hover:bg-muted/50 flex items-center w-full py-1"
+                      activeClassName="bg-muted text-primary font-medium"
+                    >
+                      <item.icon className="mr-2 h-3.5 w-3.5" />
+                      <span className="text-xs">{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         {/* More - Collapsible */}
         <SidebarGroup className="py-0.5 px-2">
           <Collapsible open={moreOpen || isMoreActive} onOpenChange={setMoreOpen}>

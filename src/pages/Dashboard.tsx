@@ -25,7 +25,7 @@ const activityRoutes: Record<string, { route: string; label: string }> = {
   persona: { route: '/persona', label: 'Raio-X Persona' },
   content: { route: '/mentora-hub', label: 'Mentora Gi' },
   mentor: { route: '/mentora-hub', label: 'Mentora Gi' },
-  calculator: { route: '/calculadora', label: 'Calculadora' },
+  calculator: { route: '/financeiro', label: 'Financeiro' },
   photo: { route: '/ensaio-fotografico', label: 'Ensaio Fotográfico' },
   compromisso: { route: '/aprendizado', label: 'Compromisso Estratégico' },
 };
