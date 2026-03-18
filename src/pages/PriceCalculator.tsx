@@ -865,9 +865,9 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
               <Activity className="h-4 w-4 text-primary" />
               Ponto de Equilíbrio
             </p>
-            <Badge variant={monthlyRevenue >= breakEven ? "default" : "destructive"}>
-              {monthlyRevenue >= breakEven ? "Acima ✅" : "Abaixo ⚠️"}
-            </Badge>
+          <Badge variant={activeRevenue >= breakEven ? "default" : "destructive"}>
+            {activeRevenue >= breakEven ? "Acima ✅" : "Abaixo ⚠️"}
+          </Badge>
           </div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-muted-foreground">
