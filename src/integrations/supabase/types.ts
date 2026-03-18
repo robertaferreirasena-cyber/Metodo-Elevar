@@ -774,6 +774,98 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_goals: {
+        Row: {
+          average_ticket: number
+          created_at: string | null
+          id: string
+          month: string
+          monthly_target: number
+          niche: string | null
+          updated_at: string | null
+          user_id: string
+          working_days: number
+        }
+        Insert: {
+          average_ticket?: number
+          created_at?: string | null
+          id?: string
+          month?: string
+          monthly_target?: number
+          niche?: string | null
+          updated_at?: string | null
+          user_id: string
+          working_days?: number
+        }
+        Update: {
+          average_ticket?: number
+          created_at?: string | null
+          id?: string
+          month?: string
+          monthly_target?: number
+          niche?: string | null
+          updated_at?: string | null
+          user_id?: string
+          working_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_records: {
+        Row: {
+          created_at: string | null
+          goal_id: string
+          id: string
+          notes: string | null
+          quantity: number
+          record_date: string
+          total_value: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          goal_id: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+          record_date?: string
+          total_value?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          goal_id?: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+          record_date?: string
+          total_value?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_records_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "sales_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sequence_posts: {
         Row: {
           content: string
