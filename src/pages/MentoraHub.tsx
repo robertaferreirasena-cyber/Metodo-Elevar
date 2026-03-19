@@ -1,4 +1,4 @@
-import { BotMessageSquare, Lightbulb, Brain, Camera, ArrowRight, MessageSquare } from "lucide-react";
+import { BotMessageSquare, Lightbulb, Brain, Camera, ArrowRight, MessageSquare, Megaphone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +101,23 @@ export default function MentoraHub() {
                     <Badge className="bg-primary text-primary-foreground text-[7px] px-1 py-0">NOVO</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">Guia para fotos profissionais</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/trafego-pago" className="group">
+            <Card className="h-full hover:shadow-md transition-all hover:border-primary/30">
+              <CardContent className="p-4 flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-violet-500/10 flex-shrink-0">
+                  <Megaphone className="h-5 w-5 text-violet-500" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-foreground">Tráfego Pago</h3>
+                    <Badge className="bg-primary text-primary-foreground text-[7px] px-1 py-0">NOVO</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">Anúncios com Método ANDROMEDA</p>
                 </div>
               </CardContent>
             </Card>

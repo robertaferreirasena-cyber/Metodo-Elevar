@@ -13,7 +13,8 @@ export type ModuleKey =
   | 'module_history'
   | 'module_community'
   | 'module_photoboss'
-  | 'module_conversation_analysis';
+  | 'module_conversation_analysis'
+  | 'module_traffic_ads';
 
 interface UserPermissions {
   module_private: boolean;
@@ -26,6 +27,7 @@ interface UserPermissions {
   module_community: boolean;
   module_photoboss: boolean;
   module_conversation_analysis: boolean;
+  module_traffic_ads: boolean;
   custom_daily_limit: number | null;
   custom_monthly_limit: number | null;
   custom_persona_limit: number | null;
@@ -43,6 +45,7 @@ const DEFAULT_PERMISSIONS: UserPermissions = {
   module_community: true,
   module_photoboss: true,
   module_conversation_analysis: true,
+  module_traffic_ads: true,
   custom_daily_limit: null,
   custom_monthly_limit: null,
   custom_persona_limit: null,
@@ -98,6 +101,7 @@ export function usePermissions() {
             module_community: data.module_community ?? true,
             module_photoboss: data.module_photoboss ?? true,
             module_conversation_analysis: data.module_conversation_analysis ?? true,
+            module_traffic_ads: (data as Record<string, unknown>).module_traffic_ads as boolean ?? true,
             custom_daily_limit: data.custom_daily_limit,
             custom_monthly_limit: data.custom_monthly_limit,
             custom_persona_limit: data.custom_persona_limit,

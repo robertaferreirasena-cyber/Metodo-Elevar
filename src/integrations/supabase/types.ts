@@ -1231,6 +1231,7 @@ export type Database = {
           module_photoboss: boolean | null
           module_private: boolean | null
           module_sequences: boolean | null
+          module_traffic_ads: boolean | null
           updated_at: string | null
           user_id: string
         }
@@ -1251,6 +1252,7 @@ export type Database = {
           module_photoboss?: boolean | null
           module_private?: boolean | null
           module_sequences?: boolean | null
+          module_traffic_ads?: boolean | null
           updated_at?: string | null
           user_id: string
         }
@@ -1271,6 +1273,7 @@ export type Database = {
           module_photoboss?: boolean | null
           module_private?: boolean | null
           module_sequences?: boolean | null
+          module_traffic_ads?: boolean | null
           updated_at?: string | null
           user_id?: string
         }

@@ -50,6 +50,7 @@ import LearningModules from "./pages/LearningModules";
 import MentorChat from "./pages/MentorChat";
 import WhatsAppHub from "./pages/WhatsAppHub";
 import MentoraHub from "./pages/MentoraHub";
+import TrafficAds from "./pages/TrafficAds";
 import FormalizeCommitment from "./pages/FormalizeCommitment";
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -369,6 +370,20 @@ const App = () => (
                     <AppLayout>
                       <MentoraHub />
                     </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Tráfego Pago */}
+              <Route
+                path="/trafego-pago"
+                element={
+                  <ProtectedRoute>
+                    <ModuleGuard module="module_traffic_ads">
+                      <AppLayout>
+                        <TrafficAds />
+                      </AppLayout>
+                    </ModuleGuard>
                   </ProtectedRoute>
                 }
               />
