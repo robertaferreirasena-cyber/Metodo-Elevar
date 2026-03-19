@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronRight, FolderOpen, Folder, FileText, Trash2, Eye } from "lucide-react";
+import { ChevronRight, FolderOpen, Folder, FileText, Trash2, Eye, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CampaignItem {
@@ -26,6 +26,7 @@ interface CampaignStructurePanelProps {
   selectedCampaignId: string | null;
   onSelectCampaign: (id: string) => void;
   onDeleteCampaign: (id: string) => void;
+  onDuplicateCampaign?: (id: string) => void;
 }
 
 export default function CampaignStructurePanel({
@@ -33,6 +34,7 @@ export default function CampaignStructurePanel({
   selectedCampaignId,
   onSelectCampaign,
   onDeleteCampaign,
+  onDuplicateCampaign,
 }: CampaignStructurePanelProps) {
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
 
@@ -100,7 +102,7 @@ export default function CampaignStructurePanel({
                         </div>
                       </div>
                     ))}
-                    <div className="flex gap-1 px-2 pt-1 pb-2">
+                    <div className="flex gap-1 px-2 pt-1 pb-2 flex-wrap">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -109,6 +111,16 @@ export default function CampaignStructurePanel({
                       >
                         <Eye className="h-3 w-3" /> Ver
                       </Button>
+                      {onDuplicateCampaign && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[10px] gap-1"
+                          onClick={() => onDuplicateCampaign(campaign.id)}
+                        >
+                          <Copy className="h-3 w-3" /> Duplicar
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"

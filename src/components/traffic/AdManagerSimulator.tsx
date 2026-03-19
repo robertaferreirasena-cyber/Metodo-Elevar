@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronRight, FolderOpen, FileText, BarChart3, Loader2, Pencil, Check, X, Download } from "lucide-react";
+import { ChevronRight, FolderOpen, FileText, BarChart3, Loader2, Pencil, Check, X, Download, Copy, ClipboardCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -16,6 +18,37 @@ import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import CampaignStructurePanel from "./CampaignStructurePanel";
 import AdPreviewMock from "./AdPreviewMock";
+
+const CHECKLIST_STEPS: Record<string, string[]> = {
+  Meta: [
+    "Criar campanha no Meta Ads Manager",
+    "Configurar objetivo da campanha",
+    "Definir orçamento diário/total",
+    "Configurar público-alvo (idade, gênero, localização, interesses)",
+    "Selecionar posicionamentos (Feed, Stories, Reels)",
+    "Criar anúncios com criativos e textos",
+    "Instalar e configurar o Meta Pixel",
+    "Revisar e publicar campanha",
+  ],
+  Google: [
+    "Criar campanha no Google Ads",
+    "Configurar objetivo da campanha",
+    "Definir estratégia de lances",
+    "Configurar grupos de anúncios e palavras-chave",
+    "Criar anúncios com títulos e descrições",
+    "Vincular conversões (Google Tag)",
+    "Revisar e publicar campanha",
+  ],
+  TikTok: [
+    "Criar campanha no TikTok Ads Manager",
+    "Configurar objetivo da campanha",
+    "Definir orçamento diário/total",
+    "Configurar público-alvo (idade, gênero, interesses)",
+    "Criar anúncios com criativos de vídeo",
+    "Instalar e configurar o TikTok Pixel",
+    "Revisar e publicar campanha",
+  ],
+};
 
 interface CampaignRow {
   id: string;
@@ -46,6 +79,7 @@ export default function AdManagerSimulator() {
   const [expandedSets, setExpandedSets] = useState<Set<number>>(new Set([0]));
   const [selectedAdIndex, setSelectedAdIndex] = useState<{ setIdx: number; adIdx: number } | null>(null);
   const [editing, setEditing] = useState<EditingField | null>(null);
+  const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
 
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ["ad-campaigns", user?.id],
@@ -85,6 +119,38 @@ export default function AdManagerSimulator() {
       queryClient.invalidateQueries({ queryKey: ["ad-campaigns"] });
       setSelectedCampaignId(null);
       toast.success("Campanha excluída");
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (campaign: CampaignRow) => {
+      const existingVariations = campaigns.filter(c =>
+        c.structured_data?.campaign?.name?.startsWith(campaign.structured_data?.campaign?.name?.replace(/ \(Variação [A-Z]\)$/, ""))
+      ).length;
+      const suffix = String.fromCharCode(65 + existingVariations); // A, B, C...
+      const baseName = campaign.structured_data?.campaign?.name?.replace(/ \(Variação [A-Z]\)$/, "") || "Campanha";
+      const newSd = JSON.parse(JSON.stringify(campaign.structured_data));
+      newSd.campaign.name = `${baseName} (Variação ${suffix})`;
+
+      const { data, error } = await supabase.from("ad_campaigns").insert({
+        user_id: campaign.user_id,
+        platform: campaign.platform,
+        objective: campaign.objective,
+        product: campaign.product,
+        audience: campaign.audience,
+        budget: campaign.budget,
+        tone: campaign.tone,
+        raw_result: campaign.raw_result,
+        structured_data: newSd,
+        status: "approved",
+      }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["ad-campaigns"] });
+      if (data) setSelectedCampaignId(data.id);
+      toast.success("Variação A/B criada com sucesso!");
     },
   });
 
@@ -218,6 +284,10 @@ export default function AdManagerSimulator() {
             selectedCampaignId={selectedCampaignId}
             onSelectCampaign={setSelectedCampaignId}
             onDeleteCampaign={(id) => deleteMutation.mutate(id)}
+            onDuplicateCampaign={(id) => {
+              const c = campaigns.find(x => x.id === id);
+              if (c) duplicateMutation.mutate(c);
+            }}
           />
         </CardContent>
       </Card>
@@ -254,6 +324,16 @@ export default function AdManagerSimulator() {
                       <span>Orçamento: <strong>{sd.campaign?.budget_value}</strong></span>
                       <Badge variant="outline" className="text-[10px]">{selectedCampaign.platform}</Badge>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 gap-1 text-xs"
+                      onClick={() => duplicateMutation.mutate(selectedCampaign)}
+                      disabled={duplicateMutation.isPending}
+                    >
+                      <Copy className="h-3 w-3" />
+                      Duplicar A/B
+                    </Button>
                     <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={exportPDF}>
                       <Download className="h-3 w-3" />
                       Exportar PDF
@@ -417,6 +497,62 @@ export default function AdManagerSimulator() {
             {selectedAd && (
               <AdPreviewMock ad={selectedAd} platform={selectedCampaign.platform} />
             )}
+
+            {/* Implementation Checklist */}
+            {(() => {
+              const platformKey = selectedCampaign.platform.includes("Meta") ? "Meta"
+                : selectedCampaign.platform.includes("Google") ? "Google" : "TikTok";
+              const steps = CHECKLIST_STEPS[platformKey];
+              const progress = steps.length > 0 ? Math.round((checkedSteps.size / steps.length) * 100) : 0;
+
+              return (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xs flex items-center gap-1.5">
+                      <ClipboardCheck className="h-3.5 w-3.5" />
+                      Checklist de Implementação — {platformKey} Ads
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Progress value={progress} className="h-2 flex-1" />
+                      <span className="text-xs text-muted-foreground font-medium">{progress}%</span>
+                    </div>
+                    <div className="space-y-2">
+                      {steps.map((step, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`step-${i}`}
+                            checked={checkedSteps.has(i)}
+                            onCheckedChange={(checked) => {
+                              setCheckedSteps(prev => {
+                                const next = new Set(prev);
+                                checked ? next.add(i) : next.delete(i);
+                                return next;
+                              });
+                            }}
+                          />
+                          <label
+                            htmlFor={`step-${i}`}
+                            className={cn(
+                              "text-xs cursor-pointer",
+                              checkedSteps.has(i) && "line-through text-muted-foreground"
+                            )}
+                          >
+                            {i + 1}. {step}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    {progress === 100 && (
+                      <p className="text-xs text-green-600 font-medium">
+                        🎉 Checklist completo! Sua campanha está pronta para ir ao ar.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
           </>
         )}
       </div>
