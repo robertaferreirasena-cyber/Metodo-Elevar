@@ -198,12 +198,30 @@ export default function InstaProGenerator({ personaData, onCreateContent }: Prop
                   >
                     <Pencil className="h-3 w-3" /> Renomear
                   </Button>
-                  <Button
-                    size="sm" variant="ghost" className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive"
-                    onClick={(e) => { e.stopPropagation(); handleDelete(sp.id); }}
-                  >
-                    <Trash2 className="h-3 w-3" /> Deletar
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm" variant="ghost" className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Trash2 className="h-3 w-3" /> Deletar
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Deletar perfil?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja deletar "{sp.label || "Perfil"}"? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(sp.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Deletar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))}
