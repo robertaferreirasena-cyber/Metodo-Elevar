@@ -1,34 +1,20 @@
+# Plano: Acesso 4 Meses + Admin Completo + Base de Conhecimento
 
+## Status: ✅ Implementado
 
-## Plano: Corrigir PDF Premium — Letras Estranhas e Margens
+## O que foi feito
 
-### Problema
+### 1. Acesso de 4 Meses
+- `handle_new_user()` agora define `expires_at = NOW() + 4 months`
+- Subscriptions existentes sem `expires_at` atualizadas para `started_at + 4 meses`
 
-1. **Letras estranhas**: jsPDF com fonte Helvetica embutida não renderiza corretamente caracteres acentuados do português (ã, é, ç, ô, etc.), gerando caracteres corrompidos no PDF
-2. **Texto ultrapassando margens**: Algumas chamadas diretas a `doc.text()` no header (linhas 339, 344, 349) não usam `splitTextToSize`, podendo ultrapassar a folha
+### 2. Admin com Menu de Abas
+- `AdminLayout.tsx` com navegação horizontal: Dashboard, Usuários, Pagamentos, Tokens, Credenciais, Aprendizado, Base IA
+- Todas as páginas admin envolvidas com AdminLayout
+- Breadcrumbs removidos em favor das abas
 
-### Solução
-
-**Abordagem**: Criar função `sanitize(text)` que remove acentos usando `String.normalize("NFD").replace(...)`, garantindo compatibilidade total com a fonte Helvetica padrão do jsPDF. Aplicar em todo texto antes de escrever no PDF.
-
-### Mudanças em `AdManagerSimulator.tsx`
-
-1. **Adicionar helper `sanitize`**:
-```typescript
-function sanitize(text: string): string {
-  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-```
-
-2. **Aplicar `sanitize` em `writeText`** — envolver `text` com `sanitize()` antes de `splitTextToSize`
-
-3. **Aplicar `sanitize` nas chamadas diretas** — header do PDF (título, subtítulo, data) que usam `doc.text()` diretamente
-
-4. **Ajustar chamadas diretas no header** para usar `splitTextToSize` respeitando `maxW`, evitando overflow lateral
-
-### Arquivo modificado
-
-| Arquivo | Mudança |
-|---|---|
-| `src/components/traffic/AdManagerSimulator.tsx` | Adicionar `sanitize()`, aplicar em todo texto do PDF, ajustar header para respeitar margens |
-
+### 3. Base de Conhecimento IA
+- Tabela `agent_knowledge_base` (agent_key, agent_name, system_prompt)
+- Página `/admin/base-conhecimento` para editar prompts dos agentes
+- Edge functions (ai-mentor-chat, sales-strategist, conversation-analyzer, sequence-generator) consultam a tabela com fallback para prompts hardcoded
+- Cache de 5 minutos para evitar queries excessivas

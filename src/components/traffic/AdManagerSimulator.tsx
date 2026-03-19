@@ -315,11 +315,14 @@ export default function AdManagerSimulator() {
       doc.line(x1, yy, x2, yy);
     };
 
+    const sanitize = (text: string): string =>
+      text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
     const writeText = (text: string, x: number, size: number, bold = false, color: [number, number, number] = [40, 40, 40]) => {
       doc.setFontSize(size);
       doc.setFont("helvetica", bold ? "bold" : "normal");
       doc.setTextColor(...color);
-      const lines = doc.splitTextToSize(text, maxW - (x - ml));
+      const lines = doc.splitTextToSize(sanitize(text), maxW - (x - ml));
       for (const line of lines) {
         checkPage(size * 0.45);
         doc.text(line, x, y);
@@ -336,17 +339,17 @@ export default function AdManagerSimulator() {
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
-    doc.text("PLANO DE CAMPANHA", ml, 25);
+    doc.text(sanitize("PLANO DE CAMPANHA"), ml, 25);
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(200, 180, 220);
-    doc.text("Metodo ANDROMEDA  |  Mentoria Elevar", ml, 35);
+    doc.text(sanitize("Metodo ANDROMEDA  |  Mentoria Elevar"), ml, 35);
 
     doc.setFontSize(9);
     doc.setTextColor(180, 160, 200);
     const dateStr = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
-    doc.text(dateStr, ml, 45);
+    doc.text(sanitize(dateStr), ml, 45);
 
     y = 68;
 
@@ -370,7 +373,7 @@ export default function AdManagerSimulator() {
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(255, 255, 255);
-      doc.text(`CONJUNTO ${si + 1}: ${adSet.name}`, ml + 4, y + 5.5);
+      doc.text(sanitize(`CONJUNTO ${si + 1}: ${adSet.name}`), ml + 4, y + 5.5);
       y += 14;
 
       // Optimization & Budget
