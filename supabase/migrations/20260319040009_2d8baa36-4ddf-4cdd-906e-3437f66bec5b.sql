@@ -1,0 +1,1 @@
+ALTER TABLE public.user_feature_permissions ADD COLUMN IF NOT EXISTS module_traffic_ads boolean DEFAULT true;
