@@ -51,6 +51,7 @@ import MentorChat from "./pages/MentorChat";
 import WhatsAppHub from "./pages/WhatsAppHub";
 import MentoraHub from "./pages/MentoraHub";
 import TrafficAds from "./pages/TrafficAds";
+import ManyChatFlows from "./pages/ManyChatFlows";
 import FormalizeCommitment from "./pages/FormalizeCommitment";
 const queryClient = new QueryClient({
   defaultOptions: {
