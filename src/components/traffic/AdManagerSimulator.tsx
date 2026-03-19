@@ -522,7 +522,7 @@ export default function AdManagerSimulator() {
                     </Button>
                     <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={exportPDF}>
                       <Download className="h-3 w-3" />
-                      Exportar PDF
+                      PDF Premium
                     </Button>
                   </div>
                 </div>
