@@ -53,6 +53,54 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_campaigns: {
+        Row: {
+          audience: string | null
+          budget: string | null
+          created_at: string | null
+          id: string
+          objective: string
+          platform: string
+          product: string | null
+          raw_result: string
+          status: string | null
+          structured_data: Json | null
+          tone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          audience?: string | null
+          budget?: string | null
+          created_at?: string | null
+          id?: string
+          objective: string
+          platform: string
+          product?: string | null
+          raw_result: string
+          status?: string | null
+          structured_data?: Json | null
+          tone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          audience?: string | null
+          budget?: string | null
+          created_at?: string | null
+          id?: string
+          objective?: string
+          platform?: string
+          product?: string | null
+          raw_result?: string
+          status?: string | null
+          structured_data?: Json | null
+          tone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_knowledge_base: {
         Row: {
           agent_key: string
