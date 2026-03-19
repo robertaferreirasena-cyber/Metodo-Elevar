@@ -266,9 +266,16 @@ export default function ManyChatFlows() {
             </div>
 
             {hasProfile && (
-              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
-                <p className="text-[10px] text-primary font-medium">✅ Dados do Raio-X da Persona serão usados automaticamente</p>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleFillFromPersona}
+                className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
+              >
+                <Zap className="h-4 w-4" />
+                Preencher com Raio-X da Persona
+              </Button>
             )}
 
             <Button
