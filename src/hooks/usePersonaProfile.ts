@@ -238,7 +238,7 @@ export function usePersonaProfile() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ profileData: formData }),
+        body: JSON.stringify({ profileData: formData, catalogFiles: catalogFiles || [] }),
       });
 
       if (response.status === 429) {
