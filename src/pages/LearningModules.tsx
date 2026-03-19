@@ -39,7 +39,7 @@ export default function LearningModules() {
 
         <TabsContent value="encontros"><EncontrosTab /></TabsContent>
         <TabsContent value="carousel"><CarouselEditor /></TabsContent>
-        <TabsContent value="profile"><ProfileGenerator /></TabsContent>
+        <TabsContent value="instapro"><InstaProTab /></TabsContent>
       </Tabs>
     </div>
   );
