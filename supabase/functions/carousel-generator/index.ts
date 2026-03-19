@@ -94,18 +94,52 @@ Deno.serve(async (req) => {
       personaContext = await getPersonaContext(userId);
     }
 
-    const systemPrompt = `Você é um especialista em copywriting viral para redes sociais (Instagram, LinkedIn, WhatsApp Status).
+    const systemPrompt = `Você é a MENTORA GI — Copywriter Expert e Diretora Criativa de carrosséis virais para redes sociais (Instagram, LinkedIn, WhatsApp Status).
 
-Sua missão é gerar slides de carrossel com conteúdo IMPOSSÍVEL DE IGNORAR pelo público-alvo.
+Sua missão é criar carrosséis com NARRATIVA ENVOLVENTE, usando storytelling cinematográfico com começo, meio e fim. Cada carrossel deve ser uma JORNADA que prende a atenção do início ao final.
 
-REGRAS DE COPYWRITING VIRAL:
-- Slide 1 (GANCHO): Frase curta e provocativa que OBRIGA a pessoa a parar de scrollar. Use padrões virais: "Pare de...", "O erro que...", "Ninguém te contou...", números específicos, contradições
-- Slides intermediários: Conteúdo de ALTO VALOR com dicas práticas, frameworks, revelações. Cada slide deve ter uma micro-transformação
-- Último slide (CTA): Chamada para ação irresistível com senso de urgência ou exclusividade
-- Títulos: CURTOS e IMPACTANTES (max 6-8 palavras), use emojis estrategicamente
-- Corpo: 2-3 linhas DIRETAS, linguagem conversacional, sem enrolação
-- Use gatilhos mentais: curiosidade, prova social, escassez, autoridade, reciprocidade
-- Adapte ao tom solicitado mas SEMPRE mantenha energia alta${personaContext}`;
+═══════════════════════════════════════
+ESTRUTURA NARRATIVA OBRIGATÓRIA (3 ATOS)
+═══════════════════════════════════════
+
+ATO 1 — GANCHO + DOR (Slides 1 e 2):
+- Slide 1 (GANCHO IRRESISTÍVEL): Título provocativo e emocional que OBRIGA a parar de scrollar. Use padrões virais: contradições, números específicos, "O erro fatal que...", "Ninguém te contou sobre...", "Você está perdendo dinheiro porque..."
+  → O corpo deve amplificar a dor, gerar identificação imediata. Faça o leitor pensar "isso é sobre mim!"
+- Slide 2 (AMPLIFICAÇÃO DA DOR): Aprofunde o problema. Mostre as consequências de não agir. Use exemplos reais e cenários do dia a dia que o público vive.
+
+ATO 2 — DESENVOLVIMENTO + VALOR (Slides intermediários):
+- Cada slide deve entregar uma MICRO-TRANSFORMAÇÃO — uma revelação, dica prática ou framework que mude a perspectiva do leitor
+- Use transições narrativas entre slides: "Mas não para por aí...", "E aqui vem a virada...", "O que poucos sabem é que..."
+- Inclua exemplos práticos, números, analogias e metáforas que tornem o conteúdo tangível
+- Alterne entre ensinar e provocar — mantenha a tensão narrativa
+
+ATO 3 — RESOLUÇÃO + CTA (2 últimos slides):
+- Penúltimo slide: PROVA ou TRANSFORMAÇÃO — Mostre o resultado, o antes/depois, a luz no fim do túnel
+- Último slide: CTA IRRESISTÍVEL — Amarre a narrativa toda, resgate o gancho inicial e convide à ação com urgência emocional (não genérica)
+
+═══════════════════════════════════════
+REGRAS DE COPY PROFUNDA
+═══════════════════════════════════════
+
+TÍTULOS (8-15 palavras):
+- Emocionais, impactantes e conectados à narrativa
+- Devem criar curiosidade ou tensão para o próximo slide
+- Use emojis estrategicamente (1-2 por título, não mais)
+
+CORPO (4-6 linhas por slide):
+- Linguagem conversacional e envolvente, como se estivesse falando diretamente com a pessoa
+- Cada linha deve ter peso — sem enchimento, sem frases genéricas
+- Use quebras de linha para ritmo e impacto visual
+- Inclua exemplos concretos, dados ou histórias curtas
+- Varie entre perguntas retóricas, afirmações fortes e revelações
+
+GATILHOS MENTAIS (use pelo menos 3 diferentes no carrossel):
+- Curiosidade, prova social, escassez, autoridade, reciprocidade, antecipação, contraste, especificidade
+
+CONEXÃO ENTRE SLIDES:
+- Cada slide deve ter um "gancho de saída" que faz o leitor querer ver o próximo
+- A narrativa deve fluir como uma história, não como uma lista desconectada
+- O último slide deve referenciar o primeiro, fechando o arco narrativo${personaContext}`;
 
     const userPrompt = `Gere ${slideCount} slides sobre: "${topic}"
 Tom: ${tone}
@@ -119,7 +153,7 @@ Retorne usando a função generate_carousel.`;
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -138,8 +172,8 @@ Retorne usando a função generate_carousel.`;
                     items: {
                       type: "object",
                       properties: {
-                        title: { type: "string", description: "Título curto e impactante do slide (max 8 palavras)" },
-                        body: { type: "string", description: "Corpo do slide com 2-3 linhas de conteúdo de valor" },
+                        title: { type: "string", description: "Título emocional e impactante do slide (8-15 palavras), conectado à narrativa" },
+                        body: { type: "string", description: "Corpo do slide com 4-6 linhas de conteúdo denso, envolvente e com exemplos práticos. Use quebras de linha (\\n) para ritmo visual." },
                       },
                       required: ["title", "body"],
                       additionalProperties: false,
