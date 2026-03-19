@@ -202,10 +202,11 @@ function InstaProTab({ onCreateContent }: { onCreateContent: (post: InstaProfile
     niche: persona.formData.niche || undefined,
     product: persona.formData.product_description || undefined,
     differentiator: persona.formData.main_differentiator || undefined,
-    transformation: undefined,
+    transformation: persona.formData.transformation || undefined,
     targetAudience: persona.formData.main_pain || undefined,
     ageRange: persona.formData.target_age_range || undefined,
     brandName: persona.formData.business_name || undefined,
+    raioX: persona.raioX || null,
   } : undefined;
 
   return <InstaProGenerator personaData={personaData} onCreateContent={onCreateContent} />;
