@@ -1,5 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Bot, Sparkles, Loader2, Copy, Check, MessageSquare, Zap, Key, GitBranch } from "lucide-react";
+import { useSessionPersistence } from "@/hooks/useSessionPersistence";
+import { SessionIndicator } from "@/components/SessionIndicator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,22 +47,47 @@ const STEPS_OPTIONS = [
   { value: "7", label: "7 mensagens (Completo)" },
 ];
 
+interface ManyChatSessionState {
+  flowType: string;
+  product: string;
+  audience: string;
+  objective: string;
+  tone: string;
+  keyword: string;
+  steps: string;
+  result: string;
+}
+
+const EMPTY_MANYCHAT_STATE: ManyChatSessionState = {
+  flowType: "", product: "", audience: "", objective: "", tone: "",
+  keyword: "", steps: "5", result: "",
+};
+
 export default function ManyChatFlows() {
   const { user } = useAuth();
   const { enrichPrompt, hasProfile, formData, raioX } = usePersonaContext();
 
+  const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<ManyChatSessionState>(
+    "session_manychat_flows", EMPTY_MANYCHAT_STATE
+  );
+
   const [activeTab, setActiveTab] = useState("create");
-  const [flowType, setFlowType] = useState("");
-  const [product, setProduct] = useState("");
-  const [audience, setAudience] = useState("");
-  const [objective, setObjective] = useState("");
-  const [tone, setTone] = useState("");
-  const [keyword, setKeyword] = useState("");
-  const [steps, setSteps] = useState("5");
-  const [result, setResult] = useState("");
+  const [flowType, setFlowType] = useState(sessionState.flowType);
+  const [product, setProduct] = useState(sessionState.product);
+  const [audience, setAudience] = useState(sessionState.audience);
+  const [objective, setObjective] = useState(sessionState.objective);
+  const [tone, setTone] = useState(sessionState.tone);
+  const [keyword, setKeyword] = useState(sessionState.keyword);
+  const [steps, setSteps] = useState(sessionState.steps);
+  const [result, setResult] = useState(sessionState.result);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+
+  // Sync to session storage
+  useEffect(() => {
+    setSessionState({ flowType, product, audience, objective, tone, keyword, steps, result });
+  }, [flowType, product, audience, objective, tone, keyword, steps, result, setSessionState]);
 
   const canGenerate = flowType && product && audience && objective && tone;
   const showKeyword = flowType === "comentario-dm" || flowType === "funil-lancamento";
@@ -208,6 +235,7 @@ export default function ManyChatFlows() {
 
         {/* Create Tab */}
         <TabsContent value="create">
+          <SessionIndicator show={hasRestoredSession} onClear={clearSession} className="mb-4" />
           {/* Flow Types Visual */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
             {FLOW_TYPES.map((ft) => (

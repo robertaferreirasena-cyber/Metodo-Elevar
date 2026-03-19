@@ -4,6 +4,7 @@ import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { useChat } from "@/hooks/useChat";
 import { Button } from "@/components/ui/button";
+import { SessionIndicator } from "@/components/SessionIndicator";
 import { useRef, useEffect, ReactNode } from "react";
 
 interface Feature {
@@ -19,7 +20,7 @@ const features: Feature[] = [
 ];
 
 const Index = () => {
-  const { messages, isLoading, sendMessage, clearMessages } = useChat();
+  const { messages, isLoading, sendMessage, clearMessages, hasRestoredSession } = useChat();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -79,6 +80,11 @@ const Index = () => {
           {/* Chat Section */}
           {hasMessages && (
             <div className="flex flex-col min-h-[300px] sm:min-h-[400px]">
+              <SessionIndicator
+                show={hasRestoredSession}
+                onClear={clearMessages}
+                className="mb-3"
+              />
               <div className="mb-4 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary glow-pink shrink-0">

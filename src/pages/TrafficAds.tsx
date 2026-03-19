@@ -1,5 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Megaphone, Sparkles, Loader2, Copy, Check, Zap, CheckCircle, BarChart3 } from "lucide-react";
+import { useSessionPersistence } from "@/hooks/useSessionPersistence";
+import { SessionIndicator } from "@/components/SessionIndicator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,23 +38,45 @@ const TONES = [
   { value: "aspiracional", label: "✨ Aspiracional" },
 ];
 
+interface TrafficSessionState {
+  platform: string;
+  objective: string;
+  product: string;
+  audience: string;
+  budget: string;
+  tone: string;
+  result: string;
+}
+
+const EMPTY_TRAFFIC_STATE: TrafficSessionState = {
+  platform: "", objective: "", product: "", audience: "", budget: "", tone: "", result: "",
+};
+
 export default function TrafficAds() {
   const { user } = useAuth();
   const { enrichPrompt, hasProfile, formData, raioX } = usePersonaContext();
   const queryClient = useQueryClient();
 
+  const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<TrafficSessionState>(
+    "session_traffic_ads", EMPTY_TRAFFIC_STATE
+  );
+
   const [activeTab, setActiveTab] = useState("create");
-  const [platform, setPlatform] = useState("");
-  const [objective, setObjective] = useState("");
-  const [product, setProduct] = useState("");
-  const [audience, setAudience] = useState("");
-  const [budget, setBudget] = useState("");
-  const [tone, setTone] = useState("");
-  const [result, setResult] = useState("");
+  const [platform, setPlatform] = useState(sessionState.platform);
+  const [objective, setObjective] = useState(sessionState.objective);
+  const [product, setProduct] = useState(sessionState.product);
+  const [audience, setAudience] = useState(sessionState.audience);
+  const [budget, setBudget] = useState(sessionState.budget);
+  const [tone, setTone] = useState(sessionState.tone);
+  const [result, setResult] = useState(sessionState.result);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setSessionState({ platform, objective, product, audience, budget, tone, result });
+  }, [platform, objective, product, audience, budget, tone, result, setSessionState]);
 
   const canGenerate = platform && objective && product && audience && tone;
 
@@ -244,6 +268,7 @@ export default function TrafficAds() {
         </TabsList>
 
         <TabsContent value="create">
+          <SessionIndicator show={hasRestoredSession} onClear={clearSession} className="mb-4" />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Form */}
             <Card>

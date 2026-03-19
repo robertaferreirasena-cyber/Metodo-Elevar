@@ -1,4 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useSessionPersistence } from "@/hooks/useSessionPersistence";
+import { SessionIndicator } from "@/components/SessionIndicator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1188,8 +1190,18 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
 // ═══════════════════════════════════════════
 // MAIN — 4 abas
 // ═══════════════════════════════════════════
+interface PriceCalcSessionState {
+  activeTab: string;
+}
+
+const EMPTY_PRICE_STATE: PriceCalcSessionState = { activeTab: "product" };
+
 export default function PriceCalculator() {
   const { user } = useAuth();
+  const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<PriceCalcSessionState>(
+    "session_price_calculator", EMPTY_PRICE_STATE
+  );
+  const [activeTab, setActiveTab] = useState(sessionState.activeTab);
   const [financialData, setFinancialData] = useState<FinancialData>({
     totalFixed: 0, totalVariablePercent: 0, totalVariableAmount: 0, proLabore: 0,
     taxPercent: 0, taxAmount: 0, monthlyRevenue: 0, totalExpenses: 0,
@@ -1197,6 +1209,10 @@ export default function PriceCalculator() {
   });
   const [savedMapData, setSavedMapData] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setSessionState({ activeTab });
+  }, [activeTab, setSessionState]);
 
   // Load saved financial data on mount
   useEffect(() => {
@@ -1246,7 +1262,6 @@ export default function PriceCalculator() {
   };
 
   const handleLoadMap = () => {
-    // Already loaded via useEffect
     toast.info("Dados carregados do banco");
   };
 
@@ -1265,7 +1280,7 @@ export default function PriceCalculator() {
         <FinishMissionButton />
       </div>
 
-      <Tabs defaultValue="product">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full">
           <TabsTrigger value="product" className="flex-1 gap-1 text-[11px] px-1">
             <Package className="h-3.5 w-3.5" /> Produto
