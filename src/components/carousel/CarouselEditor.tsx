@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, Download, Wand2, Loader2, Paintbrush, Type,
   AlignLeft, AlignCenter, DownloadCloud, ImagePlus, User, X, Smartphone,
   Square, Monitor, Sparkles, Send, ChevronDown, ChevronUp,
-  Bold, Italic, Underline,
+  Bold, Italic, Underline, ArrowUpFromLine, AlignVerticalSpaceAround, ArrowDownFromLine, Palette, Copy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
