@@ -220,6 +220,12 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     setSlides((prev) => prev.map((s, i) => (i === index ? { ...s, ...updates } : s)));
   };
 
+  const changeFormat = (newRatio: AspectRatio) => {
+    const spec = FORMAT_SPECS[newRatio];
+    setSelectedTemplate(prev => ({ ...prev, aspectRatio: newRatio, titleSize: spec.titleSize, bodySize: spec.bodySize }));
+    setSlides(prev => prev.map(s => ({ ...s, titleSize: spec.titleSize, bodySize: spec.bodySize })));
+  };
+
   const applyTemplateToAll = (template: CarouselTemplate) => {
     setSelectedTemplate(template);
     setSlides((prev) =>
