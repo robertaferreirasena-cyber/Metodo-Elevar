@@ -13,13 +13,28 @@ import StrategicCommitmentForm from "@/components/learning/StrategicCommitmentFo
 import StrategicPlanTracker from "@/components/learning/StrategicPlanTracker";
 import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useMissionAutoComplete } from "@/hooks/useMissionAutoComplete";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import InstaProGenerator from "@/components/instagram/InstaProGenerator";
 import type { InstaProfile } from "@/components/instagram/InstagramProfilePreview";
 
 export default function LearningModules() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("encontros");
   const [carouselTopic, setCarouselTopic] = useState("");
+
+  // Handle URL params for deep-linking (e.g., from MentorChat)
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    const topic = searchParams.get("topic");
+    if (tab === "carousel") {
+      if (topic) {
+        setCarouselTopic(decodeURIComponent(topic));
+        toast.success("Tema recebido! Gerando carrossel...");
+      }
+      setActiveTab("carousel");
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleCreateContent = useCallback((post: InstaProfile["posts_sugeridos"][0]) => {
     const topic = `${post.titulo}\n\n${post.descricao}\n\nLegenda: ${post.legenda}`;

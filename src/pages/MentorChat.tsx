@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Bot, Send, Plus, Trash2, MessageCircle, Sparkles, ChevronLeft } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Bot, Send, Plus, Trash2, MessageCircle, Sparkles, ChevronLeft, Palette } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,11 +37,16 @@ export default function MentorChat() {
     loadMessages, startNewConversation, sendMessage, deleteConversation,
   } = useAIMentor();
 
+  const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const promptProcessedRef = useRef(false);
+
+  const handleGenerateCarousel = (topic: string) => {
+    navigate(`/aprendizado?tab=carousel&topic=${encodeURIComponent(topic)}`);
+  };
 
   // Handle pre-filled prompt from URL
   useEffect(() => {
@@ -169,6 +174,15 @@ export default function MentorChat() {
                   </button>
                 ))}
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 mt-2"
+                onClick={() => navigate("/aprendizado?tab=carousel")}
+              >
+                <Palette className="h-4 w-4 text-primary" />
+                Criar Carrossel Viral
+              </Button>
             </div>
           ) : (
             <div className="space-y-4 max-w-3xl mx-auto">
@@ -192,7 +206,17 @@ export default function MentorChat() {
                         )}
                       </div>
                     ) : (
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      <>
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                        {msg.content.length > 10 && (
+                          <button
+                            onClick={() => handleGenerateCarousel(msg.content)}
+                            className="flex items-center gap-1 mt-2 text-[10px] text-primary hover:underline"
+                          >
+                            <Palette className="h-3 w-3" /> Gerar Carrossel com esse tema
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
