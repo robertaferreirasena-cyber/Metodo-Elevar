@@ -189,84 +189,21 @@ function EncontrosTab() {
   );
 }
 
-// CarouselCreator replaced by CarouselEditor component
+import InstaProGenerator from "@/components/instagram/InstaProGenerator";
 
-function ProfileGenerator() {
-  const [niche, setNiche] = useState("");
-  const [name, setName] = useState("");
-  const [result, setResult] = useState<{ bio: string; highlights: string[]; cta: string } | null>(null);
-  const [generating, setGenerating] = useState(false);
+function InstaProTab() {
+  let persona: ReturnType<typeof usePersonaContext> | null = null;
+  try { persona = usePersonaContext(); } catch {}
 
-  const generate = () => {
-    if (!niche.trim()) { toast.error("Informe seu nicho"); return; }
-    setGenerating(true);
-    setTimeout(() => {
-      setResult({
-        bio: `${name || 'Seu Nome'} | ${niche}\n🎯 Ajudo [público] a [transformação]\n📲 Link na bio para [oferta]\n⬇️ Acesse o material gratuito`,
-        highlights: ["Depoimentos", "Dicas", "Sobre Mim", "Resultados", "Contato"],
-        cta: `💡 Dica: Use emojis estrategicamente e inclua uma chamada para ação clara na última linha da bio.`,
-      });
-      setGenerating(false);
-      toast.success("Perfil gerado!");
-    }, 1200);
-  };
+  const personaData = persona?.hasProfile ? {
+    niche: persona.formData.niche || undefined,
+    product: persona.formData.product_description || undefined,
+    differentiator: persona.formData.main_differentiator || undefined,
+    transformation: undefined,
+    targetAudience: persona.formData.main_pain || undefined,
+    ageRange: persona.formData.target_age_range || undefined,
+    brandName: persona.formData.business_name || undefined,
+  } : undefined;
 
-  return (
-    <div className="space-y-4 mt-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <UserCircle className="h-5 w-5 text-primary" /> Gerador de Perfil
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">Otimize sua bio e destaques do Instagram</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>Seu nome ou marca</Label>
-            <Input placeholder="Ex: Maria Silva" value={name} onChange={e => setName(e.target.value)} className="mt-1" />
-          </div>
-          <div>
-            <Label>Seu nicho</Label>
-            <Input placeholder="Ex: Marketing Digital, Confeitaria, Fitness" value={niche} onChange={e => setNiche(e.target.value)} className="mt-1" />
-          </div>
-          <Button onClick={generate} disabled={generating} className="w-full">
-            {generating ? "Gerando..." : "Gerar Perfil Otimizado"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {result && (
-        <div className="space-y-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">📝 Bio Sugerida</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="text-sm whitespace-pre-wrap font-sans text-foreground bg-muted p-3 rounded-md">{result.bio}</pre>
-              <Button size="sm" variant="outline" className="mt-2" onClick={() => { navigator.clipboard.writeText(result.bio); toast.success("Bio copiada!"); }}>
-                Copiar Bio
-              </Button>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">⭐ Destaques Sugeridos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {result.highlights.map((h, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs">{h}</Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="pt-4">
-              <p className="text-sm text-foreground">{result.cta}</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
-  );
+  return <InstaProGenerator personaData={personaData} />;
 }
