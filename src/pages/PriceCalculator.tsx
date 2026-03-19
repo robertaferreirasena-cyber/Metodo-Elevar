@@ -1190,8 +1190,18 @@ function FinancialDashboard({ data }: { data: FinancialData }) {
 // ═══════════════════════════════════════════
 // MAIN — 4 abas
 // ═══════════════════════════════════════════
+interface PriceCalcSessionState {
+  activeTab: string;
+}
+
+const EMPTY_PRICE_STATE: PriceCalcSessionState = { activeTab: "product" };
+
 export default function PriceCalculator() {
   const { user } = useAuth();
+  const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<PriceCalcSessionState>(
+    "session_price_calculator", EMPTY_PRICE_STATE
+  );
+  const [activeTab, setActiveTab] = useState(sessionState.activeTab);
   const [financialData, setFinancialData] = useState<FinancialData>({
     totalFixed: 0, totalVariablePercent: 0, totalVariableAmount: 0, proLabore: 0,
     taxPercent: 0, taxAmount: 0, monthlyRevenue: 0, totalExpenses: 0,
@@ -1199,6 +1209,10 @@ export default function PriceCalculator() {
   });
   const [savedMapData, setSavedMapData] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setSessionState({ activeTab });
+  }, [activeTab, setSessionState]);
 
   // Load saved financial data on mount
   useEffect(() => {
@@ -1248,7 +1262,6 @@ export default function PriceCalculator() {
   };
 
   const handleLoadMap = () => {
-    // Already loaded via useEffect
     toast.info("Dados carregados do banco");
   };
 
