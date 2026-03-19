@@ -89,17 +89,41 @@ const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigi
 // ═══════════════════════════════════════════
 // ABA 1 — PRODUTO
 // ═══════════════════════════════════════════
+interface ProductSessionState {
+  productName: string;
+  directCosts: CostItem[];
+  monthlyFixedCosts: number;
+  quantityPerMonth: number;
+  desiredMargin: number;
+  taxPercent: number;
+}
+
+const DEFAULT_DIRECT_COSTS: CostItem[] = [
+  { id: "1", name: "Matéria-prima", value: 0 },
+  { id: "2", name: "Embalagem", value: 0 },
+  { id: "3", name: "Mão de obra direta", value: 0 },
+];
+
+const EMPTY_PRODUCT_STATE: ProductSessionState = {
+  productName: "", directCosts: DEFAULT_DIRECT_COSTS,
+  monthlyFixedCosts: 0, quantityPerMonth: 1, desiredMargin: 30, taxPercent: 10,
+};
+
 function ProductCalculator() {
-  const [productName, setProductName] = useState("");
-  const [directCosts, setDirectCosts] = useState<CostItem[]>([
-    { id: "1", name: "Matéria-prima", value: 0 },
-    { id: "2", name: "Embalagem", value: 0 },
-    { id: "3", name: "Mão de obra direta", value: 0 },
-  ]);
-  const [monthlyFixedCosts, setMonthlyFixedCosts] = useState(0);
-  const [quantityPerMonth, setQuantityPerMonth] = useState(1);
-  const [desiredMargin, setDesiredMargin] = useState(30);
-  const [taxPercent, setTaxPercent] = useState(10);
+  const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<ProductSessionState>(
+    "session_product_calc", EMPTY_PRODUCT_STATE
+  );
+
+  const [productName, setProductName] = useState(sessionState.productName);
+  const [directCosts, setDirectCosts] = useState<CostItem[]>(sessionState.directCosts);
+  const [monthlyFixedCosts, setMonthlyFixedCosts] = useState(sessionState.monthlyFixedCosts);
+  const [quantityPerMonth, setQuantityPerMonth] = useState(sessionState.quantityPerMonth);
+  const [desiredMargin, setDesiredMargin] = useState(sessionState.desiredMargin);
+  const [taxPercent, setTaxPercent] = useState(sessionState.taxPercent);
+
+  useEffect(() => {
+    setSessionState({ productName, directCosts, monthlyFixedCosts, quantityPerMonth, desiredMargin, taxPercent });
+  }, [productName, directCosts, monthlyFixedCosts, quantityPerMonth, desiredMargin, taxPercent, setSessionState]);
 
   // Catalog import state
   const [catalogFiles, setCatalogFiles] = useState<string[]>([]);
