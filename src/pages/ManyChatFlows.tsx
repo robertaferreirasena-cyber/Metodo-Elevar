@@ -83,8 +83,8 @@ export default function ManyChatFlows() {
     if (formData.sales_challenges) audienceParts.push(`Desafios de vendas: ${formData.sales_challenges}`);
     if (raioX?.desejos?.length) audienceParts.push(`Desejos: ${(raioX.desejos as string[]).slice(0, 3).join(", ")}`);
     if (raioX?.medos?.length) audienceParts.push(`Medos: ${(raioX.medos as string[]).slice(0, 3).join(", ")}`);
-    if (raioX?.objecoes?.length) audienceParts.push(`Objeções: ${(raioX.objecoes as string[]).slice(0, 3).join(", ")}`);
-    if (raioX?.gatilhos?.length) audienceParts.push(`Gatilhos: ${(raioX.gatilhos as string[]).slice(0, 3).join(", ")}`);
+    if (raioX?.padroes_de_compra?.objecoes_previsiveis) audienceParts.push(`Objeções: ${raioX.padroes_de_compra.objecoes_previsiveis}`);
+    if (raioX?.padroes_de_compra?.gatilhos_decisao) audienceParts.push(`Gatilhos de decisão: ${raioX.padroes_de_compra.gatilhos_decisao}`);
     if (audienceParts.length) setAudience(audienceParts.join(". "));
 
     toast.success("Campos preenchidos com dados do Raio-X!");
