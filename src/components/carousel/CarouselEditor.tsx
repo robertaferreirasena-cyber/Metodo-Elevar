@@ -14,6 +14,9 @@ import {
   ImagePlus,
   User,
   X,
+  Smartphone,
+  Square,
+  Monitor,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { usePersonaContext } from "@/contexts/PersonaContext";
 import SlidePreview from "./SlidePreview";
 import {
   CAROUSEL_TEMPLATES,
@@ -45,6 +49,8 @@ const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial"];
 const MULTI_IMAGE_LAYOUTS: CarouselLayout[] = ["photo-grid"];
 const PROFILE_LAYOUTS: CarouselLayout[] = ["profile-post", "photo-grid"];
 const HIGHLIGHT_LAYOUTS: CarouselLayout[] = ["sales-highlight"];
+
+type FormatFilter = "all" | "1:1" | "16:9" | "9:16";
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -63,6 +69,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [topic, setTopic] = useState(initialTopic || "");
   const [slideCount, setSlideCount] = useState(5);
   const [tone, setTone] = useState("profissional");
+  const [formatFilter, setFormatFilter] = useState<FormatFilter>("all");
   const [selectedTemplate, setSelectedTemplate] = useState<CarouselTemplate>(
     CAROUSEL_TEMPLATES[0]
   );
@@ -72,11 +79,17 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [exporting, setExporting] = useState(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  const { hasProfile, hasRaioX, formData, raioX } = usePersonaContext();
+
   const setSlideRef = useCallback(
     (index: number) => (el: HTMLDivElement | null) => {
       slideRefs.current[index] = el;
     },
     []
+  );
+
+  const filteredTemplates = CAROUSEL_TEMPLATES.filter((t) =>
+    formatFilter === "all" ? true : t.aspectRatio === formatFilter
   );
 
   const generateContent = async () => {
@@ -91,73 +104,57 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
         data: { session },
       } = await supabase.auth.getSession();
 
-      const prompt = `Gere um carrossel de ${slideCount} slides sobre "${topic}" no tom ${tone}.
+      // Build persona data to send to edge function
+      const persona: Record<string, string> = {};
+      if (hasProfile) {
+        if (formData.niche) persona.niche = formData.niche;
+        if (formData.product_description) persona.product = formData.product_description;
+        if (formData.main_pain) persona.pain = formData.main_pain;
+        if (formData.main_differentiator) persona.differentiator = formData.main_differentiator;
+        if (raioX?.estrategia_recomendada?.tom_comunicacao) {
+          persona.tone = raioX.estrategia_recomendada.tom_comunicacao;
+        }
+        const triggers = raioX?.estrategia_recomendada?.gatilhos_mentais_prioritarios;
+        if (triggers && Array.isArray(triggers)) {
+          persona.triggers = triggers.slice(0, 3).join(", ");
+        }
+      }
 
-IMPORTANTE: Responda APENAS com um JSON válido, sem markdown, sem texto extra. Formato:
-[{"title":"Título do slide","body":"Corpo do slide com 2-3 linhas"}]
-
-Regras:
-- Slide 1: gancho forte que prende atenção
-- Slides intermediários: conteúdo de valor, dicas práticas
-- Último slide: CTA com chamada para ação
-- Títulos curtos e impactantes (max 8 palavras)
-- Corpo com 2-3 linhas, linguagem direta
-- Use emojis estrategicamente nos títulos`;
-
-      const response = await supabase.functions.invoke("sales-strategist", {
+      const response = await supabase.functions.invoke("carousel-generator", {
         body: {
-          messages: [{ role: "user", content: prompt }],
-          mode: "private",
-          userId: session?.user?.id,
+          topic,
+          slideCount,
+          tone,
+          persona: Object.keys(persona).length > 0 ? persona : undefined,
         },
       });
 
-      if (response.error) throw new Error("Erro ao gerar conteúdo");
-
-      const reader = response.data instanceof ReadableStream
-        ? response.data.getReader()
-        : null;
-
-      let fullText = "";
-
-      if (reader) {
-        const decoder = new TextDecoder();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
-          for (const line of lines) {
-            const data = line.replace("data: ", "").trim();
-            if (data === "[DONE]") continue;
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) fullText += content;
-            } catch {
-              // skip
-            }
-          }
-        }
-      } else if (typeof response.data === "string") {
-        fullText = response.data;
+      if (response.error) {
+        const errorMsg = typeof response.error === "object" && "message" in response.error
+          ? (response.error as { message: string }).message
+          : "Erro ao gerar conteúdo";
+        throw new Error(errorMsg);
       }
 
-      const jsonMatch = fullText.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) throw new Error("Resposta inválida da IA");
+      const data = response.data as { slides?: { title: string; body: string }[]; error?: string };
 
-      const content = JSON.parse(jsonMatch[0]) as {
-        title: string;
-        body: string;
-      }[];
-      const newSlides = createSlidesFromTemplate(selectedTemplate, content);
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (!data.slides || !Array.isArray(data.slides)) {
+        throw new Error("Resposta inválida da IA");
+      }
+
+      const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
       setSlides(newSlides);
       setCurrentSlide(0);
       slideRefs.current = new Array(newSlides.length).fill(null);
       toast.success("Carrossel gerado com sucesso!");
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao gerar carrossel. Tente novamente.");
+      const msg = err instanceof Error ? err.message : "Erro ao gerar carrossel";
+      toast.error(msg);
     } finally {
       setGenerating(false);
     }
@@ -241,7 +238,7 @@ Regras:
     try {
       for (let i = 0; i < slides.length; i++) {
         await exportSlide(i);
-        await new Promise((r) => setTimeout(r, 300));
+        await new Promise((r) => setTimeout(r, 400));
       }
       toast.success("Todos os slides exportados!");
     } finally {
@@ -269,6 +266,11 @@ Regras:
             IA gera o conteúdo direto nos slides — edite cores, fontes e exporte
             como imagem
           </p>
+          {hasProfile && (
+            <Badge variant="secondary" className="w-fit text-xs mt-1">
+              ✨ Persona conectada — conteúdo otimizado para seu público
+            </Badge>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -316,11 +318,46 @@ Regras:
             </div>
           </div>
 
+          {/* Format filter */}
+          <div>
+            <Label>Formato</Label>
+            <div className="flex gap-2 mt-1">
+              <Button
+                size="sm"
+                variant={formatFilter === "all" ? "default" : "outline"}
+                onClick={() => setFormatFilter("all")}
+              >
+                Todos
+              </Button>
+              <Button
+                size="sm"
+                variant={formatFilter === "1:1" ? "default" : "outline"}
+                onClick={() => setFormatFilter("1:1")}
+              >
+                <Square className="h-3 w-3 mr-1" /> Feed
+              </Button>
+              <Button
+                size="sm"
+                variant={formatFilter === "9:16" ? "default" : "outline"}
+                onClick={() => setFormatFilter("9:16")}
+              >
+                <Smartphone className="h-3 w-3 mr-1" /> Stories
+              </Button>
+              <Button
+                size="sm"
+                variant={formatFilter === "16:9" ? "default" : "outline"}
+                onClick={() => setFormatFilter("16:9")}
+              >
+                <Monitor className="h-3 w-3 mr-1" /> Wide
+              </Button>
+            </div>
+          </div>
+
           {/* Template selector */}
           <div>
             <Label>Template visual</Label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-              {CAROUSEL_TEMPLATES.map((t) => (
+              {filteredTemplates.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => {
@@ -333,12 +370,17 @@ Regras:
                       : "border-border hover:border-primary/40"
                   }`}
                 >
-                  <div
-                    className="w-full h-8 rounded mb-2"
-                    style={{
-                      background: t.bgGradient || t.bgColor,
-                    }}
-                  />
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="flex-1 h-8 rounded"
+                      style={{
+                        background: t.bgGradient || t.bgColor,
+                      }}
+                    />
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0">
+                      {t.aspectRatio}
+                    </Badge>
+                  </div>
                   <span className="text-xs font-medium text-foreground">
                     {t.name}
                   </span>
@@ -408,7 +450,7 @@ Regras:
                 disabled={exporting}
               >
                 <DownloadCloud className="h-4 w-4 mr-1" />
-                {exporting ? "Exportando..." : "Todos"}
+                {exporting ? "Exportando..." : "Baixar Todos"}
               </Button>
             </div>
           </div>

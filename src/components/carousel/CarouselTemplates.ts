@@ -10,7 +10,7 @@ export interface CarouselTemplate {
   id: string;
   name: string;
   description: string;
-  aspectRatio: "1:1" | "16:9";
+  aspectRatio: "1:1" | "16:9" | "9:16";
   bgColor: string;
   textColor: string;
   accentColor: string;
@@ -155,7 +155,7 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     bgGradient: "linear-gradient(145deg, #1E3A5F 0%, #1A2744 100%)",
     layout: "text-only",
   },
-  // ========== NOVOS TEMPLATES VIRAIS ==========
+  // ========== TEMPLATES VIRAIS ==========
   {
     id: "viral-foto",
     name: "Viral com Foto",
@@ -227,6 +227,66 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     bgGradient: "linear-gradient(160deg, #3D2B1F 0%, #5C3D2E 50%, #2D1B0E 100%)",
     layout: "sales-highlight",
     highlightBgColor: "#22C55E",
+  },
+  // ========== TEMPLATES STORIES (9:16) ==========
+  {
+    id: "stories-bold",
+    name: "Stories Bold",
+    description: "Gradiente vibrante vertical para Stories",
+    aspectRatio: "9:16",
+    bgColor: "#FF6B35",
+    textColor: "#FFFFFF",
+    accentColor: "#FFF740",
+    fontFamily: "'Arial Black', Arial, sans-serif",
+    titleSize: 36,
+    bodySize: 20,
+    align: "center",
+    bgGradient: "linear-gradient(180deg, #FF6B35 0%, #E11D48 100%)",
+    layout: "text-only",
+  },
+  {
+    id: "stories-escuro",
+    name: "Stories Dark",
+    description: "Fundo escuro premium para Stories",
+    aspectRatio: "9:16",
+    bgColor: "#0A0A0A",
+    textColor: "#FFFFFF",
+    accentColor: "#A78BFA",
+    fontFamily: "'Georgia', 'Times New Roman', serif",
+    titleSize: 32,
+    bodySize: 20,
+    align: "center",
+    bgGradient: "linear-gradient(180deg, #1A1A2E 0%, #0A0A0A 100%)",
+    layout: "text-only",
+  },
+  {
+    id: "stories-foto",
+    name: "Stories com Foto",
+    description: "Foto de fundo vertical + texto overlay",
+    aspectRatio: "9:16",
+    bgColor: "#1A1A1A",
+    textColor: "#FFFFFF",
+    accentColor: "#FF6B35",
+    fontFamily: "'Arial Black', Arial, sans-serif",
+    titleSize: 34,
+    bodySize: 18,
+    align: "center",
+    layout: "image-bg",
+  },
+  {
+    id: "stories-educativo",
+    name: "Stories Educativo",
+    description: "Gradiente azul educativo para Stories",
+    aspectRatio: "9:16",
+    bgColor: "#667EEA",
+    textColor: "#FFFFFF",
+    accentColor: "#FBBF24",
+    fontFamily: "'Segoe UI', system-ui, sans-serif",
+    titleSize: 30,
+    bodySize: 18,
+    align: "center",
+    bgGradient: "linear-gradient(180deg, #667EEA 0%, #764BA2 100%)",
+    layout: "text-only",
   },
 ];
 
