@@ -720,11 +720,11 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
             </Card>
           </Collapsible>
 
-          {/* Hidden slides for export */}
+          {/* Hidden slides for export at native resolution */}
           <div className="absolute -left-[9999px] top-0" aria-hidden>
-            {slides.map((s, i) => i !== currentSlide ? (
-              <SlidePreview key={i} ref={setSlideRef(i)} slide={s} slideIndex={i} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} />
-            ) : null)}
+            {slides.map((s, i) => (
+              <SlidePreview key={i} ref={setExportRef(i)} slide={s} slideIndex={i} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} nativeSize />
+            ))}
           </div>
         </>
       )}
