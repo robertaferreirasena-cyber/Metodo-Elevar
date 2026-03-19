@@ -497,6 +497,62 @@ export default function AdManagerSimulator() {
             {selectedAd && (
               <AdPreviewMock ad={selectedAd} platform={selectedCampaign.platform} />
             )}
+
+            {/* Implementation Checklist */}
+            {(() => {
+              const platformKey = selectedCampaign.platform.includes("Meta") ? "Meta"
+                : selectedCampaign.platform.includes("Google") ? "Google" : "TikTok";
+              const steps = CHECKLIST_STEPS[platformKey];
+              const progress = steps.length > 0 ? Math.round((checkedSteps.size / steps.length) * 100) : 0;
+
+              return (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xs flex items-center gap-1.5">
+                      <ClipboardCheck className="h-3.5 w-3.5" />
+                      Checklist de Implementação — {platformKey} Ads
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Progress value={progress} className="h-2 flex-1" />
+                      <span className="text-xs text-muted-foreground font-medium">{progress}%</span>
+                    </div>
+                    <div className="space-y-2">
+                      {steps.map((step, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`step-${i}`}
+                            checked={checkedSteps.has(i)}
+                            onCheckedChange={(checked) => {
+                              setCheckedSteps(prev => {
+                                const next = new Set(prev);
+                                checked ? next.add(i) : next.delete(i);
+                                return next;
+                              });
+                            }}
+                          />
+                          <label
+                            htmlFor={`step-${i}`}
+                            className={cn(
+                              "text-xs cursor-pointer",
+                              checkedSteps.has(i) && "line-through text-muted-foreground"
+                            )}
+                          >
+                            {i + 1}. {step}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    {progress === 100 && (
+                      <p className="text-xs text-green-600 font-medium">
+                        🎉 Checklist completo! Sua campanha está pronta para ir ao ar.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
           </>
         )}
       </div>

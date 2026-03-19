@@ -102,7 +102,7 @@ export default function CampaignStructurePanel({
                         </div>
                       </div>
                     ))}
-                    <div className="flex gap-1 px-2 pt-1 pb-2">
+                    <div className="flex gap-1 px-2 pt-1 pb-2 flex-wrap">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -111,6 +111,16 @@ export default function CampaignStructurePanel({
                       >
                         <Eye className="h-3 w-3" /> Ver
                       </Button>
+                      {onDuplicateCampaign && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[10px] gap-1"
+                          onClick={() => onDuplicateCampaign(campaign.id)}
+                        >
+                          <Copy className="h-3 w-3" /> Duplicar
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
