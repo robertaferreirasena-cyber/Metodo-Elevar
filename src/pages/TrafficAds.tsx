@@ -221,8 +221,6 @@ export default function TrafficAds() {
                 <p className="text-[10px] text-primary font-medium">✅ Dados do Raio-X da Persona serão usados automaticamente</p>
               </div>
             )}
-              </div>
-            )}
 
             <Button
               onClick={handleGenerate}
