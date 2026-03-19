@@ -16,6 +16,7 @@ import { useMissionAutoComplete } from "@/hooks/useMissionAutoComplete";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import InstaProGenerator from "@/components/instagram/InstaProGenerator";
 import type { InstaProfile } from "@/components/instagram/InstagramProfilePreview";
+import { MissionContextBanner } from "@/components/learning/MissionContextBanner";
 
 export default function LearningModules() {
   const [searchParams, setSearchParams] = useSearchParams();

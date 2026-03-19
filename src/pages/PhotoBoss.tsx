@@ -59,6 +59,9 @@ export default function PhotoBoss() {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
+      <div className="max-w-6xl mx-auto px-4 pt-4">
+        <MissionContextBanner />
+      </div>
       {/* Hero Section */}
       <section className="relative py-16 px-4 text-center">
         <div className="max-w-4xl mx-auto space-y-8">
