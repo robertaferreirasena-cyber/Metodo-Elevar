@@ -218,6 +218,8 @@ export default function MentorChat() {
                         )}
                       </>
                     )}
+                  </div>
+                </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
