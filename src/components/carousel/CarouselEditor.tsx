@@ -55,8 +55,12 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-export default function CarouselEditor() {
-  const [topic, setTopic] = useState("");
+interface CarouselEditorProps {
+  initialTopic?: string;
+}
+
+export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {}) {
+  const [topic, setTopic] = useState(initialTopic || "");
   const [slideCount, setSlideCount] = useState(5);
   const [tone, setTone] = useState("profissional");
   const [selectedTemplate, setSelectedTemplate] = useState<CarouselTemplate>(

@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { GraduationCap, BookOpen, Palette, Sparkles, AlertTriangle, Instagram } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import CarouselEditor from "@/components/carousel/CarouselEditor";
 import { toast } from "sonner";
@@ -21,10 +19,13 @@ import type { InstaProfile } from "@/components/instagram/InstagramProfilePrevie
 
 export default function LearningModules() {
   const [activeTab, setActiveTab] = useState("encontros");
+  const [carouselTopic, setCarouselTopic] = useState("");
 
   const handleCreateContent = useCallback((post: InstaProfile["posts_sugeridos"][0]) => {
-    toast.success(`Abrindo Carrossel com: "${post.titulo}"`);
+    const topic = `${post.titulo}\n\n${post.descricao}\n\nLegenda: ${post.legenda}`;
+    setCarouselTopic(topic);
     setActiveTab("carousel");
+    toast.success(`Carrossel pré-preenchido com: "${post.titulo}"`);
   }, []);
 
   return (
@@ -47,7 +48,9 @@ export default function LearningModules() {
         </TabsList>
 
         <TabsContent value="encontros"><EncontrosTab /></TabsContent>
-        <TabsContent value="carousel"><CarouselEditor /></TabsContent>
+        <TabsContent value="carousel">
+          <CarouselEditor key={carouselTopic} initialTopic={carouselTopic} />
+        </TabsContent>
         <TabsContent value="instapro"><InstaProTab onCreateContent={handleCreateContent} /></TabsContent>
       </Tabs>
     </div>
