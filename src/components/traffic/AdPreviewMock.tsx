@@ -12,6 +12,9 @@ interface Ad {
   format: string;
   video_script?: string;
   visual_brief?: string;
+  creative_format_label?: string;
+  creative_description?: string;
+  recommended_dimensions?: string;
 }
 
 interface AdPreviewMockProps {
