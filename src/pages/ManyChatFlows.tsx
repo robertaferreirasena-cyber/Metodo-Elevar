@@ -62,7 +62,15 @@ export default function ManyChatFlows() {
   const showKeyword = flowType === "comentario-dm" || flowType === "funil-lancamento";
 
   const handleFillFromPersona = () => {
-    const productParts = [formData.product_description, formData.main_differentiator, formData.transformation, formData.price_range ? `Faixa de preço: ${formData.price_range}` : ""].filter(Boolean);
+    const productParts = [
+      formData.product_description,
+      formData.main_differentiator,
+      formData.transformation,
+      formData.price_range ? `Faixa de preço: ${formData.price_range}` : "",
+      formData.common_objections ? `Objeções comuns: ${formData.common_objections}` : "",
+      formData.sales_channels?.length ? `Canais de venda: ${formData.sales_channels.join(", ")}` : "",
+      formData.time_in_market ? `Tempo de mercado: ${formData.time_in_market}` : "",
+    ].filter(Boolean);
     if (productParts.length) setProduct(productParts.join(". "));
 
     const audienceParts: string[] = [];
@@ -71,8 +79,12 @@ export default function ManyChatFlows() {
     if (formData.target_profession) audienceParts.push(formData.target_profession);
     if (formData.target_location) audienceParts.push(formData.target_location);
     if (formData.main_pain) audienceParts.push(`Dor principal: ${formData.main_pain}`);
+    if (formData.previous_attempts) audienceParts.push(`Tentativas anteriores: ${formData.previous_attempts}`);
+    if (formData.sales_challenges) audienceParts.push(`Desafios de vendas: ${formData.sales_challenges}`);
     if (raioX?.desejos?.length) audienceParts.push(`Desejos: ${(raioX.desejos as string[]).slice(0, 3).join(", ")}`);
     if (raioX?.medos?.length) audienceParts.push(`Medos: ${(raioX.medos as string[]).slice(0, 3).join(", ")}`);
+    if (raioX?.objecoes?.length) audienceParts.push(`Objeções: ${(raioX.objecoes as string[]).slice(0, 3).join(", ")}`);
+    if (raioX?.gatilhos?.length) audienceParts.push(`Gatilhos: ${(raioX.gatilhos as string[]).slice(0, 3).join(", ")}`);
     if (audienceParts.length) setAudience(audienceParts.join(". "));
 
     toast.success("Campos preenchidos com dados do Raio-X!");
