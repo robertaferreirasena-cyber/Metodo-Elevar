@@ -681,8 +681,8 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
               );
             })}
           </div>
-            ))}
-          </div>
+
+
 
           {/* Mentora Gi Mini-Chat */}
           <Collapsible open={giOpen} onOpenChange={setGiOpen}>
