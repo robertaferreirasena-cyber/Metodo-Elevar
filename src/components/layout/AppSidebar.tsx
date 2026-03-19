@@ -117,6 +117,15 @@ export function AppSidebar() {
                     >
                       <item.icon className="mr-2 h-3.5 w-3.5" />
                       <span className="text-xs">{item.title}</span>
+                      {item.title === "Persona" && !personaLoading && (
+                        hasRaioX ? (
+                          <CheckCircle2 className="ml-auto h-3.5 w-3.5 text-green-500" />
+                        ) : hasProfile ? (
+                          <AlertCircle className="ml-auto h-3.5 w-3.5 text-yellow-500" />
+                        ) : (
+                          <AlertCircle className="ml-auto h-3.5 w-3.5 text-muted-foreground/50" />
+                        )
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
