@@ -328,6 +328,21 @@ export default function PersonaRaioX() {
                 />
               </div>
 
+              {/* Catalog Upload */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Package className="h-3.5 w-3.5" />
+                  Materiais do Catálogo/Produtos (opcional)
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Envie PDFs, fotos ou listas de produtos. A IA usará esses materiais para gerar um Raio-X mais preciso.
+                </p>
+                <CatalogUploader
+                  fileUrls={catalogFiles}
+                  onFilesChange={setCatalogFiles}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>Faixa de Preço</Label>
                 <Select value={formData.price_range} onValueChange={(v) => updateFormData({ price_range: v })}>
