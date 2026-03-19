@@ -45,3 +45,6 @@ verify_jwt = false
 
 [functions.manychat-flow-generator]
 verify_jwt = false
+
+[functions.ad-structure-generator]
+verify_jwt = false
