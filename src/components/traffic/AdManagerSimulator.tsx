@@ -575,26 +575,37 @@ export default function AdManagerSimulator() {
                               <Users className="h-3.5 w-3.5 text-violet-500" />
                               Público-Alvo
                             </h4>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 text-[10px] gap-1"
-                              onClick={() => {
-                                const parts = [
-                                  `Gênero: ${audience.gender || "todos"}`,
-                                  `Idade: ${audience.age_min || "18"}-${audience.age_max || "65"}`,
-                                  `Localizações: ${audience.locations?.join(", ") || "N/A"}`,
-                                  dt.interests?.length ? `Interesses: ${dt.interests.join(", ")}` : "",
-                                  dt.behaviors?.length ? `Comportamentos: ${dt.behaviors.join(", ")}` : "",
-                                  dt.demographics?.length ? `Dados demográficos: ${dt.demographics.join(", ")}` : "",
-                                  audience.custom_audiences?.length ? `Públicos personalizados: ${audience.custom_audiences.join(", ")}` : "",
-                                ].filter(Boolean).join("\n");
-                                copyToClipboard(parts, "Configuração de público");
-                              }}
-                            >
-                              <Clipboard className="h-3 w-3" />
-                              Copiar tudo
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] gap-1"
+                                onClick={() => exportAudienceText(adSet, si)}
+                              >
+                                <FileText className="h-3 w-3" />
+                                Exportar Publico
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] gap-1"
+                                onClick={() => {
+                                  const parts = [
+                                    `Genero: ${audience.gender || "todos"}`,
+                                    `Idade: ${audience.age_min || "18"}-${audience.age_max || "65"}`,
+                                    `Localizacoes: ${audience.locations?.join(", ") || "N/A"}`,
+                                    dt.interests?.length ? `Interesses: ${dt.interests.join(", ")}` : "",
+                                    dt.behaviors?.length ? `Comportamentos: ${dt.behaviors.join(", ")}` : "",
+                                    dt.demographics?.length ? `Dados demograficos: ${dt.demographics.join(", ")}` : "",
+                                    audience.custom_audiences?.length ? `Publicos personalizados: ${audience.custom_audiences.join(", ")}` : "",
+                                  ].filter(Boolean).join("\n");
+                                  copyToClipboard(parts, "Configuracao de publico");
+                                }}
+                              >
+                                <Clipboard className="h-3 w-3" />
+                                Copiar tudo
+                              </Button>
+                            </div>
                           </div>
 
                           {/* Audience description */}
