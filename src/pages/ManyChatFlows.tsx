@@ -61,6 +61,23 @@ export default function ManyChatFlows() {
   const canGenerate = flowType && product && audience && objective && tone;
   const showKeyword = flowType === "comentario-dm" || flowType === "funil-lancamento";
 
+  const handleFillFromPersona = () => {
+    const productParts = [formData.product_description, formData.main_differentiator, formData.transformation, formData.price_range ? `Faixa de preço: ${formData.price_range}` : ""].filter(Boolean);
+    if (productParts.length) setProduct(productParts.join(". "));
+
+    const audienceParts: string[] = [];
+    if (formData.target_gender) audienceParts.push(formData.target_gender);
+    if (formData.target_age_range) audienceParts.push(formData.target_age_range);
+    if (formData.target_profession) audienceParts.push(formData.target_profession);
+    if (formData.target_location) audienceParts.push(formData.target_location);
+    if (formData.main_pain) audienceParts.push(`Dor principal: ${formData.main_pain}`);
+    if (raioX?.desejos?.length) audienceParts.push(`Desejos: ${(raioX.desejos as string[]).slice(0, 3).join(", ")}`);
+    if (raioX?.medos?.length) audienceParts.push(`Medos: ${(raioX.medos as string[]).slice(0, 3).join(", ")}`);
+    if (audienceParts.length) setAudience(audienceParts.join(". "));
+
+    toast.success("Campos preenchidos com dados do Raio-X!");
+  };
+
   const handleGenerate = async () => {
     if (!canGenerate || !user) return;
     setIsGenerating(true);
