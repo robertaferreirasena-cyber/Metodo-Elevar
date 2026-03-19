@@ -37,11 +37,16 @@ export default function MentorChat() {
     loadMessages, startNewConversation, sendMessage, deleteConversation,
   } = useAIMentor();
 
+  const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const promptProcessedRef = useRef(false);
+
+  const handleGenerateCarousel = (topic: string) => {
+    navigate(`/aprendizado?tab=carousel&topic=${encodeURIComponent(topic)}`);
+  };
 
   // Handle pre-filled prompt from URL
   useEffect(() => {
