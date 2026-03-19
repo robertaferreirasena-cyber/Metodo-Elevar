@@ -710,14 +710,48 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   <Slider value={[cur.bodySize]} onValueChange={([v]) => updateSlide(currentSlide, { bodySize: v })} min={12} max={32} step={1} className="mt-2" />
                 </div>
 
-                {/* Alignment */}
+                {/* Horizontal Alignment */}
                 <div>
-                  <Label className="text-xs">Alinhamento</Label>
+                  <Label className="text-xs">Alinhamento horizontal</Label>
                   <div className="flex gap-2 mt-1">
                     <Button size="sm" variant={cur.align === "left" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { align: "left" })}><AlignLeft className="h-4 w-4" /></Button>
                     <Button size="sm" variant={cur.align === "center" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { align: "center" })}><AlignCenter className="h-4 w-4" /></Button>
                   </div>
                 </div>
+
+                {/* Vertical Position */}
+                <div>
+                  <Label className="text-xs">Posição vertical do texto</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Button size="sm" variant={(cur.verticalAlign || "center") === "top" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { verticalAlign: "top" })}>
+                      <ArrowUpFromLine className="h-4 w-4 mr-1" /> Topo
+                    </Button>
+                    <Button size="sm" variant={(cur.verticalAlign || "center") === "center" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { verticalAlign: "center" })}>
+                      <AlignVerticalSpaceAround className="h-4 w-4 mr-1" /> Meio
+                    </Button>
+                    <Button size="sm" variant={(cur.verticalAlign || "center") === "bottom" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { verticalAlign: "bottom" })}>
+                      <ArrowDownFromLine className="h-4 w-4 mr-1" /> Baixo
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Copy formatting to other slides */}
+                <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => {
+                  const source = slides[currentSlide];
+                  setSlides(prev => prev.map((s, i) => i === currentSlide ? s : {
+                    ...s,
+                    bgColor: source.bgColor, textColor: source.textColor, accentColor: source.accentColor,
+                    titleSize: source.titleSize, bodySize: source.bodySize, fontFamily: source.fontFamily,
+                    align: source.align, bgGradient: source.bgGradient, titleColor: source.titleColor,
+                    bodyColor: source.bodyColor, titleBold: source.titleBold, titleItalic: source.titleItalic,
+                    bodyBold: source.bodyBold, bodyItalic: source.bodyItalic, bodyUnderline: source.bodyUnderline,
+                    textShadow: source.textShadow, verticalAlign: source.verticalAlign,
+                    highlightBgColor: source.highlightBgColor,
+                  }));
+                  toast.success("Formatação copiada para todos os slides!");
+                }}>
+                  <Copy className="h-3 w-3 mr-1" /> Copiar formatação para todos os slides
+                </Button>
               </CardContent>
             </Card>
           </div>
