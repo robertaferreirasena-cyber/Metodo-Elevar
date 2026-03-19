@@ -190,7 +190,6 @@ function EncontrosTab() {
   );
 }
 
-import InstaProGenerator from "@/components/instagram/InstaProGenerator";
 
 function InstaProTab() {
   let persona: ReturnType<typeof usePersonaContext> | null = null;
