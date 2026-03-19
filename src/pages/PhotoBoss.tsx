@@ -1,4 +1,5 @@
 import { Check, Sparkles, Camera, Users, Eye, Globe, UserCheck, ArrowRight, Zap, Star } from "lucide-react";
+import { MissionContextBanner } from "@/components/learning/MissionContextBanner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
