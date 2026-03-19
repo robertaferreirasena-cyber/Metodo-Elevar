@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Loader2, Save, History } from "lucide-react";
+import { Loader2, Save, History, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ProfileGeneratorForm, { type InstaFormData } from "./ProfileGeneratorForm";
 import InstagramProfilePreview, { type InstaProfile } from "./InstagramProfilePreview";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +39,8 @@ export default function InstaProGenerator({ personaData, onCreateContent }: Prop
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
   const [saving, setSaving] = useState(false);
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
+  const [editingProfile, setEditingProfile] = useState<SavedProfile | null>(null);
+  const [editLabel, setEditLabel] = useState("");
   const { user } = useAuth();
 
   useEffect(() => {
@@ -71,6 +75,38 @@ export default function InstaProGenerator({ personaData, onCreateContent }: Prop
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from("saved_instagram_profiles")
+      .delete()
+      .eq("id", id);
+    if (error) {
+      toast.error("Erro ao deletar perfil");
+      return;
+    }
+    toast.success("Perfil deletado!");
+    setSavedProfiles(prev => prev.filter(p => p.id !== id));
+    if (currentProfileId === id) {
+      setCurrentProfileId(null);
+      setView("form");
+    }
+  };
+
+  const handleEditSave = async () => {
+    if (!editingProfile) return;
+    const { error } = await supabase
+      .from("saved_instagram_profiles")
+      .update({ label: editLabel })
+      .eq("id", editingProfile.id);
+    if (error) {
+      toast.error("Erro ao renomear");
+      return;
+    }
+    toast.success("Nome atualizado!");
+    setSavedProfiles(prev => prev.map(p => p.id === editingProfile.id ? { ...p, label: editLabel } : p));
+    setEditingProfile(null);
   };
 
   const handleLoadProfile = (saved: SavedProfile) => {
@@ -138,26 +174,75 @@ export default function InstaProGenerator({ personaData, onCreateContent }: Prop
         ) : (
           <div className="space-y-2">
             {savedProfiles.map(sp => (
-              <button
+              <div
                 key={sp.id}
-                onClick={() => handleLoadProfile(sp)}
-                className="w-full text-left p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">{sp.label || "Perfil"}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {new Date(sp.created_at).toLocaleDateString("pt-BR")}
-                  </span>
+                <button
+                  onClick={() => handleLoadProfile(sp)}
+                  className="w-full text-left"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">{sp.label || "Perfil"}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(sp.created_at).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                  <div className="flex gap-1 mt-1">
+                    {sp.profile_data.username_sugestoes?.slice(0, 2).map((u, i) => (
+                      <Badge key={i} variant="outline" className="text-[10px]">{u}</Badge>
+                    ))}
+                  </div>
+                </button>
+                <div className="flex gap-1 mt-2 justify-end">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs gap-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingProfile(sp);
+                      setEditLabel(sp.label || "");
+                    }}
+                  >
+                    <Pencil className="h-3 w-3" /> Renomear
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(sp.id);
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" /> Deletar
+                  </Button>
                 </div>
-                <div className="flex gap-1 mt-1">
-                  {sp.profile_data.username_sugestoes?.slice(0, 2).map((u, i) => (
-                    <Badge key={i} variant="outline" className="text-[10px]">{u}</Badge>
-                  ))}
-                </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
+
+        {/* Edit label dialog */}
+        <Dialog open={!!editingProfile} onOpenChange={() => setEditingProfile(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="text-base">Renomear Perfil</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input
+                value={editLabel}
+                onChange={(e) => setEditLabel(e.target.value)}
+                placeholder="Nome do perfil"
+              />
+              <div className="flex gap-2 justify-end">
+                <Button size="sm" variant="outline" onClick={() => setEditingProfile(null)}>Cancelar</Button>
+                <Button size="sm" onClick={handleEditSave}>Salvar</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
