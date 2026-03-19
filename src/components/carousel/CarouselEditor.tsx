@@ -25,8 +25,8 @@ import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
 import {
-  CAROUSEL_TEMPLATES, createSlidesFromTemplate,
-  type SlideData, type CarouselTemplate, type CarouselLayout,
+  CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS,
+  type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
 } from "./CarouselTemplates";
 
 const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial"];
