@@ -296,6 +296,89 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const showProfile = PROFILE_LAYOUTS.includes(currentLayout);
   const showHighlight = HIGHLIGHT_LAYOUTS.includes(currentLayout);
 
+  const buildSlidesContext = () => {
+    return slides.map((s, i) => `Slide ${i + 1}:\nTítulo: ${s.title}\nCorpo: ${s.body}`).join("\n\n");
+  };
+
+  const sendToGi = async (userMessage: string) => {
+    if (!userMessage.trim() || giLoading) return;
+    const slidesContext = buildSlidesContext();
+    const fullMessage = `CONTEXTO — Slides atuais do carrossel:\n\n${slidesContext}\n\n---\n\nPedido do usuário: ${userMessage}`;
+
+    setGiMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setGiInput("");
+    setGiLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          messages: [
+            ...giMessages.map(m => ({ role: m.role, content: m.content })),
+            { role: 'user', content: fullMessage },
+          ],
+          persona: 'copywriter',
+        }),
+      });
+
+      if (!resp.ok) throw new Error(`Erro ${resp.status}`);
+      if (!resp.body) throw new Error('Stream não disponível');
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = '';
+      let textBuffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              assistantContent += content;
+              setGiMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last?.role === 'assistant') {
+                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
+                }
+                return [...prev, { role: 'assistant', content: assistantContent }];
+              });
+            }
+          } catch {
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error('Gi chat error:', err);
+      toast.error(err.message || 'Erro ao consultar Mentora Gi');
+    } finally {
+      setGiLoading(false);
+    }
+  };
+
+  const improveAllCopies = () => {
+    sendToGi("Analise todos os slides acima e reescreva cada um com copy mais envolvente, profunda e persuasiva. Mantenha o arco narrativo com começo, meio e fim. Para cada slide, forneça o novo título e corpo no formato:\n\nSlide X:\nTítulo: ...\nCorpo: ...");
+  };
+
   return (
     <div className="space-y-4 mt-4">
       <SessionIndicator show={hasRestoredSession && slides.length > 0} onClear={clearSession} />
