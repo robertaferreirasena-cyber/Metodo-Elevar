@@ -268,6 +268,7 @@ export default function TrafficAds() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      <MissionContextBanner />
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-3 rounded-2xl bg-violet-500/10">

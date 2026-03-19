@@ -1316,6 +1316,7 @@ export default function PriceCalculator() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
+      <MissionContextBanner />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Calculator className="h-6 w-6 text-primary" />
