@@ -250,7 +250,7 @@ export default function MissionChecklist({
                   </div>
                 </div>
                 {hasRoute && (
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex flex-col gap-1 shrink-0">
                     {mission.completed ? (
                       <Button
                         size="sm"
@@ -268,6 +268,16 @@ export default function MissionChecklist({
                         onClick={(e) => { e.stopPropagation(); handleExecuteMission(mission); }}
                       >
                         Executar <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    )}
+                    {TOOL_CONTEXT_PROMPTS[mission.title] && mission.activity_type !== "mentor" && mission.activity_type !== "content" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-[10px] h-6"
+                        onClick={(e) => { e.stopPropagation(); handleAskMentora(mission); }}
+                      >
+                        <MessageCircle className="h-3 w-3" /> Pedir ajuda à Gi
                       </Button>
                     )}
                   </div>
