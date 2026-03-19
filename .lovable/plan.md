@@ -1,20 +1,58 @@
-# Plano: Acesso 4 Meses + Admin Completo + Base de Conhecimento
 
-## Status: ✅ Implementado
 
-## O que foi feito
+## Plano: Persistência de Sessão em Todo o App
 
-### 1. Acesso de 4 Meses
-- `handle_new_user()` agora define `expires_at = NOW() + 4 months`
-- Subscriptions existentes sem `expires_at` atualizadas para `started_at + 4 meses`
+### Situação Atual
 
-### 2. Admin com Menu de Abas
-- `AdminLayout.tsx` com navegação horizontal: Dashboard, Usuários, Pagamentos, Tokens, Credenciais, Aprendizado, Base IA
-- Todas as páginas admin envolvidas com AdminLayout
-- Breadcrumbs removidos em favor das abas
+6 páginas já têm persistência. 5 páginas com conteúdo gerado **perdem tudo** ao navegar:
 
-### 3. Base de Conhecimento IA
-- Tabela `agent_knowledge_base` (agent_key, agent_name, system_prompt)
-- Página `/admin/base-conhecimento` para editar prompts dos agentes
-- Edge functions (ai-mentor-chat, sales-strategist, conversation-analyzer, sequence-generator) consultam a tabela com fallback para prompts hardcoded
-- Cache de 5 minutos para evitar queries excessivas
+| Página | Tipo de Estado | Risco de Perda |
+|---|---|---|
+| `Index.tsx` | Chat (useChat) | Médio — já usa useChat mas não mostra SessionIndicator |
+| `ManyChatFlows.tsx` | Formulário + resultado gerado | Alto |
+| `TrafficAds.tsx` | Formulário + resultado gerado | Alto |
+| `PriceCalculator.tsx` | Formulário complexo + dados financeiros | Alto |
+| `CarouselEditor.tsx` | Slides + tema + template | Alto |
+
+Páginas como `MentorChat`, `SalesGoals` e `InstaProGenerator` já salvam no banco de dados — não precisam de sessão local.
+
+### Implementação
+
+#### 1. Index.tsx
+- Adicionar `hasRestoredSession` na desestruturação do `useChat()`
+- Adicionar `SessionIndicator` no topo da área de chat
+
+#### 2. ManyChatFlows.tsx
+- Usar `useSessionPersistence` para salvar o state do formulário (`flowType`, `product`, `audience`, `objective`, `tone`, `keyword`, `steps`) e o `result` gerado
+- Adicionar `SessionIndicator` na aba "create"
+
+#### 3. TrafficAds.tsx
+- Mesmo padrão: `useSessionPersistence` para formulário (`platform`, `objective`, `product`, `audience`, `budget`, `tone`) e `result`
+- Adicionar `SessionIndicator`
+
+#### 4. PriceCalculator.tsx
+- Usar `useSessionPersistence` para salvar os arrays de custos fixos, variáveis, produtos e serviços (as principais entradas do usuário)
+- Adicionar `SessionIndicator` no topo
+
+#### 5. CarouselEditor.tsx
+- Usar `useSessionPersistence` para salvar `slides`, `topic`, `selectedTemplate`, `format`
+- Adicionar `SessionIndicator` no editor
+
+### Padrão Comum
+
+Cada página receberá:
+1. Import de `useSessionPersistence` e `SessionIndicator`
+2. State inicial extraído do sessionStorage via hook
+3. Banner discreto "Sessão anterior restaurada" com botão de limpar
+4. Debounce de 500ms para não sobrecarregar o storage
+
+### Arquivos Modificados
+
+| Arquivo | Mudança |
+|---|---|
+| `src/pages/Index.tsx` | Adicionar SessionIndicator + hasRestoredSession |
+| `src/pages/ManyChatFlows.tsx` | useSessionPersistence para form + result |
+| `src/pages/TrafficAds.tsx` | useSessionPersistence para form + result |
+| `src/pages/PriceCalculator.tsx` | useSessionPersistence para dados financeiros |
+| `src/components/carousel/CarouselEditor.tsx` | useSessionPersistence para slides |
+
