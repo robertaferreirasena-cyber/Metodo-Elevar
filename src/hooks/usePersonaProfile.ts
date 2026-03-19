@@ -222,7 +222,7 @@ export function usePersonaProfile() {
   }, [user, profile, fetchProfile]);
 
   // Generate raio-x with AI
-  const generateRaioX = useCallback(async (): Promise<boolean> => {
+  const generateRaioX = useCallback(async (catalogFiles?: string[]): Promise<boolean> => {
     if (!user) {
       toast.error("Você precisa estar logado");
       return false;
