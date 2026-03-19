@@ -11,6 +11,9 @@ import {
   AlignLeft,
   AlignCenter,
   DownloadCloud,
+  ImagePlus,
+  User,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +37,23 @@ import {
   createSlidesFromTemplate,
   type SlideData,
   type CarouselTemplate,
+  type CarouselLayout,
 } from "./CarouselTemplates";
+
+// Layouts that support images
+const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial"];
+const MULTI_IMAGE_LAYOUTS: CarouselLayout[] = ["photo-grid"];
+const PROFILE_LAYOUTS: CarouselLayout[] = ["profile-post", "photo-grid"];
+const HIGHLIGHT_LAYOUTS: CarouselLayout[] = ["sales-highlight"];
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function CarouselEditor() {
   const [topic, setTopic] = useState("");
@@ -91,7 +110,6 @@ Regras:
 
       if (response.error) throw new Error("Erro ao gerar conteúdo");
 
-      // Handle streaming response
       const reader = response.data instanceof ReadableStream
         ? response.data.getReader()
         : null;
@@ -121,7 +139,6 @@ Regras:
         fullText = response.data;
       }
 
-      // Extract JSON from response
       const jsonMatch = fullText.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("Resposta inválida da IA");
 
@@ -161,8 +178,38 @@ Regras:
         fontFamily: template.fontFamily,
         align: template.align,
         bgGradient: template.bgGradient,
+        layout: template.layout,
+        highlightBgColor: template.highlightBgColor,
       }))
     );
+  };
+
+  const handleImageUpload = async (index: number, file: File) => {
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      updateSlide(index, { imageUrl: dataUrl });
+    } catch {
+      toast.error("Erro ao carregar imagem");
+    }
+  };
+
+  const handleMultiImageUpload = async (index: number, files: FileList) => {
+    try {
+      const urls = await Promise.all(Array.from(files).map(fileToDataUrl));
+      const current = slides[index]?.imageUrls || [];
+      updateSlide(index, { imageUrls: [...current, ...urls].slice(0, 4) });
+    } catch {
+      toast.error("Erro ao carregar imagens");
+    }
+  };
+
+  const handleProfileImageUpload = async (index: number, file: File) => {
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      updateSlide(index, { profileImageUrl: dataUrl });
+    } catch {
+      toast.error("Erro ao carregar foto de perfil");
+    }
   };
 
   const exportSlide = async (index: number) => {
@@ -199,6 +246,11 @@ Regras:
   };
 
   const current = slides[currentSlide];
+  const currentLayout = current?.layout || "text-only";
+  const showImageUpload = IMAGE_LAYOUTS.includes(currentLayout);
+  const showMultiImage = MULTI_IMAGE_LAYOUTS.includes(currentLayout);
+  const showProfile = PROFILE_LAYOUTS.includes(currentLayout);
+  const showHighlight = HIGHLIGHT_LAYOUTS.includes(currentLayout);
 
   return (
     <div className="space-y-4 mt-4">
@@ -377,7 +429,8 @@ Regras:
                   {currentSlide + 1}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 max-h-[500px] overflow-y-auto">
+                {/* Title + Body */}
                 <div>
                   <Label className="text-xs">Título</Label>
                   <Input
@@ -400,6 +453,140 @@ Regras:
                   />
                 </div>
 
+                {/* ===== IMAGE UPLOAD (image-bg, editorial) ===== */}
+                {showImageUpload && (
+                  <div>
+                    <Label className="text-xs flex items-center gap-1">
+                      <ImagePlus className="h-3 w-3" /> Imagem de fundo
+                    </Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors text-xs text-muted-foreground">
+                        <ImagePlus className="h-4 w-4" />
+                        {current.imageUrl ? "Trocar imagem" : "Enviar imagem"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleImageUpload(currentSlide, f);
+                          }}
+                        />
+                      </label>
+                      {current.imageUrl && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => updateSlide(currentSlide, { imageUrl: undefined })}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ===== MULTI IMAGE UPLOAD (photo-grid) ===== */}
+                {showMultiImage && (
+                  <div>
+                    <Label className="text-xs flex items-center gap-1">
+                      <ImagePlus className="h-3 w-3" /> Fotos do grid (até 4)
+                    </Label>
+                    <div className="mt-1 space-y-2">
+                      <label className="flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors text-xs text-muted-foreground">
+                        <ImagePlus className="h-4 w-4" />
+                        Adicionar fotos
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files)
+                              handleMultiImageUpload(currentSlide, e.target.files);
+                          }}
+                        />
+                      </label>
+                      {(current.imageUrls?.length || 0) > 0 && (
+                        <div className="flex gap-1 flex-wrap">
+                          {current.imageUrls!.map((url, i) => (
+                            <div key={i} className="relative w-12 h-12 rounded overflow-hidden group">
+                              <img src={url} alt="" className="w-full h-full object-cover" />
+                              <button
+                                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                onClick={() => {
+                                  const updated = [...(current.imageUrls || [])];
+                                  updated.splice(i, 1);
+                                  updateSlide(currentSlide, { imageUrls: updated });
+                                }}
+                              >
+                                <X className="h-3 w-3 text-white" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ===== PROFILE FIELDS (profile-post, photo-grid) ===== */}
+                {showProfile && (
+                  <div className="space-y-2">
+                    <Label className="text-xs flex items-center gap-1">
+                      <User className="h-3 w-3" /> Dados do perfil
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Nome"
+                        value={current.profileName || ""}
+                        onChange={(e) =>
+                          updateSlide(currentSlide, { profileName: e.target.value })
+                        }
+                        className="text-xs"
+                      />
+                      <Input
+                        placeholder="@handle"
+                        value={current.profileHandle || ""}
+                        onChange={(e) =>
+                          updateSlide(currentSlide, { profileHandle: e.target.value })
+                        }
+                        className="text-xs"
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors text-xs text-muted-foreground">
+                      <User className="h-3 w-3" />
+                      {current.profileImageUrl ? "Trocar avatar" : "Enviar avatar"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleProfileImageUpload(currentSlide, f);
+                        }}
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {/* ===== HIGHLIGHT COLOR (sales-highlight) ===== */}
+                {showHighlight && (
+                  <div>
+                    <Label className="text-xs">Cor do bloco de destaque</Label>
+                    <input
+                      type="color"
+                      value={current.highlightBgColor || "#22C55E"}
+                      onChange={(e) =>
+                        updateSlide(currentSlide, { highlightBgColor: e.target.value })
+                      }
+                      className="w-full h-9 rounded border border-input cursor-pointer mt-1"
+                    />
+                  </div>
+                )}
+
+                {/* Colors */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <Label className="text-xs">Fundo</Label>
@@ -443,6 +630,7 @@ Regras:
                   </div>
                 </div>
 
+                {/* Font sizes */}
                 <div>
                   <Label className="text-xs flex items-center gap-1">
                     <Type className="h-3 w-3" /> Tamanho do título:{" "}
@@ -476,6 +664,7 @@ Regras:
                   />
                 </div>
 
+                {/* Alignment */}
                 <div>
                   <Label className="text-xs">Alinhamento</Label>
                   <div className="flex gap-2 mt-1">
@@ -522,7 +711,9 @@ Regras:
                 <div
                   className="w-full h-full flex items-center justify-center p-1"
                   style={{
-                    background: s.bgGradient || s.bgColor,
+                    background: s.imageUrl
+                      ? `linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url(${s.imageUrl}) center/cover`
+                      : s.bgGradient || s.bgColor,
                   }}
                 >
                   <span
@@ -536,7 +727,7 @@ Regras:
             ))}
           </div>
 
-          {/* Hidden slides for export (all rendered for html-to-image) */}
+          {/* Hidden slides for export */}
           <div className="absolute -left-[9999px] top-0" aria-hidden>
             {slides.map((s, i) =>
               i !== currentSlide ? (
