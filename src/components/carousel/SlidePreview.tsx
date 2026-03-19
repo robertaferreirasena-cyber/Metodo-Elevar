@@ -22,36 +22,54 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
       maxWidth: isSquare ? 480 : isStories ? 320 : 640,
     };
 
+    const titleStyle: React.CSSProperties = {
+      color: slide.titleColor || slide.textColor,
+      fontSize: `${slide.titleSize}px`,
+      fontWeight: slide.titleBold !== false ? "bold" : "normal",
+      fontStyle: slide.titleItalic ? "italic" : "normal",
+      textShadow: slide.textShadow || undefined,
+    };
+
+    const bodyStyle: React.CSSProperties = {
+      color: slide.textColor,
+      fontSize: `${slide.bodySize}px`,
+      opacity: 0.9,
+      fontWeight: slide.bodyBold ? "bold" : "normal",
+      fontStyle: slide.bodyItalic ? "italic" : "normal",
+      textDecoration: slide.bodyUnderline ? "underline" : "none",
+      textShadow: slide.textShadow || undefined,
+    };
+
+    // Universal background image layer
+    const renderBgImage = () => {
+      const bgUrl = slide.bgImageUrl || (layout === "image-bg" ? slide.imageUrl : undefined);
+      if (!bgUrl) return null;
+      const opacity = slide.overlayOpacity ?? 0.55;
+      return (
+        <>
+          <div className="absolute inset-0" style={{ background: `url(${bgUrl}) center/cover no-repeat` }} />
+          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${opacity})` }} />
+        </>
+      );
+    };
+
     // =========== IMAGE-BG LAYOUT ===========
     if (layout === "image-bg") {
       return (
         <div ref={ref} className="relative overflow-hidden" style={containerStyle}>
-          <div
-            className="absolute inset-0"
-            style={{
-              background: slide.imageUrl
-                ? `url(${slide.imageUrl}) center/cover no-repeat`
-                : slide.bgGradient || slide.bgColor,
-            }}
-          />
-          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.55)" }} />
-
-          {!slide.imageUrl && (
+          <div className="absolute inset-0" style={{ background: slide.bgGradient || slide.bgColor }} />
+          {renderBgImage()}
+          {!slide.imageUrl && !slide.bgImageUrl && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.25 }}>
               <ImagePlus className="h-16 w-16" style={{ color: slide.textColor }} />
             </div>
           )}
-
           <div className={`absolute inset-0 flex flex-col ${isStories ? "justify-center" : "justify-end"} p-8 md:p-10`} style={{ textAlign: slide.align }}>
             <div className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: slide.accentColor }}>
               {slideIndex + 1} / {totalSlides}
             </div>
-            <h2 className="font-black leading-tight mb-3" style={{ color: slide.textColor, fontSize: `${slide.titleSize}px` }}>
-              {slide.title}
-            </h2>
-            <p className="leading-relaxed whitespace-pre-wrap" style={{ color: slide.textColor, fontSize: `${slide.bodySize}px`, opacity: 0.9 }}>
-              {slide.body}
-            </p>
+            <h2 className="leading-tight mb-3" style={titleStyle}>{slide.title}</h2>
+            <p className="leading-relaxed whitespace-pre-wrap" style={bodyStyle}>{slide.body}</p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: slide.accentColor }} />
         </div>
@@ -62,17 +80,14 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     if (layout === "editorial") {
       return (
         <div ref={ref} className="relative overflow-hidden" style={{ ...containerStyle, background: slide.bgColor }}>
+          {slide.bgImageUrl && renderBgImage()}
           <div className="absolute inset-0 flex">
             <div className="flex-1 flex flex-col justify-center p-6 md:p-8" style={{ textAlign: slide.align }}>
               <div className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: slide.accentColor }}>
                 {slideIndex + 1} / {totalSlides}
               </div>
-              <h2 className="font-black leading-tight mb-3" style={{ color: slide.textColor, fontSize: `${slide.titleSize}px` }}>
-                {slide.title}
-              </h2>
-              <p className="leading-relaxed whitespace-pre-wrap" style={{ color: slide.textColor, fontSize: `${slide.bodySize}px`, opacity: 0.85 }}>
-                {slide.body}
-              </p>
+              <h2 className="leading-tight mb-3" style={titleStyle}>{slide.title}</h2>
+              <p className="leading-relaxed whitespace-pre-wrap" style={{ ...bodyStyle, opacity: 0.85 }}>{slide.body}</p>
             </div>
             <div className="w-[45%] relative">
               {slide.imageUrl ? (
@@ -93,41 +108,29 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     if (layout === "profile-post") {
       return (
         <div ref={ref} className="relative overflow-hidden" style={{ ...containerStyle, background: slide.bgColor }}>
+          {slide.bgImageUrl && renderBgImage()}
           <div className="absolute inset-0 flex flex-col p-6 md:p-8">
             <div className="flex items-center gap-3 mb-4">
               {slide.profileImageUrl ? (
                 <img src={slide.profileImageUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
               ) : (
                 <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: slide.accentColor }}>
-                  <span className="text-white text-sm font-bold">
-                    {(slide.profileName || "U")[0].toUpperCase()}
-                  </span>
+                  <span className="text-white text-sm font-bold">{(slide.profileName || "U")[0].toUpperCase()}</span>
                 </div>
               )}
               <div>
                 <div className="flex items-center gap-1">
-                  <span className="font-bold text-sm" style={{ color: slide.textColor }}>
-                    {slide.profileName || "Seu Nome"}
-                  </span>
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill={slide.accentColor}>
-                    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
+                  <span className="font-bold text-sm" style={{ color: slide.textColor }}>{slide.profileName || "Seu Nome"}</span>
                 </div>
-                <span className="text-xs" style={{ color: slide.textColor, opacity: 0.6 }}>
-                  {slide.profileHandle || "@seuhandle"}
-                </span>
+                <span className="text-xs" style={{ color: slide.textColor, opacity: 0.6 }}>{slide.profileHandle || "@seuhandle"}</span>
               </div>
             </div>
             <div className="w-full h-px mb-4" style={{ background: slide.textColor, opacity: 0.1 }} />
             <div className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: slide.accentColor }}>
               {slideIndex + 1} / {totalSlides}
             </div>
-            <h2 className="font-bold leading-tight mb-3" style={{ color: slide.textColor, fontSize: `${slide.titleSize}px` }}>
-              {slide.title}
-            </h2>
-            <p className="leading-relaxed whitespace-pre-wrap flex-1" style={{ color: slide.textColor, fontSize: `${slide.bodySize}px`, opacity: 0.85 }}>
-              {slide.body}
-            </p>
+            <h2 className="leading-tight mb-3" style={titleStyle}>{slide.title}</h2>
+            <p className="leading-relaxed whitespace-pre-wrap flex-1" style={{ ...bodyStyle, opacity: 0.85 }}>{slide.body}</p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: slide.accentColor }} />
         </div>
@@ -139,29 +142,20 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
       const images = slide.imageUrls || [];
       return (
         <div ref={ref} className="relative overflow-hidden" style={{ ...containerStyle, background: slide.bgColor }}>
+          {slide.bgImageUrl && renderBgImage()}
           <div className="absolute inset-0 flex flex-col p-6 md:p-8">
             <div className="flex items-center gap-3 mb-3">
               {slide.profileImageUrl ? (
                 <img src={slide.profileImageUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
               ) : (
                 <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: slide.accentColor }}>
-                  <span className="text-white text-xs font-bold">
-                    {(slide.profileName || "U")[0].toUpperCase()}
-                  </span>
+                  <span className="text-white text-xs font-bold">{(slide.profileName || "U")[0].toUpperCase()}</span>
                 </div>
               )}
-              <div>
-                <span className="font-bold text-sm" style={{ color: slide.textColor }}>
-                  {slide.profileName || "Seu Nome"}
-                </span>
-              </div>
+              <span className="font-bold text-sm" style={{ color: slide.textColor }}>{slide.profileName || "Seu Nome"}</span>
             </div>
-            <h2 className="font-bold leading-tight mb-2" style={{ color: slide.textColor, fontSize: `${slide.titleSize}px` }}>
-              {slide.title}
-            </h2>
-            <p className="leading-relaxed whitespace-pre-wrap mb-3 text-sm" style={{ color: slide.textColor, fontSize: `${slide.bodySize}px`, opacity: 0.8 }}>
-              {slide.body}
-            </p>
+            <h2 className="leading-tight mb-2" style={titleStyle}>{slide.title}</h2>
+            <p className="leading-relaxed whitespace-pre-wrap mb-3 text-sm" style={{ ...bodyStyle, opacity: 0.8 }}>{slide.body}</p>
             <div className="flex-1 grid grid-cols-2 gap-2 min-h-0">
               {images.length > 0 ? (
                 images.slice(0, 4).map((url, i) => (
@@ -170,13 +164,11 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                   </div>
                 ))
               ) : (
-                <>
-                  {[0, 1].map((i) => (
-                    <div key={i} className="relative rounded-lg overflow-hidden flex items-center justify-center" style={{ background: "rgba(0,0,0,0.04)" }}>
-                      <ImagePlus className="h-8 w-8" style={{ color: slide.accentColor, opacity: 0.3 }} />
-                    </div>
-                  ))}
-                </>
+                [0, 1].map((i) => (
+                  <div key={i} className="relative rounded-lg overflow-hidden flex items-center justify-center" style={{ background: "rgba(0,0,0,0.04)" }}>
+                    <ImagePlus className="h-8 w-8" style={{ color: slide.accentColor, opacity: 0.3 }} />
+                  </div>
+                ))
               )}
             </div>
           </div>
@@ -190,19 +182,16 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
       const hlColor = slide.highlightBgColor || "#22C55E";
       return (
         <div ref={ref} className="relative overflow-hidden" style={{ ...containerStyle, background: slide.bgGradient || slide.bgColor }}>
+          {slide.bgImageUrl && renderBgImage()}
           <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-10 gap-4" style={{ textAlign: "center" }}>
             <div className="text-xs font-bold uppercase tracking-widest" style={{ color: slide.textColor, opacity: 0.6 }}>
               {slideIndex + 1} / {totalSlides}
             </div>
             <div className="px-6 py-3 rounded-lg" style={{ backgroundColor: hlColor }}>
-              <h2 className="font-black leading-tight" style={{ color: "#FFFFFF", fontSize: `${slide.titleSize}px` }}>
-                {slide.title}
-              </h2>
+              <h2 className="leading-tight" style={{ ...titleStyle, color: "#FFFFFF" }}>{slide.title}</h2>
             </div>
             <div className="px-6 py-3 rounded-lg" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
-              <p className="leading-relaxed whitespace-pre-wrap font-medium" style={{ color: slide.textColor, fontSize: `${slide.bodySize}px` }}>
-                {slide.body}
-              </p>
+              <p className="leading-relaxed whitespace-pre-wrap font-medium" style={{ ...bodyStyle, opacity: 1 }}>{slide.body}</p>
             </div>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: hlColor }} />
@@ -212,36 +201,25 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
 
     // =========== TEXT-ONLY (DEFAULT) LAYOUT ===========
     return (
-      <div
-        ref={ref}
-        className="relative overflow-hidden"
-        style={{
-          ...containerStyle,
-          background: slide.bgGradient || slide.bgColor,
-        }}
-      >
+      <div ref={ref} className="relative overflow-hidden" style={{ ...containerStyle, background: slide.bgGradient || slide.bgColor }}>
+        {slide.bgImageUrl && renderBgImage()}
+
         {slide.accentColor === "#F59E0B" && (
           <div className="absolute top-6 left-8 text-6xl leading-none font-serif select-none pointer-events-none" style={{ color: slide.accentColor, opacity: 0.3 }}>
             &ldquo;
           </div>
         )}
-
         {slide.accentColor === "#FBBF24" && slide.bgColor === "#1E3A5F" && (
           <div className="absolute top-6 right-8 select-none pointer-events-none" style={{ color: slide.accentColor, opacity: 0.18 }}>
             <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           </div>
         )}
-
         {slide.accentColor === "#34D399" && (
           <div className="absolute top-6 right-8 select-none pointer-events-none" style={{ color: slide.accentColor, opacity: 0.2 }}>
             <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="17 1 21 5 17 9" />
-              <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-              <polyline points="7 23 3 19 7 15" />
-              <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
             </svg>
           </div>
         )}
@@ -250,12 +228,8 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           <div className="mb-4 text-xs font-bold uppercase tracking-widest" style={{ color: slide.accentColor }}>
             {slideIndex + 1} / {totalSlides}
           </div>
-          <h2 className="font-bold leading-tight mb-4" style={{ color: slide.textColor, fontSize: `${slide.titleSize}px` }}>
-            {slide.title}
-          </h2>
-          <p className="leading-relaxed whitespace-pre-wrap" style={{ color: slide.textColor, fontSize: `${slide.bodySize}px`, opacity: 0.9 }}>
-            {slide.body}
-          </p>
+          <h2 className="leading-tight mb-4" style={titleStyle}>{slide.title}</h2>
+          <p className="leading-relaxed whitespace-pre-wrap" style={bodyStyle}>{slide.body}</p>
         </div>
         <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: slide.accentColor }} />
       </div>
