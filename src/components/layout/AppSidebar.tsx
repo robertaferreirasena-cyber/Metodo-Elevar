@@ -54,6 +54,7 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const { profile, subscription, signOut, loading } = useAuth();
   const { isAdmin } = useAdmin();
+  const { hasRaioX, hasProfile, loading: personaLoading } = usePersonaProfile();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (path: string) => {
