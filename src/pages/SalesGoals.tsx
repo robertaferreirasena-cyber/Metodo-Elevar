@@ -209,6 +209,7 @@ export default function SalesGoals() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <MissionContextBanner />
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-lg bg-primary/10">
