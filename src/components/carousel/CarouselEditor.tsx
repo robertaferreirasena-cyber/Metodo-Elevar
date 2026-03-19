@@ -900,7 +900,85 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
             ))}
           </div>
 
-          {/* Hidden slides for export */}
+          {/* Mentora Gi Mini-Chat */}
+          <Collapsible open={giOpen} onOpenChange={setGiOpen}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <button className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors rounded-t-lg">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-sm">Mentora Gi — Copywriter</span>
+                    <Badge variant="secondary" className="text-[10px]">IA</Badge>
+                  </div>
+                  {giOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0 space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Peça melhorias nas copies, ajuste tom, peça mais storytelling ou refine slides específicos.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={improveAllCopies}
+                    disabled={giLoading}
+                    className="w-full"
+                  >
+                    <Sparkles className="h-4 w-4 mr-1" />
+                    ✨ Melhorar todas as copies
+                  </Button>
+
+                  {giMessages.length > 0 && (
+                    <ScrollArea className="max-h-60 rounded-md border p-3">
+                      <div className="space-y-3">
+                        {giMessages.map((msg, i) => (
+                          <div key={i} className={`text-sm ${msg.role === 'user' ? 'text-right' : ''}`}>
+                            <div className={`inline-block max-w-[90%] rounded-lg px-3 py-2 ${
+                              msg.role === 'user'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-foreground'
+                            }`}>
+                              <p className="whitespace-pre-wrap text-xs">{msg.content}</p>
+                            </div>
+                          </div>
+                        ))}
+                        {giLoading && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Loader2 className="h-3 w-3 animate-spin" /> Mentora Gi pensando...
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ex: Deixe o slide 3 mais agressivo..."
+                      value={giInput}
+                      onChange={(e) => setGiInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          sendToGi(giInput);
+                        }
+                      }}
+                      className="text-sm"
+                    />
+                    <Button
+                      size="icon"
+                      onClick={() => sendToGi(giInput)}
+                      disabled={!giInput.trim() || giLoading}
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+
           <div className="absolute -left-[9999px] top-0" aria-hidden>
             {slides.map((s, i) =>
               i !== currentSlide ? (
