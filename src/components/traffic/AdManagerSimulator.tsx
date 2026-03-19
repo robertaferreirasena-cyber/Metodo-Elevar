@@ -79,6 +79,7 @@ export default function AdManagerSimulator() {
   const [expandedSets, setExpandedSets] = useState<Set<number>>(new Set([0]));
   const [selectedAdIndex, setSelectedAdIndex] = useState<{ setIdx: number; adIdx: number } | null>(null);
   const [editing, setEditing] = useState<EditingField | null>(null);
+  const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
 
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ["ad-campaigns", user?.id],
