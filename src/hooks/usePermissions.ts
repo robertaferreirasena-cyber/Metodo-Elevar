@@ -101,6 +101,7 @@ export function usePermissions() {
             module_community: data.module_community ?? true,
             module_photoboss: data.module_photoboss ?? true,
             module_conversation_analysis: data.module_conversation_analysis ?? true,
+            module_traffic_ads: (data as Record<string, unknown>).module_traffic_ads as boolean ?? true,
             custom_daily_limit: data.custom_daily_limit,
             custom_monthly_limit: data.custom_monthly_limit,
             custom_persona_limit: data.custom_persona_limit,

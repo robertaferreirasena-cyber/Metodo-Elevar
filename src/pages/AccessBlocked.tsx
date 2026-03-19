@@ -15,6 +15,7 @@ const MODULE_NAMES: Record<ModuleKey, string> = {
   module_community: 'Comunidade',
   module_photoboss: 'Ensaio Fotográfico',
   module_conversation_analysis: 'Análise de Conversas',
+  module_traffic_ads: 'Tráfego Pago',
 };
 
 export default function AccessBlocked() {
