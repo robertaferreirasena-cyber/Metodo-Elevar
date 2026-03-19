@@ -54,3 +54,6 @@ verify_jwt = false
 
 [functions.catalog-price-analyzer]
 verify_jwt = false
+
+[functions.carousel-generator]
+verify_jwt = false
