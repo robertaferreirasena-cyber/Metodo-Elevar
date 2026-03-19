@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Bot, Sparkles, Loader2, Copy, Check, MessageSquare } from "lucide-react";
+import { Bot, Sparkles, Loader2, Copy, Check, MessageSquare, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
