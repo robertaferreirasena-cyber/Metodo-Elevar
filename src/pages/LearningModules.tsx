@@ -34,6 +34,9 @@ export default function LearningModules() {
       }
       setActiveTab("carousel");
       setSearchParams({}, { replace: true });
+    } else if (tab === "instapro") {
+      setActiveTab("instapro");
+      setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
