@@ -253,72 +253,197 @@ export default function AdManagerSimulator() {
 
   const cancelEdit = () => setEditing(null);
 
+  const exportAudienceText = (adSet: any, setIndex: number) => {
+    const a = adSet.audience || {};
+    const dt = a.detailed_targeting || {};
+    const genderLabel = a.gender === "all" ? "Todos" : a.gender === "male" ? "Masculino" : "Feminino";
+
+    const sections = [
+      `========================================`,
+      `CONFIGURACAO DE PUBLICO - META ADS 2026`,
+      `Conjunto: ${adSet.name}`,
+      `========================================`,
+      ``,
+      `--- DADOS BASICOS ---`,
+      `Genero: ${genderLabel}`,
+      `Faixa Etaria: ${a.age_min || 18} - ${a.age_max || 65} anos`,
+      `Localizacoes: ${a.locations?.join(", ") || "N/A"}`,
+      ``,
+      `--- SEGMENTACAO DETALHADA ---`,
+      dt.interests?.length ? `Interesses: ${dt.interests.join(" | ")}` : null,
+      dt.behaviors?.length ? `Comportamentos: ${dt.behaviors.join(" | ")}` : null,
+      dt.demographics?.length ? `Dados Demograficos: ${dt.demographics.join(" | ")}` : null,
+      ``,
+      a.custom_audiences?.length ? `--- PUBLICOS PERSONALIZADOS ---` : null,
+      a.custom_audiences?.length ? a.custom_audiences.map((ca: string) => `  - ${ca}`).join("\n") : null,
+      ``,
+      `--- CONFIGURACOES ---`,
+      `Advantage+ Audience: ${a.advantage_plus ? "ATIVADO (recomendado)" : "Desativado"}`,
+      adSet.optimization_goal ? `Objetivo de Otimizacao: ${adSet.optimization_goal}` : null,
+      `Orcamento: ${adSet.budget}`,
+      `Posicionamentos: ${adSet.placements?.join(", ") || "Automatico"}`,
+      ``,
+      `--- DESCRICAO DO PUBLICO ---`,
+      a.description || "N/A",
+      ``,
+      `Gerado pelo Metodo ANDROMEDA - Mentoria Elevar`,
+    ].filter(v => v !== null).join("\n");
+
+    copyToClipboard(sections, `Publico do Conjunto ${setIndex + 1}`);
+  };
+
   const exportPDF = () => {
     if (!selectedCampaign || !sd) return;
-    const doc = new jsPDF();
-    const margin = 15;
-    let y = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const maxWidth = pageWidth - margin * 2;
+    const doc = new jsPDF("p", "mm", "a4");
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+    const ml = 20;
+    const mr = 20;
+    const maxW = pw - ml - mr;
+    let y = 0;
 
-    const addText = (text: string, size: number, bold = false, color: [number, number, number] = [33, 33, 33]) => {
-      doc.setFontSize(size);
-      doc.setFont("helvetica", bold ? "bold" : "normal");
-      doc.setTextColor(...color);
-      const lines = doc.splitTextToSize(text, maxWidth);
-      for (const line of lines) {
-        if (y > 275) { doc.addPage(); y = 20; }
-        doc.text(line, margin, y);
-        y += size * 0.5 + 1;
+    const checkPage = (needed = 12) => {
+      if (y > ph - 25 - needed) {
+        doc.addPage();
+        y = 20;
       }
     };
 
-    const addSpacer = (h = 4) => { y += h; };
+    const drawLine = (x1: number, yy: number, x2: number, color: [number, number, number] = [200, 200, 200]) => {
+      doc.setDrawColor(...color);
+      doc.setLineWidth(0.3);
+      doc.line(x1, yy, x2, yy);
+    };
 
-    addText("PLANO DE CAMPANHA - GERENCIADOR DE ANUNCIOS", 14, true, [100, 50, 200]);
-    addSpacer(6);
-    addText(`Campanha: ${sd.campaign?.name}`, 12, true);
-    addText(`Plataforma: ${selectedCampaign.platform}`, 10, false, [100, 100, 100]);
-    addText(`Objetivo: ${sd.campaign?.objective}`, 10, false, [100, 100, 100]);
-    addText(`Orcamento Total: ${sd.campaign?.budget_value}`, 10, false, [100, 100, 100]);
-    addSpacer(8);
+    const writeText = (text: string, x: number, size: number, bold = false, color: [number, number, number] = [40, 40, 40]) => {
+      doc.setFontSize(size);
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setTextColor(...color);
+      const lines = doc.splitTextToSize(text, maxW - (x - ml));
+      for (const line of lines) {
+        checkPage(size * 0.45);
+        doc.text(line, x, y);
+        y += size * 0.45 + 0.5;
+      }
+    };
 
+    // ===== COVER HEADER =====
+    doc.setFillColor(30, 15, 45);
+    doc.rect(0, 0, pw, 55, "F");
+    doc.setFillColor(200, 50, 120);
+    doc.rect(0, 55, pw, 1.5, "F");
+
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text("PLANO DE CAMPANHA", ml, 25);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(200, 180, 220);
+    doc.text("Metodo ANDROMEDA  |  Mentoria Elevar", ml, 35);
+
+    doc.setFontSize(9);
+    doc.setTextColor(180, 160, 200);
+    const dateStr = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+    doc.text(dateStr, ml, 45);
+
+    y = 68;
+
+    // ===== CAMPAIGN INFO =====
+    doc.setFillColor(245, 240, 250);
+    doc.roundedRect(ml, y - 5, maxW, 28, 3, 3, "F");
+    writeText(sd.campaign?.name || "Campanha", ml + 5, 13, true, [60, 20, 100]);
+    y += 2;
+    writeText(`Plataforma: ${selectedCampaign.platform}   |   Objetivo: ${sd.campaign?.objective || "N/A"}   |   Orcamento: ${sd.campaign?.budget_value || "N/A"}`, ml + 5, 9, false, [100, 80, 120]);
+    y += 10;
+
+    // ===== AD SETS =====
     sd.ad_sets?.forEach((adSet: any, si: number) => {
-      addText(`CONJUNTO ${si + 1}: ${adSet.name}`, 11, true, [30, 100, 200]);
-      if (adSet.optimization_goal) addText(`Otimizacao: ${adSet.optimization_goal}`, 9, false, [80, 80, 80]);
-      addText(`Orcamento: ${adSet.budget}`, 9, false, [80, 80, 80]);
-      addText(`Publico: ${adSet.audience?.description || "N/A"}`, 9, false, [80, 80, 80]);
-      addText(`Faixa etaria: ${adSet.audience?.age_min || "?"}-${adSet.audience?.age_max || "?"} | Genero: ${adSet.audience?.gender || "todos"}`, 9, false, [80, 80, 80]);
-      if (adSet.audience?.locations?.length) addText(`Localizacoes: ${adSet.audience.locations.join(", ")}`, 9, false, [80, 80, 80]);
-      const dt = adSet.audience?.detailed_targeting;
-      if (dt?.interests?.length) addText(`Interesses: ${dt.interests.join(", ")}`, 9, false, [80, 80, 80]);
-      if (dt?.behaviors?.length) addText(`Comportamentos: ${dt.behaviors.join(", ")}`, 9, false, [80, 80, 80]);
-      if (dt?.demographics?.length) addText(`Demograficos: ${dt.demographics.join(", ")}`, 9, false, [80, 80, 80]);
-      if (adSet.audience?.custom_audiences?.length) addText(`Publicos personalizados: ${adSet.audience.custom_audiences.join(", ")}`, 9, false, [80, 80, 80]);
-      if (adSet.audience?.advantage_plus) addText(`Advantage+ Audience: Ativado`, 9, true, [0, 130, 80]);
-      addText(`Posicionamentos: ${adSet.placements?.join(", ") || "N/A"}`, 9, false, [80, 80, 80]);
-      addSpacer(4);
+      checkPage(30);
+      const a = adSet.audience || {};
+      const dt = a.detailed_targeting || {};
 
+      // Set header
+      doc.setFillColor(200, 50, 120);
+      doc.roundedRect(ml, y, maxW, 8, 2, 2, "F");
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text(`CONJUNTO ${si + 1}: ${adSet.name}`, ml + 4, y + 5.5);
+      y += 14;
+
+      // Optimization & Budget
+      if (adSet.optimization_goal) {
+        writeText(`Otimizacao: ${adSet.optimization_goal}`, ml, 9, true, [50, 50, 50]);
+      }
+      writeText(`Orcamento: ${adSet.budget}`, ml, 9, false, [80, 80, 80]);
+      y += 2;
+
+      // Audience section
+      drawLine(ml, y, pw - mr, [200, 50, 120]);
+      y += 5;
+      writeText("PUBLICO-ALVO", ml, 9, true, [60, 20, 100]);
+      y += 1;
+      const genderLabel = a.gender === "all" ? "Todos" : a.gender === "male" ? "Masculino" : "Feminino";
+      writeText(`Genero: ${genderLabel}   |   Idade: ${a.age_min || 18}-${a.age_max || 65} anos`, ml + 2, 9, false, [60, 60, 60]);
+      if (a.locations?.length) writeText(`Localizacoes: ${a.locations.join(", ")}`, ml + 2, 9, false, [60, 60, 60]);
+      if (a.description) writeText(`Descricao: ${a.description}`, ml + 2, 8, false, [100, 100, 100]);
+      y += 2;
+
+      // Detailed Targeting
+      if (dt.interests?.length || dt.behaviors?.length || dt.demographics?.length) {
+        writeText("SEGMENTACAO DETALHADA", ml, 8, true, [60, 20, 100]);
+        if (dt.interests?.length) writeText(`Interesses: ${dt.interests.join("  |  ")}`, ml + 2, 8, false, [60, 60, 60]);
+        if (dt.behaviors?.length) writeText(`Comportamentos: ${dt.behaviors.join("  |  ")}`, ml + 2, 8, false, [60, 60, 60]);
+        if (dt.demographics?.length) writeText(`Demograficos: ${dt.demographics.join("  |  ")}`, ml + 2, 8, false, [60, 60, 60]);
+        y += 1;
+      }
+
+      if (a.custom_audiences?.length) {
+        writeText(`Publicos Personalizados: ${a.custom_audiences.join("  |  ")}`, ml + 2, 8, false, [100, 60, 140]);
+      }
+      if (a.advantage_plus) {
+        writeText("Advantage+ Audience: ATIVADO", ml + 2, 8, true, [0, 130, 80]);
+      }
+
+      // Placements
+      writeText(`Posicionamentos: ${adSet.placements?.join(", ") || "Automatico"}`, ml + 2, 8, false, [80, 80, 80]);
+      y += 4;
+
+      // Ads
+      drawLine(ml, y, pw - mr, [220, 220, 220]);
+      y += 5;
       adSet.ads?.forEach((ad: any, ai: number) => {
-        addText(`  Anuncio ${ai + 1}: ${ad.name}`, 10, true);
+        checkPage(25);
         const fmtLabel = ad.creative_format_label || ad.format;
-        addText(`  Formato: ${fmtLabel}${ad.recommended_dimensions ? ` (${ad.recommended_dimensions})` : ""} | CTA: ${ad.cta}`, 9, false, [80, 80, 80]);
-        addText(`  Headline: ${ad.headline}`, 9, false, [50, 50, 50]);
-        addText(`  Texto: ${ad.primary_text}`, 9, false, [50, 50, 50]);
-        if (ad.description) addText(`  Descricao: ${ad.description}`, 9, false, [80, 80, 80]);
-        if (ad.creative_description) addText(`  Criativo: ${ad.creative_description}`, 9, false, [80, 80, 80]);
-        if (ad.video_script) addText(`  Roteiro: ${ad.video_script}`, 9, false, [80, 80, 80]);
-        if (ad.visual_brief) addText(`  Briefing Visual: ${ad.visual_brief}`, 9, false, [80, 80, 80]);
-        addSpacer(3);
+        doc.setFillColor(248, 245, 252);
+        doc.roundedRect(ml + 2, y - 3, maxW - 4, 7, 1, 1, "F");
+        writeText(`Anuncio ${ai + 1}: ${ad.name}  [${fmtLabel}${ad.recommended_dimensions ? ` - ${ad.recommended_dimensions}` : ""}]`, ml + 4, 9, true, [40, 40, 40]);
+        y += 2;
+        writeText(`Headline: ${ad.headline}`, ml + 4, 9, false, [50, 50, 50]);
+        writeText(`Texto Principal: ${ad.primary_text}`, ml + 4, 8, false, [70, 70, 70]);
+        if (ad.description) writeText(`Descricao: ${ad.description}`, ml + 4, 8, false, [90, 90, 90]);
+        writeText(`CTA: ${ad.cta}`, ml + 4, 8, true, [200, 50, 120]);
+        if (ad.creative_description) {
+          writeText(`Criativo: ${ad.creative_description}`, ml + 4, 8, false, [90, 90, 90]);
+        }
+        if (ad.video_script) writeText(`Roteiro: ${ad.video_script}`, ml + 4, 8, false, [90, 90, 90]);
+        if (ad.visual_brief) writeText(`Briefing Visual: ${ad.visual_brief}`, ml + 4, 8, false, [90, 90, 90]);
+        y += 5;
       });
-      addSpacer(6);
+      y += 4;
     });
 
-    addSpacer(8);
-    addText("Gerado pelo Metodo ANDROMEDA - Mentoria Elevar", 8, false, [150, 150, 150]);
+    // ===== FOOTER =====
+    checkPage(15);
+    drawLine(ml, y, pw - mr, [200, 50, 120]);
+    y += 6;
+    writeText("Gerado pelo Metodo ANDROMEDA - Mentoria Elevar", ml, 7, false, [160, 140, 180]);
+    writeText("Este documento e confidencial e de uso exclusivo do destinatario.", ml, 7, false, [180, 170, 190]);
 
     doc.save(`campanha-${sd.campaign?.name?.replace(/\s+/g, "-").toLowerCase() || "export"}.pdf`);
-    toast.success("PDF exportado com sucesso!");
+    toast.success("PDF Premium exportado com sucesso!");
   };
 
   if (isLoading) {
