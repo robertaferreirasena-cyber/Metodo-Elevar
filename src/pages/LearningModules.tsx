@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { GraduationCap, BookOpen, Palette, UserCircle, Sparkles, AlertTriangle } from "lucide-react";
+import { GraduationCap, BookOpen, Palette, Sparkles, AlertTriangle, Instagram } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
