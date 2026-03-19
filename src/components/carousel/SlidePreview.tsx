@@ -34,6 +34,34 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           </div>
         )}
 
+        {/* Decorative checkmark for benefits style */}
+        {slide.accentColor === "#FBBF24" && slide.bgColor === "#1E3A5F" && (
+          <div
+            className="absolute top-6 right-8 select-none pointer-events-none"
+            style={{ color: slide.accentColor, opacity: 0.18 }}
+          >
+            <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+        )}
+
+        {/* Decorative transformation arrow for before/after style */}
+        {slide.accentColor === "#34D399" && (
+          <div
+            className="absolute top-6 right-8 select-none pointer-events-none"
+            style={{ color: slide.accentColor, opacity: 0.2 }}
+          >
+            <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="17 1 21 5 17 9" />
+              <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+              <polyline points="7 23 3 19 7 15" />
+              <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+            </svg>
+          </div>
+        )}
+
         {/* Content */}
         <div
           className="absolute inset-0 flex flex-col justify-center p-8 md:p-12"
