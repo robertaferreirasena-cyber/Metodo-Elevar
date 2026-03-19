@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Megaphone, Sparkles, Loader2, Copy, Check } from "lucide-react";
+import { Megaphone, Sparkles, Loader2, Copy, Check, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
