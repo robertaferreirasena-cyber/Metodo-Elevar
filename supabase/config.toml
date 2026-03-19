@@ -51,3 +51,6 @@ verify_jwt = false
 
 [functions.manychat-validate]
 verify_jwt = false
+
+[functions.catalog-price-analyzer]
+verify_jwt = false

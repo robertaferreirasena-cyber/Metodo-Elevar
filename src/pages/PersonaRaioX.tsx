@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CatalogUploader } from "@/components/catalog/CatalogUploader";
 import { 
   User, 
   Package, 
@@ -112,6 +113,7 @@ export default function PersonaRaioX() {
   } = usePersonaProfile();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [catalogFiles, setCatalogFiles] = useState<string[]>([]);
 
   const handleChannelToggle = (channelId: string) => {
     const current = formData.sales_channels || [];
@@ -151,7 +153,7 @@ export default function PersonaRaioX() {
   const handleSaveAndGenerate = async () => {
     const saved = await saveProfile(formData);
     if (saved) {
-      const generated = await generateRaioX();
+      const generated = await generateRaioX(catalogFiles);
       if (generated) {
         setIsEditing(false);
       }
@@ -323,6 +325,21 @@ export default function PersonaRaioX() {
                   value={formData.product_description}
                   onChange={(e) => updateFormData({ product_description: e.target.value })}
                   rows={3}
+                />
+              </div>
+
+              {/* Catalog Upload */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Package className="h-3.5 w-3.5" />
+                  Materiais do Catálogo/Produtos (opcional)
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Envie PDFs, fotos ou listas de produtos. A IA usará esses materiais para gerar um Raio-X mais preciso.
+                </p>
+                <CatalogUploader
+                  fileUrls={catalogFiles}
+                  onFilesChange={setCatalogFiles}
                 />
               </div>
 

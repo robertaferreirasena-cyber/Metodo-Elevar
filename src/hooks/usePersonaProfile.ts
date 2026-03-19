@@ -222,7 +222,7 @@ export function usePersonaProfile() {
   }, [user, profile, fetchProfile]);
 
   // Generate raio-x with AI
-  const generateRaioX = useCallback(async (): Promise<boolean> => {
+  const generateRaioX = useCallback(async (catalogFiles?: string[]): Promise<boolean> => {
     if (!user) {
       toast.error("Você precisa estar logado");
       return false;
@@ -238,7 +238,7 @@ export function usePersonaProfile() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ profileData: formData }),
+        body: JSON.stringify({ profileData: formData, catalogFiles: catalogFiles || [] }),
       });
 
       if (response.status === 429) {

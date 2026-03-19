@@ -9,13 +9,16 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
-import { Calculator, Download, Plus, Trash2, Package, Briefcase, BarChart3, HelpCircle, AlertTriangle, TrendingUp, TrendingDown, PieChart as PieChartIcon, Activity, Save, CloudDownload, SlidersHorizontal } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calculator, Download, Plus, Trash2, Package, Briefcase, BarChart3, HelpCircle, AlertTriangle, TrendingUp, TrendingDown, PieChart as PieChartIcon, Activity, Save, CloudDownload, SlidersHorizontal, Upload, Loader2, FileSearch } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import FinishMissionButton from "@/components/learning/FinishMissionButton";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { CatalogUploader } from "@/components/catalog/CatalogUploader";
+import { CatalogAnalysisResult, type CatalogAnalysis } from "@/components/catalog/CatalogAnalysisResult";
 
 // ─── Types ───
 interface CostItem { id: string; name: string; value: number; }
@@ -95,6 +98,12 @@ function ProductCalculator() {
   const [desiredMargin, setDesiredMargin] = useState(30);
   const [taxPercent, setTaxPercent] = useState(10);
 
+  // Catalog import state
+  const [catalogFiles, setCatalogFiles] = useState<string[]>([]);
+  const [catalogAnalysis, setCatalogAnalysis] = useState<CatalogAnalysis | null>(null);
+  const [analyzingCatalog, setAnalyzingCatalog] = useState(false);
+  const [catalogDialogOpen, setCatalogDialogOpen] = useState(false);
+
   const addCost = () => setDirectCosts([...directCosts, { id: Date.now().toString(), name: "", value: 0 }]);
   const removeCost = (id: string) => { if (directCosts.length > 1) setDirectCosts(directCosts.filter(c => c.id !== id)); };
   const updateCost = (id: string, field: keyof CostItem, value: string | number) => setDirectCosts(directCosts.map(c => c.id === id ? { ...c, [field]: value } : c));
@@ -109,6 +118,47 @@ function ProductCalculator() {
   const realMargin = sellingPrice > 0 ? (unitProfit / sellingPrice) * 100 : 0;
   const monthlyRevenue = sellingPrice * quantityPerMonth;
   const monthlyProfit = unitProfit * quantityPerMonth;
+
+  const analyzeCatalog = async () => {
+    if (catalogFiles.length === 0) {
+      toast.error("Envie pelo menos um arquivo");
+      return;
+    }
+    setAnalyzingCatalog(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/catalog-price-analyzer`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ filePaths: catalogFiles, niche: "" }),
+        }
+      );
+      if (response.status === 429) { toast.error("Limite de requisições excedido"); return; }
+      if (response.status === 402) { toast.error("Créditos esgotados"); return; }
+      if (!response.ok) throw new Error("Erro na análise");
+      const { analysis } = await response.json();
+      setCatalogAnalysis(analysis);
+      toast.success("Catálogo analisado!");
+    } catch (err) {
+      toast.error("Erro ao analisar catálogo");
+    } finally {
+      setAnalyzingCatalog(false);
+    }
+  };
+
+  const handleImportProduct = (product: any) => {
+    if (product.name) setProductName(product.name);
+    if (product.estimated_cost) {
+      setDirectCosts([{ id: Date.now().toString(), name: "Custo estimado (catálogo)", value: product.estimated_cost }]);
+    }
+    toast.success(`Produto "${product.name}" importado!`);
+    setCatalogDialogOpen(false);
+  };
 
   const exportPDF = () => {
     const doc = new jsPDF();
@@ -138,10 +188,50 @@ function ProductCalculator() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label>Nome do Produto</Label>
-        <Input value={productName} onChange={e => setProductName(e.target.value)} placeholder="Ex: Camiseta personalizada" />
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <Label>Nome do Produto</Label>
+          <Input value={productName} onChange={e => setProductName(e.target.value)} placeholder="Ex: Camiseta personalizada" />
+        </div>
+        <Dialog open={catalogDialogOpen} onOpenChange={setCatalogDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+              <FileSearch className="h-3.5 w-3.5" /> Importar Catálogo
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" /> Importar Catálogo de Produtos
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Envie PDFs, fotos ou listas de preços. A IA vai extrair produtos, preços e dar insights de precificação.
+              </p>
+              <CatalogUploader fileUrls={catalogFiles} onFilesChange={setCatalogFiles} />
+              <Button
+                onClick={analyzeCatalog}
+                disabled={catalogFiles.length === 0 || analyzingCatalog}
+                className="w-full"
+              >
+                {analyzingCatalog ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Analisando...</>
+                ) : (
+                  <><FileSearch className="h-4 w-4 mr-2" /> Analisar Catálogo</>
+                )}
+              </Button>
+              {catalogAnalysis && (
+                <CatalogAnalysisResult
+                  analysis={catalogAnalysis}
+                  onImportProduct={handleImportProduct}
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
+
 
       <Card>
         <CardHeader className="pb-3">
