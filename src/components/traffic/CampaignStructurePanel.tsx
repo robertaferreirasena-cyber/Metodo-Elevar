@@ -26,6 +26,7 @@ interface CampaignStructurePanelProps {
   selectedCampaignId: string | null;
   onSelectCampaign: (id: string) => void;
   onDeleteCampaign: (id: string) => void;
+  onDuplicateCampaign?: (id: string) => void;
 }
 
 export default function CampaignStructurePanel({
