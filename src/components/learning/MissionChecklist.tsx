@@ -145,15 +145,31 @@ export default function MissionChecklist({
       onToggle(mission.id);
     }
 
-    if (mission.activity_type === "mentor" || config.route === "/mentora") {
+    if (mission.activity_type === "mentor" || mission.activity_type === "content") {
       let prompt = MENTOR_PROMPTS[mission.title] || `Me ajude com a missão: ${mission.title}. ${mission.content || ""}`;
       if (personaContext?.enrichPrompt) {
         prompt = personaContext.enrichPrompt(prompt);
       }
       navigate(`/mentora?prompt=${encodeURIComponent(prompt)}`);
     } else {
+      // Store contextual prompt for tool missions so user can ask Mentora for help
+      const contextPrompt = TOOL_CONTEXT_PROMPTS[mission.title];
+      if (contextPrompt) {
+        sessionStorage.setItem("elevar_mission_context", JSON.stringify({
+          missionTitle: mission.title,
+          prompt: personaContext?.enrichPrompt ? personaContext.enrichPrompt(contextPrompt) : contextPrompt,
+          route: config.route,
+        }));
+      }
       navigate(config.route);
     }
+  };
+
+  const handleAskMentora = (mission: Mission) => {
+    const contextPrompt = TOOL_CONTEXT_PROMPTS[mission.title] || MENTOR_PROMPTS[mission.title];
+    if (!contextPrompt) return;
+    let prompt = personaContext?.enrichPrompt ? personaContext.enrichPrompt(contextPrompt) : contextPrompt;
+    navigate(`/mentora?prompt=${encodeURIComponent(prompt)}`);
   };
 
   const handleViewMission = (mission: Mission) => {
