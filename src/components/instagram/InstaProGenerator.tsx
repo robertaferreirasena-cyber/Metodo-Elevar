@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import ProfileGeneratorForm, { type InstaFormData } from "./ProfileGeneratorForm";
 import InstagramProfilePreview, { type InstaProfile } from "./InstagramProfilePreview";
 import { useAuth } from "@/hooks/useAuth";
+import type { RaioXData } from "@/hooks/usePersonaProfile";
 
 interface Props {
   personaData?: {
@@ -19,6 +20,7 @@ interface Props {
     targetAudience?: string;
     ageRange?: string;
     brandName?: string;
+    raioX?: RaioXData | null;
   };
   onCreateContent?: (post: InstaProfile["posts_sugeridos"][0]) => void;
 }
@@ -121,7 +123,7 @@ export default function InstaProGenerator({ personaData, onCreateContent }: Prop
     setCurrentProfileId(null);
     try {
       const { data, error } = await supabase.functions.invoke("instagram-profile-generator", {
-        body: { formData },
+        body: { formData, raioXData: personaData?.raioX || null },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -155,8 +157,8 @@ export default function InstaProGenerator({ personaData, onCreateContent }: Prop
           </div>
         </div>
         <div className="text-center space-y-1">
-          <p className="text-sm font-medium text-foreground">Gerando seu perfil Instagram...</p>
-          <p className="text-xs text-muted-foreground">A IA está criando um perfil otimizado para alta conversão</p>
+          <p className="text-sm font-medium text-foreground">Gerando seu perfil Instagram estratégico...</p>
+          <p className="text-xs text-muted-foreground">A IA está criando 9 posts com funil de atração, retenção e conversão</p>
         </div>
       </div>
     );
@@ -174,14 +176,8 @@ export default function InstaProGenerator({ personaData, onCreateContent }: Prop
         ) : (
           <div className="space-y-2">
             {savedProfiles.map(sp => (
-              <div
-                key={sp.id}
-                className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-              >
-                <button
-                  onClick={() => handleLoadProfile(sp)}
-                  className="w-full text-left"
-                >
+              <div key={sp.id} className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <button onClick={() => handleLoadProfile(sp)} className="w-full text-left">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-foreground">{sp.label || "Perfil"}</span>
                     <span className="text-[10px] text-muted-foreground">
@@ -196,25 +192,14 @@ export default function InstaProGenerator({ personaData, onCreateContent }: Prop
                 </button>
                 <div className="flex gap-1 mt-2 justify-end">
                   <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 text-xs gap-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingProfile(sp);
-                      setEditLabel(sp.label || "");
-                    }}
+                    size="sm" variant="ghost" className="h-7 px-2 text-xs gap-1"
+                    onClick={(e) => { e.stopPropagation(); setEditingProfile(sp); setEditLabel(sp.label || ""); }}
                   >
                     <Pencil className="h-3 w-3" /> Renomear
                   </Button>
                   <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(sp.id);
-                    }}
+                    size="sm" variant="ghost" className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(sp.id); }}
                   >
                     <Trash2 className="h-3 w-3" /> Deletar
                   </Button>
@@ -223,19 +208,11 @@ export default function InstaProGenerator({ personaData, onCreateContent }: Prop
             ))}
           </div>
         )}
-
-        {/* Edit label dialog */}
         <Dialog open={!!editingProfile} onOpenChange={() => setEditingProfile(null)}>
           <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="text-base">Renomear Perfil</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle className="text-base">Renomear Perfil</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <Input
-                value={editLabel}
-                onChange={(e) => setEditLabel(e.target.value)}
-                placeholder="Nome do perfil"
-              />
+              <Input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} placeholder="Nome do perfil" />
               <div className="flex gap-2 justify-end">
                 <Button size="sm" variant="outline" onClick={() => setEditingProfile(null)}>Cancelar</Button>
                 <Button size="sm" onClick={handleEditSave}>Salvar</Button>

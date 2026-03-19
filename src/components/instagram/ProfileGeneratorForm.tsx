@@ -6,7 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ChevronRight, ChevronLeft, Camera, Target, Palette, BarChart3 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Sparkles, ChevronRight, ChevronLeft, Camera, Target, Palette, BarChart3, ChevronDown, Brain } from "lucide-react";
+import type { RaioXData } from "@/hooks/usePersonaProfile";
 
 export interface InstaFormData {
   niche: string;
@@ -14,7 +17,7 @@ export interface InstaFormData {
   showsFace: string;
   targetAudience: string;
   ageRange: string;
-  mainGoal: string;
+  mainGoals: string[];
   brandName: string;
   whatSells: string;
   differentiator: string;
@@ -37,6 +40,7 @@ interface Props {
     targetAudience?: string;
     ageRange?: string;
     brandName?: string;
+    raioX?: RaioXData | null;
   };
 }
 
@@ -59,34 +63,54 @@ const AGE_RANGES = ["18-24 anos", "25-34 anos", "35-44 anos", "45-54 anos", "55+
 
 export default function ProfileGeneratorForm({ onSubmit, isGenerating, personaData }: Props) {
   const [step, setStep] = useState(0);
+  const [raioXOpen, setRaioXOpen] = useState(false);
   const [form, setForm] = useState<InstaFormData>({
     niche: "", subNiche: "", showsFace: "",
-    targetAudience: "", ageRange: "", mainGoal: "",
+    targetAudience: "", ageRange: "", mainGoals: [],
     brandName: "", whatSells: "", differentiator: "", transformation: "", toneOfVoice: "",
     hasInstagram: "", followers: "", postFrequency: "", difficulties: "",
   });
 
+  const raioX = personaData?.raioX;
+
   // Auto-fill from persona
   useEffect(() => {
     if (personaData) {
+      const audienceParts: string[] = [];
+      if (personaData.targetAudience) audienceParts.push(personaData.targetAudience);
+      if (raioX) {
+        if (raioX.desejos?.length) audienceParts.push(`Desejos: ${raioX.desejos.slice(0, 3).join(", ")}`);
+        if (raioX.fontes_de_dor?.length) audienceParts.push(`Dores: ${raioX.fontes_de_dor.slice(0, 3).join(", ")}`);
+      }
+
       setForm(prev => ({
         ...prev,
         niche: prev.niche || personaData.niche || "",
         whatSells: prev.whatSells || personaData.product || "",
         differentiator: prev.differentiator || personaData.differentiator || "",
         transformation: prev.transformation || personaData.transformation || "",
-        targetAudience: prev.targetAudience || personaData.targetAudience || "",
+        targetAudience: prev.targetAudience || audienceParts.join("\n") || "",
         ageRange: prev.ageRange || personaData.ageRange || "",
         brandName: prev.brandName || personaData.brandName || "",
+        toneOfVoice: prev.toneOfVoice || raioX?.estrategia_recomendada?.tom_comunicacao || "",
       }));
     }
   }, [personaData]);
 
   const set = (key: keyof InstaFormData, val: string) => setForm(p => ({ ...p, [key]: val }));
 
+  const toggleGoal = (goal: string) => {
+    setForm(p => ({
+      ...p,
+      mainGoals: p.mainGoals.includes(goal)
+        ? p.mainGoals.filter(g => g !== goal)
+        : [...p.mainGoals, goal],
+    }));
+  };
+
   const canAdvance = () => {
     if (step === 0) return !!form.niche && !!form.showsFace;
-    if (step === 1) return !!form.targetAudience && !!form.mainGoal;
+    if (step === 1) return !!form.targetAudience && form.mainGoals.length > 0;
     if (step === 2) return !!form.brandName && !!form.whatSells;
     return true;
   };
@@ -162,6 +186,54 @@ export default function ProfileGeneratorForm({ onSubmit, isGenerating, personaDa
 
           {step === 1 && (
             <>
+              {/* Raio-X Summary */}
+              {raioX && (
+                <Collapsible open={raioXOpen} onOpenChange={setRaioXOpen}>
+                  <CollapsibleTrigger asChild>
+                    <button className="w-full flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-primary" />
+                        <span className="text-xs font-medium text-foreground">Raio-X da Persona</span>
+                        <Badge className="bg-green-500/20 text-green-700 dark:text-green-300 text-[10px]">Carregado ✓</Badge>
+                      </div>
+                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${raioXOpen ? "rotate-180" : ""}`} />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2 p-3 rounded-lg border bg-card space-y-2">
+                    {raioX.fontes_de_dor?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase">Dores</p>
+                        <p className="text-xs text-foreground">{raioX.fontes_de_dor.slice(0, 4).join(" • ")}</p>
+                      </div>
+                    )}
+                    {raioX.desejos?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase">Desejos</p>
+                        <p className="text-xs text-foreground">{raioX.desejos.slice(0, 4).join(" • ")}</p>
+                      </div>
+                    )}
+                    {raioX.medos?.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase">Medos</p>
+                        <p className="text-xs text-foreground">{raioX.medos.slice(0, 3).join(" • ")}</p>
+                      </div>
+                    )}
+                    {raioX.neurocomportamentos && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase">Gatilhos de confiança</p>
+                        <p className="text-xs text-foreground">{raioX.neurocomportamentos.gatilhos_confianca}</p>
+                      </div>
+                    )}
+                    {raioX.estrategia_recomendada?.tom_comunicacao && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase">Tom recomendado</p>
+                        <p className="text-xs text-primary font-medium">{raioX.estrategia_recomendada.tom_comunicacao}</p>
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+
               <div>
                 <Label>Quem é seu público ideal? *</Label>
                 <Textarea placeholder="Ex: Mulheres 25-40 anos que querem emagrecer com saúde..." value={form.targetAudience} onChange={e => set("targetAudience", e.target.value)} className="mt-1" rows={3} />
@@ -174,11 +246,18 @@ export default function ProfileGeneratorForm({ onSubmit, isGenerating, personaDa
                 </Select>
               </div>
               <div>
-                <Label>Qual seu principal objetivo? *</Label>
-                <Select value={form.mainGoal} onValueChange={v => set("mainGoal", v)}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>{GOALS.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
-                </Select>
+                <Label>Quais são seus objetivos? * (selecione um ou mais)</Label>
+                <div className="space-y-2 mt-2">
+                  {GOALS.map(goal => (
+                    <label key={goal} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={form.mainGoals.includes(goal)}
+                        onCheckedChange={() => toggleGoal(goal)}
+                      />
+                      <span className="text-sm text-foreground">{goal}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </>
           )}
