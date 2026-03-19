@@ -16,6 +16,7 @@ import StrategicPlanTracker from "@/components/learning/StrategicPlanTracker";
 import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useMissionAutoComplete } from "@/hooks/useMissionAutoComplete";
 import { useNavigate } from "react-router-dom";
+import InstaProGenerator from "@/components/instagram/InstaProGenerator";
 
 export default function LearningModules() {
   return (
