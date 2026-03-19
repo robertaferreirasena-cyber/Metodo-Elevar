@@ -15,6 +15,8 @@ const PERSONAS = [
   { id: "estrategista", name: "Estrategista", icon: "📊", desc: "Vendas e conversão" },
   { id: "copywriter", name: "Copywriter", icon: "✍️", desc: "Textos que vendem" },
   { id: "instagram", name: "Instagram Expert", icon: "📸", desc: "Crescimento e engajamento" },
+  { id: "diretor-criativo", name: "Diretor Criativo", icon: "🎬", desc: "Storytelling e narrativa cinematográfica" },
+  { id: "gestor-trafego", name: "Gestor de Tráfego", icon: "📈", desc: "Estratégia de tráfego pago e métricas" },
 ];
 
 const SUGGESTIONS = [

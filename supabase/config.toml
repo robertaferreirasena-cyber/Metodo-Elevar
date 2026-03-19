@@ -39,3 +39,6 @@ verify_jwt = false
 
 [functions.instagram-profile-generator]
 verify_jwt = false
+
+[functions.ad-creator]
+verify_jwt = false
