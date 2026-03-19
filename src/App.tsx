@@ -389,6 +389,20 @@ const App = () => (
                 }
               />
 
+              {/* Automação Instagram - ManyChat */}
+              <Route
+                path="/automacao-instagram"
+                element={
+                  <ProtectedRoute>
+                    <ModuleGuard module="module_manychat_flows">
+                      <AppLayout>
+                        <ManyChatFlows />
+                      </AppLayout>
+                    </ModuleGuard>
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Legacy redirects */}
               <Route path="/estrategias" element={<Navigate to="/privado/estrategias" replace />} />
               <Route path="/analise" element={<Navigate to="/privado/analise" replace />} />
