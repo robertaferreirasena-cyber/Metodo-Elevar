@@ -324,6 +324,16 @@ export default function AdManagerSimulator() {
                       <span>Orçamento: <strong>{sd.campaign?.budget_value}</strong></span>
                       <Badge variant="outline" className="text-[10px]">{selectedCampaign.platform}</Badge>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 gap-1 text-xs"
+                      onClick={() => duplicateMutation.mutate(selectedCampaign)}
+                      disabled={duplicateMutation.isPending}
+                    >
+                      <Copy className="h-3 w-3" />
+                      Duplicar A/B
+                    </Button>
                     <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={exportPDF}>
                       <Download className="h-3 w-3" />
                       Exportar PDF
