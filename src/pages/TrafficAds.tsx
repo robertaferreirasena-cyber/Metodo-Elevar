@@ -76,7 +76,7 @@ export default function TrafficAds() {
           audience,
           budget,
           tone: TONES.find(t => t.value === tone)?.label || tone,
-          personaContext: personaContext || null,
+          personaContext: hasProfile ? enrichPrompt("") : null,
         }),
       });
 
