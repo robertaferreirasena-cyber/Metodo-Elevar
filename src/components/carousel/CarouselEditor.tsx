@@ -660,14 +660,27 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
             </Card>
           </div>
 
-          {/* Thumbnail strip */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {slides.map((s, i) => (
-              <button key={i} onClick={() => setCurrentSlide(i)} className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${i === currentSlide ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}>
-                <div className="w-full h-full flex items-center justify-center p-1" style={{ background: s.bgImageUrl ? `linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url(${s.bgImageUrl}) center/cover` : s.imageUrl ? `linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url(${s.imageUrl}) center/cover` : s.bgGradient || s.bgColor }}>
-                  <span className="text-[8px] font-bold leading-tight text-center line-clamp-3" style={{ color: s.textColor }}>{s.title}</span>
-                </div>
-              </button>
+          {/* Thumbnail strip — aspect-ratio aware */}
+          <div className="flex gap-3 overflow-x-auto pb-3 pt-1">
+            {slides.map((s, i) => {
+              const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
+              const thumbH = 100;
+              const thumbW = Math.round(thumbH * (spec.width / spec.height));
+              return (
+                <button
+                  key={i}
+                  onClick={() => setCurrentSlide(i)}
+                  className={`flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${i === currentSlide ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
+                  style={{ width: thumbW, height: thumbH }}
+                >
+                  <div className="w-full h-full flex flex-col items-center justify-center p-1.5 relative" style={{ background: s.bgImageUrl ? `linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url(${s.bgImageUrl}) center/cover` : s.imageUrl ? `linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url(${s.imageUrl}) center/cover` : s.bgGradient || s.bgColor }}>
+                    <span className="text-[7px] font-bold uppercase tracking-wide mb-0.5" style={{ color: s.accentColor }}>{i + 1}/{slides.length}</span>
+                    <span className="text-[9px] font-bold leading-tight text-center line-clamp-3" style={{ color: s.textColor }}>{s.title}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
             ))}
           </div>
 
