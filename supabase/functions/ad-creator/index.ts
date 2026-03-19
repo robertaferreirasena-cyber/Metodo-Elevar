@@ -145,7 +145,7 @@ serve(async (req) => {
     if (authResult instanceof Response) return authResult;
     const { userId } = authResult;
 
-    const { platform, objective, product, audience, budget, tone, personaContext } = await req.json();
+    const { platform, objective, product, audience, budget, tone, destination, personaContext } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -183,6 +183,22 @@ serve(async (req) => {
     const kbPrompt = await getKBPrompt("ad-creator");
     const systemPrompt = (kbPrompt || DEFAULT_SYSTEM_PROMPT) + raioXContext;
 
+    // Build destination-specific instructions
+    let destinationInstructions = "";
+    if (destination && destination !== "não especificado") {
+      const destMap: Record<string, string> = {
+        "📱 WhatsApp": "DESTINO: WhatsApp. Otimize o CTA para 'Enviar mensagem no WhatsApp'. O texto deve criar urgência para iniciar uma conversa. Use linguagem conversacional. Sugira mensagem de boas-vindas automática. O botão do anúncio deve ser 'Enviar mensagem' ou 'Falar no WhatsApp'.",
+        "🛒 Página de Vendas": "DESTINO: Página de vendas. CTA direto para compra ('Comprar agora', 'Garantir minha vaga'). Copy focada em benefícios, prova social e escassez. Destaque oferta e preço.",
+        "📋 Página de Captura (Lead)": "DESTINO: Landing page de captura. CTA para download de material gratuito ('Baixar grátis', 'Receber agora'). Copy focada na isca digital e no valor do material. Minimizar fricção.",
+        "📸 Perfil do Instagram": "DESTINO: Perfil do Instagram. CTA para 'Visitar perfil' ou 'Seguir'. Copy que gere curiosidade sobre o conteúdo do perfil. Destaque autoridade e conteúdo exclusivo.",
+        "🔗 Link na Bio / Linktree": "DESTINO: Link na bio. CTA para 'Saiba mais' com instrução para clicar no link da bio. Copy que gere curiosidade múltipla.",
+        "🏪 Loja Online / E-commerce": "DESTINO: Loja online. CTA para 'Ver produtos', 'Comprar com desconto'. Copy focada em catálogo, frete grátis, promoções. Use formato carrossel quando possível.",
+        "💬 Messenger": "DESTINO: Messenger. CTA para 'Enviar mensagem'. Copy que inicie qualificação automática. Sugira sequência de perguntas para o bot.",
+        "📲 Aplicativo": "DESTINO: App. CTA para 'Instalar agora', 'Baixar app'. Copy focada em benefícios exclusivos do app e facilidade de uso.",
+      };
+      destinationInstructions = destMap[destination] || `DESTINO: ${destination}. Adapte o CTA e a copy para este destino específico.`;
+    }
+
     const userMessage = `Crie um anúncio completo usando o Método ANDROMEDA com as seguintes especificações:
 
 **Plataforma:** ${platform}
@@ -191,9 +207,11 @@ serve(async (req) => {
 **Público-alvo:** ${audience}
 **Orçamento estimado:** ${budget || "não informado"}
 **Tom desejado:** ${tone}
+**Destino do tráfego:** ${destination || "não especificado"}
+${destinationInstructions ? `\n**INSTRUÇÕES DE DESTINO:**\n${destinationInstructions}` : ""}
 ${personaContext ? `\n**Contexto adicional da persona:** ${personaContext}` : ""}
 
-Gere o anúncio completo seguindo todas as etapas do Método ANDROMEDA (A-N-D-R-O-M-E-D-A).`;
+Gere o anúncio completo seguindo todas as etapas do Método ANDROMEDA (A-N-D-R-O-M-E-D-A). Adapte especificamente o CTA e a estratégia ao destino escolhido.`;
 
     console.log(`[ad-creator] user:${userId.slice(0,8)} platform:${platform} objective:${objective}`);
 
