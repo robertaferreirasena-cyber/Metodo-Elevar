@@ -153,7 +153,7 @@ Retorne usando a função generate_carousel.`;
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
