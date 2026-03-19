@@ -400,6 +400,7 @@ function ServiceCalculator() {
 
   return (
     <div className="space-y-4">
+      <SessionIndicator show={hasRestoredSession} onClear={clearSession} />
       <div>
         <Label>Nome do Serviço</Label>
         <Input value={serviceName} onChange={e => setServiceName(e.target.value)} placeholder="Ex: Consultoria de Marketing" />
