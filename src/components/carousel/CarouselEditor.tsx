@@ -456,11 +456,37 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
           {/* Template selector */}
           <div>
             <Label>Template visual</Label>
+            {slides.length > 0 && (
+              <div className="flex gap-1.5 mt-1 mb-2">
+                <Button size="sm" variant={templateApplyMode === "all" ? "default" : "outline"} className="text-xs h-7" onClick={() => setTemplateApplyMode("all")}>
+                  Todos slides
+                </Button>
+                <Button size="sm" variant={templateApplyMode === "current" ? "default" : "outline"} className="text-xs h-7" onClick={() => setTemplateApplyMode("current")}>
+                  Slide atual
+                </Button>
+                <Button size="sm" variant={templateApplyMode === "preserve" ? "default" : "outline"} className="text-xs h-7" onClick={() => setTemplateApplyMode("preserve")}>
+                  <Palette className="h-3 w-3 mr-1" /> Preservar formatação
+                </Button>
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
               {filteredTemplates.map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => { setSelectedTemplate(t); if (slides.length > 0) applyTemplateToAll(t); }}
+                  onClick={() => {
+                    setSelectedTemplate(t);
+                    if (slides.length > 0) {
+                      if (templateApplyMode === "current") {
+                        applyTemplateToSlide(t, currentSlide);
+                        toast.success(`Template aplicado ao slide ${currentSlide + 1}`);
+                      } else if (templateApplyMode === "preserve") {
+                        applyTemplatePreservingFormatting(t);
+                        toast.success("Template aplicado preservando formatação personalizada");
+                      } else {
+                        applyTemplateToAll(t);
+                      }
+                    }
+                  }}
                   className={`p-3 rounded-lg border-2 text-left transition-all ${selectedTemplate.id === t.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
                 >
                   <div className="flex items-center gap-2 mb-2">
