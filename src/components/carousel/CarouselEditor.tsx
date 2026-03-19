@@ -25,8 +25,8 @@ import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
 import {
-  CAROUSEL_TEMPLATES, createSlidesFromTemplate,
-  type SlideData, type CarouselTemplate, type CarouselLayout,
+  CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS,
+  type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
 } from "./CarouselTemplates";
 
 const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial"];
@@ -220,6 +220,12 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     setSlides((prev) => prev.map((s, i) => (i === index ? { ...s, ...updates } : s)));
   };
 
+  const changeFormat = (newRatio: AspectRatio) => {
+    const spec = FORMAT_SPECS[newRatio];
+    setSelectedTemplate(prev => ({ ...prev, aspectRatio: newRatio, titleSize: spec.titleSize, bodySize: spec.bodySize }));
+    setSlides(prev => prev.map(s => ({ ...s, titleSize: spec.titleSize, bodySize: spec.bodySize })));
+  };
+
   const applyTemplateToAll = (template: CarouselTemplate) => {
     setSelectedTemplate(template);
     setSlides((prev) =>
@@ -256,11 +262,19 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     catch { toast.error("Erro ao carregar foto de perfil"); }
   };
 
+  // Hidden export refs for native-size rendering
+  const exportRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const setExportRef = useCallback(
+    (index: number) => (el: HTMLDivElement | null) => { exportRefs.current[index] = el; },
+    []
+  );
+
   const exportSlide = async (index: number) => {
-    const el = slideRefs.current[index];
+    const el = exportRefs.current[index] || slideRefs.current[index];
     if (!el) return;
+    const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
     try {
-      const dataUrl = await toPng(el, { cacheBust: true, pixelRatio: 2, width: el.offsetWidth, height: el.offsetHeight });
+      const dataUrl = await toPng(el, { cacheBust: true, pixelRatio: 1, width: spec.width, height: spec.height });
       const link = document.createElement("a");
       link.download = `slide-${index + 1}.png`;
       link.href = dataUrl;
@@ -434,18 +448,33 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
       {/* ========== EDITOR + PREVIEW ========== */}
       {slides.length > 0 && cur && (
         <>
-          {/* Navigation */}
-          <div className="flex items-center justify-between">
+          {/* Format toggle + Navigation */}
+          <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <Button size="icon" variant="outline" disabled={currentSlide === 0} onClick={() => setCurrentSlide((p) => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
-              <Badge variant="secondary">Slide {currentSlide + 1} / {slides.length}</Badge>
-              <Button size="icon" variant="outline" disabled={currentSlide === slides.length - 1} onClick={() => setCurrentSlide((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+              <Label className="text-xs text-muted-foreground shrink-0">Formato:</Label>
+              {(["1:1", "9:16", "16:9"] as AspectRatio[]).map((r) => (
+                <Button key={r} size="sm" variant={selectedTemplate.aspectRatio === r ? "default" : "outline"} onClick={() => changeFormat(r)}>
+                  {r === "1:1" && <Square className="h-3 w-3 mr-1" />}
+                  {r === "9:16" && <Smartphone className="h-3 w-3 mr-1" />}
+                  {r === "16:9" && <Monitor className="h-3 w-3 mr-1" />}
+                  {FORMAT_SPECS[r].label}
+                </Button>
+              ))}
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => exportSlide(currentSlide)}><Download className="h-4 w-4 mr-1" /> PNG</Button>
-              <Button size="sm" onClick={exportAll} disabled={exporting}><DownloadCloud className="h-4 w-4 mr-1" />{exporting ? "Exportando..." : "Baixar Todos"}</Button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button size="icon" variant="outline" disabled={currentSlide === 0} onClick={() => setCurrentSlide((p) => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+                <Badge variant="secondary">Slide {currentSlide + 1} / {slides.length}</Badge>
+                <Button size="icon" variant="outline" disabled={currentSlide === slides.length - 1} onClick={() => setCurrentSlide((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => exportSlide(currentSlide)}><Download className="h-4 w-4 mr-1" /> PNG</Button>
+                <Button size="sm" onClick={exportAll} disabled={exporting}><DownloadCloud className="h-4 w-4 mr-1" />{exporting ? "Exportando..." : "Baixar Todos"}</Button>
+              </div>
             </div>
           </div>
+
+
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Preview */}
@@ -691,11 +720,11 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
             </Card>
           </Collapsible>
 
-          {/* Hidden slides for export */}
+          {/* Hidden slides for export at native resolution */}
           <div className="absolute -left-[9999px] top-0" aria-hidden>
-            {slides.map((s, i) => i !== currentSlide ? (
-              <SlidePreview key={i} ref={setSlideRef(i)} slide={s} slideIndex={i} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} />
-            ) : null)}
+            {slides.map((s, i) => (
+              <SlidePreview key={i} ref={setExportRef(i)} slide={s} slideIndex={i} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} nativeSize />
+            ))}
           </div>
         </>
       )}

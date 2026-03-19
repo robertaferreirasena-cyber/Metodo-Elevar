@@ -6,6 +6,22 @@ export type CarouselLayout =
   | "sales-highlight"
   | "editorial";
 
+export type AspectRatio = "1:1" | "16:9" | "9:16";
+
+export interface FormatSpec {
+  width: number;
+  height: number;
+  label: string;
+  titleSize: number;
+  bodySize: number;
+}
+
+export const FORMAT_SPECS: Record<AspectRatio, FormatSpec> = {
+  "1:1":  { width: 1080, height: 1080, label: "Feed 1:1",    titleSize: 42, bodySize: 26 },
+  "9:16": { width: 1080, height: 1920, label: "Stories 9:16", titleSize: 48, bodySize: 28 },
+  "16:9": { width: 1920, height: 1080, label: "Wide 16:9",    titleSize: 48, bodySize: 28 },
+};
+
 export interface CarouselTemplate {
   id: string;
   name: string;
