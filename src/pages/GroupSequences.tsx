@@ -504,22 +504,10 @@ export default function GroupSequences() {
               <CardContent className="space-y-4">
                 {/* Webhook & Schedule Config (only for saved sequences) */}
                 {sequence.id && (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <WebhookConfig
-                      sequenceId={sequence.id}
-                      initialWebhookUrl={sequence.webhookUrl || ""}
-                      initialGroupId={sequence.whatsappGroupId || ""}
-                      initialGroupName={sequence.whatsappGroupName || ""}
-                      initialSendMode={sequence.sendMode || "uazapi"}
-                      onSaved={(url, gid, gname) =>
-                        setSequence({ ...sequence, webhookUrl: url, whatsappGroupId: gid, whatsappGroupName: gname })
-                      }
-                    />
-                    <ScheduleConfig
-                      totalPosts={sequence.totalPosts}
-                      onScheduleAll={handleScheduleAll}
-                    />
-                  </div>
+                  <ScheduleConfig
+                    totalPosts={sequence.totalPosts}
+                    onScheduleAll={handleScheduleAll}
+                  />
                 )}
 
                 {/* Posts */}
