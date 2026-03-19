@@ -88,7 +88,7 @@ export default function InstaProGenerator({ personaData }: Props) {
     <div className="mt-4">
       <ProfileGeneratorForm
         onSubmit={handleSubmit}
-        isGenerating={view === "generating"}
+        isGenerating={false}
         personaData={personaData}
       />
     </div>
