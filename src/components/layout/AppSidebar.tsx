@@ -40,7 +40,6 @@ const financeItems = [
 ];
 
 const moreItems = [
-  { title: "Raio-X Persona", url: "/persona", icon: Brain },
   { title: "Ideias", url: "/ideias", icon: Lightbulb },
   { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera },
   { title: "Comunidade", url: "/comunidade", icon: MessageSquare },
