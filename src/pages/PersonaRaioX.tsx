@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CatalogUploader } from "@/components/catalog/CatalogUploader";
 import { 
   User, 
   Package, 
