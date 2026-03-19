@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Megaphone, Sparkles, Loader2, Copy, Check, Zap } from "lucide-react";
+import { Megaphone, Sparkles, Loader2, Copy, Check, Zap, CheckCircle, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { usePersonaContext } from "@/contexts/PersonaContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import AdManagerSimulator from "@/components/traffic/AdManagerSimulator";
 
 const PLATFORMS = [
   { value: "meta-ads", label: "Meta Ads (Facebook/Instagram)" },
@@ -36,7 +39,9 @@ const TONES = [
 export default function TrafficAds() {
   const { user } = useAuth();
   const { enrichPrompt, hasProfile, formData, raioX } = usePersonaContext();
+  const queryClient = useQueryClient();
 
+  const [activeTab, setActiveTab] = useState("create");
   const [platform, setPlatform] = useState("");
   const [objective, setObjective] = useState("");
   const [product, setProduct] = useState("");
@@ -45,6 +50,7 @@ export default function TrafficAds() {
   const [tone, setTone] = useState("");
   const [result, setResult] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
@@ -136,6 +142,52 @@ export default function TrafficAds() {
     }
   };
 
+  const handleApprove = async () => {
+    if (!result || !user) return;
+    setIsApproving(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Sessão expirada.");
+        return;
+      }
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const resp = await fetch(`https://${projectId}.supabase.co/functions/v1/ad-structure-generator`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          rawResult: result,
+          platform: PLATFORMS.find(p => p.value === platform)?.label || platform,
+          objective: OBJECTIVES.find(o => o.value === objective)?.label || objective,
+          product,
+          audience,
+          budget,
+          tone: TONES.find(t => t.value === tone)?.label || tone,
+        }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "Erro ao estruturar" }));
+        toast.error(err.error || "Erro ao aprovar campanha");
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["ad-campaigns"] });
+      toast.success("Campanha aprovada e estruturada! Abrindo simulador...");
+      setActiveTab("simulator");
+    } catch (e) {
+      console.error("Error approving campaign:", e);
+      toast.error("Erro ao aprovar campanha.");
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText(result);
     setCopied(true);
@@ -144,7 +196,7 @@ export default function TrafficAds() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-3 rounded-2xl bg-violet-500/10">
@@ -157,7 +209,7 @@ export default function TrafficAds() {
         <Badge className="ml-auto bg-violet-500/10 text-violet-600 border-violet-200">Método ANDROMEDA</Badge>
       </div>
 
-      {/* ANDROMEDA Steps Visual */}
+      {/* ANDROMEDA Steps */}
       <div className="flex flex-wrap gap-1.5">
         {["A·Atenção", "N·Narrativa", "D·Dor", "R·Resolução", "O·Oferta", "M·Movimento", "E·Escassez", "D·Dados", "A·Ação"].map((step, i) => (
           <Badge key={i} variant="outline" className="text-[10px] font-medium bg-violet-500/5 border-violet-200 text-violet-600">
@@ -166,135 +218,138 @@ export default function TrafficAds() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Form */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Configuração do Anúncio</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Plataforma</label>
-              <Select value={platform} onValueChange={setPlatform}>
-                <SelectTrigger><SelectValue placeholder="Selecione a plataforma" /></SelectTrigger>
-                <SelectContent>
-                  {PLATFORMS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full max-w-md">
+          <TabsTrigger value="create" className="flex-1 gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" />
+            Criar Anúncio
+          </TabsTrigger>
+          <TabsTrigger value="simulator" className="flex-1 gap-1.5">
+            <BarChart3 className="h-3.5 w-3.5" />
+            Gerenciador
+          </TabsTrigger>
+        </TabsList>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Objetivo</label>
-              <Select value={objective} onValueChange={setObjective}>
-                <SelectTrigger><SelectValue placeholder="Selecione o objetivo" /></SelectTrigger>
-                <SelectContent>
-                  {OBJECTIVES.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Produto / Serviço</label>
-              <Textarea
-                value={product}
-                onChange={e => setProduct(e.target.value)}
-                placeholder="Descreva seu produto ou serviço..."
-                className="min-h-[80px] text-sm"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Público-alvo</label>
-              <Textarea
-                value={audience}
-                onChange={e => setAudience(e.target.value)}
-                placeholder="Descreva seu público-alvo ideal..."
-                className="min-h-[80px] text-sm"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Orçamento estimado (opcional)</label>
-              <Input
-                value={budget}
-                onChange={e => setBudget(e.target.value)}
-                placeholder="Ex: R$ 500/mês"
-                className="text-sm"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Tom do anúncio</label>
-              <Select value={tone} onValueChange={setTone}>
-                <SelectTrigger><SelectValue placeholder="Selecione o tom" /></SelectTrigger>
-                <SelectContent>
-                  {TONES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {hasProfile && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleFillFromPersona}
-                className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
-              >
-                <Zap className="h-4 w-4" />
-                Preencher com Raio-X da Persona
-              </Button>
-            )}
-
-            <Button
-              onClick={handleGenerate}
-              disabled={!canGenerate || isGenerating}
-              className="w-full gap-2"
-            >
-              {isGenerating ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Gerando com ANDROMEDA...</>
-              ) : (
-                <><Sparkles className="h-4 w-4" /> Gerar Anúncio</>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Result */}
-        <Card>
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm">Resultado</CardTitle>
-            {result && (
-              <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 gap-1 text-xs">
-                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                {copied ? "Copiado" : "Copiar"}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[600px]" ref={resultRef}>
-              {result ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none [&>h2]:text-violet-600 [&>h3]:text-violet-500">
-                  <ReactMarkdown>{result}</ReactMarkdown>
-                  {isGenerating && <span className="inline-block w-1.5 h-4 bg-primary animate-pulse ml-0.5" />}
+        <TabsContent value="create">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Form */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Configuração do Anúncio</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Plataforma</label>
+                  <Select value={platform} onValueChange={setPlatform}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a plataforma" /></SelectTrigger>
+                    <SelectContent>
+                      {PLATFORMS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-[400px] text-center space-y-3">
-                  <div className="p-4 rounded-full bg-violet-500/10">
-                    <Megaphone className="h-8 w-8 text-violet-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Seu anúncio aparecerá aqui</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Preencha o formulário e clique em "Gerar Anúncio" para criar seu anúncio com o Método ANDROMEDA
-                    </p>
-                  </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Objetivo</label>
+                  <Select value={objective} onValueChange={setObjective}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o objetivo" /></SelectTrigger>
+                    <SelectContent>
+                      {OBJECTIVES.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Produto / Serviço</label>
+                  <Textarea value={product} onChange={e => setProduct(e.target.value)} placeholder="Descreva seu produto ou serviço..." className="min-h-[80px] text-sm" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Público-alvo</label>
+                  <Textarea value={audience} onChange={e => setAudience(e.target.value)} placeholder="Descreva seu público-alvo ideal..." className="min-h-[80px] text-sm" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Orçamento estimado (opcional)</label>
+                  <Input value={budget} onChange={e => setBudget(e.target.value)} placeholder="Ex: R$ 500/mês" className="text-sm" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Tom do anúncio</label>
+                  <Select value={tone} onValueChange={setTone}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o tom" /></SelectTrigger>
+                    <SelectContent>
+                      {TONES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {hasProfile && (
+                  <Button type="button" variant="outline" size="sm" onClick={handleFillFromPersona} className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10">
+                    <Zap className="h-4 w-4" />
+                    Preencher com Raio-X da Persona
+                  </Button>
+                )}
+
+                <Button onClick={handleGenerate} disabled={!canGenerate || isGenerating} className="w-full gap-2">
+                  {isGenerating ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Gerando com ANDROMEDA...</>
+                  ) : (
+                    <><Sparkles className="h-4 w-4" /> Gerar Anúncio</>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Result */}
+            <Card>
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm">Resultado</CardTitle>
+                <div className="flex gap-1">
+                  {result && !isGenerating && (
+                    <Button variant="default" size="sm" onClick={handleApprove} disabled={isApproving} className="h-7 gap-1 text-xs bg-green-600 hover:bg-green-700">
+                      {isApproving ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+                      {isApproving ? "Estruturando..." : "Aprovar Campanha"}
+                    </Button>
+                  )}
+                  {result && (
+                    <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 gap-1 text-xs">
+                      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {copied ? "Copiado" : "Copiar"}
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[600px]" ref={resultRef}>
+                  {result ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none [&>h2]:text-violet-600 [&>h3]:text-violet-500">
+                      <ReactMarkdown>{result}</ReactMarkdown>
+                      {isGenerating && <span className="inline-block w-1.5 h-4 bg-primary animate-pulse ml-0.5" />}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-[400px] text-center space-y-3">
+                      <div className="p-4 rounded-full bg-violet-500/10">
+                        <Megaphone className="h-8 w-8 text-violet-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Seu anúncio aparecerá aqui</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Preencha o formulário e clique em "Gerar Anúncio" para criar seu anúncio com o Método ANDROMEDA
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="simulator">
+          <AdManagerSimulator />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
