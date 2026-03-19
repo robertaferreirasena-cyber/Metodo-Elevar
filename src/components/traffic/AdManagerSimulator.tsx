@@ -284,6 +284,10 @@ export default function AdManagerSimulator() {
             selectedCampaignId={selectedCampaignId}
             onSelectCampaign={setSelectedCampaignId}
             onDeleteCampaign={(id) => deleteMutation.mutate(id)}
+            onDuplicateCampaign={(id) => {
+              const c = campaigns.find(x => x.id === id);
+              if (c) duplicateMutation.mutate(c);
+            }}
           />
         </CardContent>
       </Card>
