@@ -10,6 +10,7 @@ import { Target, Save, TrendingUp, AlertTriangle, CheckCircle2, Plus, DollarSign
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { MissionContextBanner } from "@/components/learning/MissionContextBanner";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, isBefore, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -208,6 +209,7 @@ export default function SalesGoals() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <MissionContextBanner />
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-lg bg-primary/10">
