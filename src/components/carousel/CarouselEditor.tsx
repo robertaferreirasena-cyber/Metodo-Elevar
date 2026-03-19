@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, Download, Wand2, Loader2, Paintbrush, Type,
   AlignLeft, AlignCenter, DownloadCloud, ImagePlus, User, X, Smartphone,
   Square, Monitor, Sparkles, Send, ChevronDown, ChevronUp,
-  Bold, Italic, Underline,
+  Bold, Italic, Underline, ArrowUpFromLine, AlignVerticalSpaceAround, ArrowDownFromLine, Palette, Copy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -239,6 +239,41 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     );
   };
 
+  const applyTemplateToSlide = (template: CarouselTemplate, index: number) => {
+    setSelectedTemplate(template);
+    updateSlide(index, {
+      bgColor: template.bgColor, textColor: template.textColor, accentColor: template.accentColor,
+      titleSize: template.titleSize, bodySize: template.bodySize, fontFamily: template.fontFamily,
+      align: template.align, bgGradient: template.bgGradient, layout: template.layout,
+      highlightBgColor: template.highlightBgColor,
+    });
+  };
+
+  const applyTemplatePreservingFormatting = (template: CarouselTemplate, index?: number) => {
+    setSelectedTemplate(template);
+    const applyToSlide = (s: SlideData): SlideData => ({
+      ...s,
+      bgColor: template.bgColor,
+      bgGradient: template.bgGradient,
+      layout: template.layout,
+      fontFamily: template.fontFamily,
+      align: s.align, // preserve user alignment
+      titleSize: s.titleSize, // preserve user sizes
+      bodySize: s.bodySize,
+      textColor: s.titleColor ? s.textColor : template.textColor, // preserve if user customized
+      accentColor: template.accentColor,
+      highlightBgColor: template.highlightBgColor,
+      // Preserve: titleColor, bodyColor, titleBold, titleItalic, bodyBold, bodyItalic, bodyUnderline, textShadow, bgImageUrl, overlayOpacity, verticalAlign
+    });
+    if (index !== undefined) {
+      setSlides(prev => prev.map((s, i) => i === index ? applyToSlide(s) : s));
+    } else {
+      setSlides(prev => prev.map(applyToSlide));
+    }
+  };
+
+  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">("all");
+
   const handleImageUpload = async (index: number, file: File) => {
     try { updateSlide(index, { imageUrl: await fileToDataUrl(file) }); }
     catch { toast.error("Erro ao carregar imagem"); }
@@ -421,11 +456,37 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
           {/* Template selector */}
           <div>
             <Label>Template visual</Label>
+            {slides.length > 0 && (
+              <div className="flex gap-1.5 mt-1 mb-2">
+                <Button size="sm" variant={templateApplyMode === "all" ? "default" : "outline"} className="text-xs h-7" onClick={() => setTemplateApplyMode("all")}>
+                  Todos slides
+                </Button>
+                <Button size="sm" variant={templateApplyMode === "current" ? "default" : "outline"} className="text-xs h-7" onClick={() => setTemplateApplyMode("current")}>
+                  Slide atual
+                </Button>
+                <Button size="sm" variant={templateApplyMode === "preserve" ? "default" : "outline"} className="text-xs h-7" onClick={() => setTemplateApplyMode("preserve")}>
+                  <Palette className="h-3 w-3 mr-1" /> Preservar formatação
+                </Button>
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
               {filteredTemplates.map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => { setSelectedTemplate(t); if (slides.length > 0) applyTemplateToAll(t); }}
+                  onClick={() => {
+                    setSelectedTemplate(t);
+                    if (slides.length > 0) {
+                      if (templateApplyMode === "current") {
+                        applyTemplateToSlide(t, currentSlide);
+                        toast.success(`Template aplicado ao slide ${currentSlide + 1}`);
+                      } else if (templateApplyMode === "preserve") {
+                        applyTemplatePreservingFormatting(t);
+                        toast.success("Template aplicado preservando formatação personalizada");
+                      } else {
+                        applyTemplateToAll(t);
+                      }
+                    }
+                  }}
                   className={`p-3 rounded-lg border-2 text-left transition-all ${selectedTemplate.id === t.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -517,6 +578,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     <Button size="icon" variant={cur.bodyUnderline ? "default" : "outline"} className="h-7 w-7" onClick={() => updateSlide(currentSlide, { bodyUnderline: !cur.bodyUnderline })}>
                       <Underline className="h-3 w-3" />
                     </Button>
+                    <input type="color" value={cur.bodyColor || cur.textColor} onChange={(e) => updateSlide(currentSlide, { bodyColor: e.target.value })} className="h-7 w-7 rounded border border-input cursor-pointer" title="Cor do corpo" />
                   </div>
                 </div>
 
@@ -648,14 +710,48 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   <Slider value={[cur.bodySize]} onValueChange={([v]) => updateSlide(currentSlide, { bodySize: v })} min={12} max={32} step={1} className="mt-2" />
                 </div>
 
-                {/* Alignment */}
+                {/* Horizontal Alignment */}
                 <div>
-                  <Label className="text-xs">Alinhamento</Label>
+                  <Label className="text-xs">Alinhamento horizontal</Label>
                   <div className="flex gap-2 mt-1">
                     <Button size="sm" variant={cur.align === "left" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { align: "left" })}><AlignLeft className="h-4 w-4" /></Button>
                     <Button size="sm" variant={cur.align === "center" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { align: "center" })}><AlignCenter className="h-4 w-4" /></Button>
                   </div>
                 </div>
+
+                {/* Vertical Position */}
+                <div>
+                  <Label className="text-xs">Posição vertical do texto</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Button size="sm" variant={(cur.verticalAlign || "center") === "top" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { verticalAlign: "top" })}>
+                      <ArrowUpFromLine className="h-4 w-4 mr-1" /> Topo
+                    </Button>
+                    <Button size="sm" variant={(cur.verticalAlign || "center") === "center" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { verticalAlign: "center" })}>
+                      <AlignVerticalSpaceAround className="h-4 w-4 mr-1" /> Meio
+                    </Button>
+                    <Button size="sm" variant={(cur.verticalAlign || "center") === "bottom" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { verticalAlign: "bottom" })}>
+                      <ArrowDownFromLine className="h-4 w-4 mr-1" /> Baixo
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Copy formatting to other slides */}
+                <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => {
+                  const source = slides[currentSlide];
+                  setSlides(prev => prev.map((s, i) => i === currentSlide ? s : {
+                    ...s,
+                    bgColor: source.bgColor, textColor: source.textColor, accentColor: source.accentColor,
+                    titleSize: source.titleSize, bodySize: source.bodySize, fontFamily: source.fontFamily,
+                    align: source.align, bgGradient: source.bgGradient, titleColor: source.titleColor,
+                    bodyColor: source.bodyColor, titleBold: source.titleBold, titleItalic: source.titleItalic,
+                    bodyBold: source.bodyBold, bodyItalic: source.bodyItalic, bodyUnderline: source.bodyUnderline,
+                    textShadow: source.textShadow, verticalAlign: source.verticalAlign,
+                    highlightBgColor: source.highlightBgColor,
+                  }));
+                  toast.success("Formatação copiada para todos os slides!");
+                }}>
+                  <Copy className="h-3 w-3 mr-1" /> Copiar formatação para todos os slides
+                </Button>
               </CardContent>
             </Card>
           </div>
