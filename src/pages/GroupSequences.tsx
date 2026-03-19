@@ -47,10 +47,6 @@ interface Sequence {
   product?: string;
   goal?: string;
   created_at?: string;
-  webhookUrl?: string;
-  whatsappGroupId?: string;
-  whatsappGroupName?: string;
-  sendMode?: string;
 }
 
 interface SavedSequence {
