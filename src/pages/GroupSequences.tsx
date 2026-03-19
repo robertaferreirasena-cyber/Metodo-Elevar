@@ -338,10 +338,6 @@ export default function GroupSequences() {
       product: saved.product,
       goal: saved.goal,
       created_at: saved.created_at,
-      webhookUrl: saved.webhook_url || "",
-      whatsappGroupId: saved.whatsapp_group_id || "",
-      whatsappGroupName: saved.whatsapp_group_name || "",
-      sendMode: saved.send_mode || "uazapi",
       posts: saved.sequence_posts
         .sort((a, b) => a.post_order - b.post_order)
         .map(post => ({
