@@ -1,16 +1,27 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3?target=deno";
 
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// ============================================
-// ULTRA-ECONOMIC: gemini-2.5-flash-lite
-// Motor: Prompt-Mestre com Níveis de Consciência + Formatos de Copy
-// Savings: 94% per request
-// ============================================
+async function authenticateRequest(req: Request): Promise<{ userId: string } | Response> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const token = authHeader.replace("Bearer ", "");
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) {
+    return new Response(JSON.stringify({ error: "Token inválido" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  return { userId: user.id };
+}
 
 const PERSONA_PROMPT = `# Especialista em Neuromarketing e Vendas WhatsApp
 
@@ -84,7 +95,6 @@ REGRAS:
 - Baseado nos dados fornecidos
 - Retorne APENAS JSON válido`;
 
-// Limits
 const LIMITS = { daily: 15, monthly: 100, persona: 1 };
 
 // deno-lint-ignore no-explicit-any
@@ -104,7 +114,7 @@ async function checkUsageLimits(supabase: any, userId: string): Promise<{ allowe
       return { allowed: false, reason: "Assinatura expirada" };
     }
 
-    const { data: limits } = await supabase.rpc("check_and_reset_usage", { p_user_id: userId });
+    const { data: limits } = await supabase.rpc("check_and_reset_usage_admin", { p_user_id: userId });
     
     // deno-lint-ignore no-explicit-any
     if (!limits || (limits as any[]).length === 0) return { allowed: true };
@@ -112,19 +122,19 @@ async function checkUsageLimits(supabase: any, userId: string): Promise<{ allowe
     // deno-lint-ignore no-explicit-any
     const usage = (limits as any[])[0];
     
-    if (usage.daily_requests >= LIMITS.daily) {
+    if (usage.out_daily_requests >= LIMITS.daily) {
       return { allowed: false, reason: `Limite diário atingido (${LIMITS.daily}/dia)` };
     }
 
-    if (usage.monthly_requests >= LIMITS.monthly) {
+    if (usage.out_monthly_requests >= LIMITS.monthly) {
       return { allowed: false, reason: `Limite mensal atingido (${LIMITS.monthly}/mês)` };
     }
 
-    if (usage.persona_requests_month >= LIMITS.persona) {
+    if (usage.out_persona_requests_month >= LIMITS.persona) {
       return { allowed: false, reason: `Limite de Raio-X atingido (${LIMITS.persona}/mês)` };
     }
 
-    await supabase.rpc("increment_usage", { p_user_id: userId, p_function_type: "persona" });
+    await supabase.rpc("increment_usage_admin", { p_user_id: userId, p_function_type: "persona" });
     return { allowed: true };
   } catch (error) {
     console.error("Error checking usage limits:", error);
@@ -138,25 +148,27 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { profileData, userId } = await req.json();
+    // Authenticate user from JWT
+    const authResult = await authenticateRequest(req);
+    if (authResult instanceof Response) return authResult;
+    const { userId } = authResult;
+
+    const { profileData } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Check limits
-    if (userId) {
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-      const { allowed, reason } = await checkUsageLimits(supabase, userId);
-      if (!allowed) {
-        return new Response(
-          JSON.stringify({ error: reason }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+    const { allowed, reason } = await checkUsageLimits(supabase, userId);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: reason }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const userMessage = `Crie RAIO-X DE PERSONA completo:
@@ -180,7 +192,7 @@ IMPORTANTE:
 2. Recomende os 3 melhores formatos de copy para este nicho
 3. Gere JSON completo conforme especificado`;
 
-    console.log("[persona-generator] Generating for:", profileData.business_name);
+    console.log("[persona-generator] user:", userId.slice(0,8), "business:", profileData.business_name);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -229,21 +241,14 @@ IMPORTANTE:
       throw new Error("Falha ao processar resposta da IA");
     }
 
-    // Track token usage
     const tokensUsed = data.usage?.total_tokens || 1500;
-    if (userId) {
-      const supabaseForTracking = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
-      await supabaseForTracking.rpc("track_token_usage", {
-        p_user_id: userId,
-        p_feature: "raio-x",
-        p_tokens: tokensUsed
-      });
-    }
+    await supabase.rpc("track_token_usage_admin", {
+      p_user_id: userId,
+      p_feature: "raio-x",
+      p_tokens: tokensUsed
+    });
 
-    console.log("[persona-generator] Success for:", profileData.business_name, "tokens:", tokensUsed);
+    console.log("[persona-generator] Success, tokens:", tokensUsed);
 
     return new Response(
       JSON.stringify({ raioX }),

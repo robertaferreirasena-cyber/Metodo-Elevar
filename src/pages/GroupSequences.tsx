@@ -144,7 +144,7 @@ export default function GroupSequences() {
 
     try {
       const { data, error } = await supabase.functions.invoke("sequence-generator", {
-        body: { product, goal, numPosts: parseInt(numPosts), userId: user?.id },
+        body: { product, goal, numPosts: parseInt(numPosts) },
       });
 
       if (error) throw error;

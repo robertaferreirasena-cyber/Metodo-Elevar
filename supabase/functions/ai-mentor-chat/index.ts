@@ -23,6 +23,67 @@ async function getKBPrompt(agentKey: string): Promise<string | null> {
   return null;
 }
 
+async function authenticateRequest(req: Request): Promise<{ userId: string } | Response> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Não autorizado" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const token = authHeader.replace("Bearer ", "");
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) {
+    return new Response(JSON.stringify({ error: "Token inválido" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  return { userId: user.id };
+}
+
+const LIMITS = { daily: 15, monthly: 100 };
+
+// deno-lint-ignore no-explicit-any
+async function checkUsageLimits(supabase: any, userId: string): Promise<{ allowed: boolean; reason?: string }> {
+  try {
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("status, expires_at")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!sub || sub.status !== "active") {
+      return { allowed: false, reason: "Assinatura inativa" };
+    }
+
+    if (sub.expires_at && new Date(sub.expires_at as string) < new Date()) {
+      return { allowed: false, reason: "Assinatura expirada" };
+    }
+
+    const { data: limits } = await supabase.rpc("check_and_reset_usage_admin", { p_user_id: userId });
+    
+    // deno-lint-ignore no-explicit-any
+    if (!limits || (limits as any[]).length === 0) return { allowed: true };
+
+    // deno-lint-ignore no-explicit-any
+    const usage = (limits as any[])[0];
+    
+    if (usage.out_daily_requests >= LIMITS.daily) {
+      return { allowed: false, reason: `Limite diário atingido (${LIMITS.daily}/dia)` };
+    }
+
+    if (usage.out_monthly_requests >= LIMITS.monthly) {
+      return { allowed: false, reason: `Limite mensal atingido (${LIMITS.monthly}/mês)` };
+    }
+
+    await supabase.rpc("increment_usage_admin", { p_user_id: userId, p_function_type: "general" });
+    return { allowed: true };
+  } catch (error) {
+    console.error("Error checking usage limits:", error);
+    return { allowed: true };
+  }
+}
+
 const PERSONAS: Record<string, { name: string; systemPrompt: string }> = {
   "mentora-gi": {
     name: "Mentora Gi",
@@ -85,15 +146,35 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Authenticate user from JWT
+    const authResult = await authenticateRequest(req);
+    if (authResult instanceof Response) return authResult;
+    const { userId } = authResult;
+
     const { messages, persona = "mentora-gi" } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    // Check usage limits
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { allowed, reason } = await checkUsageLimits(supabase, userId);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: reason }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const selectedPersona = PERSONAS[persona] || PERSONAS["mentora-gi"];
     
-    // Try to get prompt from knowledge base, fallback to hardcoded
     const kbPrompt = await getKBPrompt(persona);
     const systemPrompt = kbPrompt || selectedPersona.systemPrompt;
+
+    console.log(`[ai-mentor-chat] user:${userId.slice(0,8)} persona:${persona} ${messages.length} msgs`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
