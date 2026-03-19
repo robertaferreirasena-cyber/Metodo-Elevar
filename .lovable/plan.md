@@ -1,43 +1,31 @@
 
 
-## Plano: Corrigir redirecionamento de missões para Insta PRO
+## Problema: Login falha com "captcha verification process failed"
 
-### Problema Encontrado
+O Supabase do projeto tem **CAPTCHA habilitado** nas configurações de autenticação (no dashboard), mas o código do app **não envia nenhum `captcha_token`** nas chamadas de `signInWithPassword` ou `signUp`. Isso causa erro 500 em toda tentativa de login.
 
-A missão "Ajustar posicionamento nas redes" tem `activity_type = 'instapro'` no banco (correto) e o `ACTIVITY_CONFIG` mapeia para `/aprendizado?tab=instapro` (correto). O `navigate()` funciona. **Porém**, na página `LearningModules.tsx`, o `useEffect` que lê os query params só trata `tab=carousel` — ignora completamente `tab=instapro`. Resultado: o usuário chega na página mas fica na aba "Encontros" em vez de abrir a aba "Insta PRO".
+### Causa raiz
 
-### Dados do banco (confirmados)
+No painel do Supabase (Authentication > Settings), há um provedor de CAPTCHA ativo (provavelmente Turnstile ou hCaptcha). O servidor exige o token, mas o frontend não implementa nenhum widget de CAPTCHA.
 
-| Missão | activity_type | Status |
-|---|---|---|
-| Ajustar posicionamento nas redes | `instapro` | Rota correta, aba não abre |
-| Atualizar Instagram completamente | `instapro` | Mesmo problema |
-| Criar ensaio fotográfico estratégico | `foto` | OK (rota `/ensaio-fotografico` funciona) |
-| Todas as demais (financeiro, metas, trafego) | corretos | OK (rotas diretas, sem tabs) |
+### Solução recomendada: Desabilitar CAPTCHA no dashboard
 
-### Correção
+Como o app não usa CAPTCHA no frontend, a solução mais rápida e segura é:
 
-**Arquivo: `src/pages/LearningModules.tsx`** (linhas 27-38)
+1. Acesse o **Supabase Dashboard** > **Authentication** > **Settings** (Bot and Abuse Protection)
+2. **Desabilite** o CAPTCHA provider (mude para "None" / desligado)
+3. Salve as alterações
 
-Expandir o `useEffect` para também tratar `tab=instapro`:
+Isso resolve o erro imediatamente sem precisar alterar nenhum código.
 
-```typescript
-useEffect(() => {
-  const tab = searchParams.get("tab");
-  const topic = searchParams.get("topic");
-  if (tab === "carousel") {
-    if (topic) {
-      setCarouselTopic(decodeURIComponent(topic));
-      toast.success("Tema recebido! Gerando carrossel...");
-    }
-    setActiveTab("carousel");
-    setSearchParams({}, { replace: true });
-  } else if (tab === "instapro") {
-    setActiveTab("instapro");
-    setSearchParams({}, { replace: true });
-  }
-}, [searchParams, setSearchParams]);
-```
+### Alternativa (se quiser manter CAPTCHA)
 
-Isso é a única mudança necessária. Todas as demais missões estão com activity_type e rotas corretos no banco.
+Se por algum motivo o CAPTCHA precisa ficar ativo, seria necessário:
+- Instalar o widget do provedor (Turnstile/hCaptcha) no frontend
+- Passar o `captchaToken` nas chamadas `signIn` e `signUp` via `options.captchaToken`
+- Isso é mais complexo e normalmente desnecessário para este tipo de app
+
+### Ação imediata
+
+A correção é apenas no dashboard do Supabase — nenhuma mudança de código é necessária.
 
