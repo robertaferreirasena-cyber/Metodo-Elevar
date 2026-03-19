@@ -1,5 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Bot, Sparkles, Loader2, Copy, Check, MessageSquare, Zap, Key, GitBranch } from "lucide-react";
+import { useSessionPersistence } from "@/hooks/useSessionPersistence";
+import { SessionIndicator } from "@/components/SessionIndicator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
