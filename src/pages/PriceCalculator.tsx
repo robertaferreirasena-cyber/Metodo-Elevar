@@ -88,17 +88,41 @@ const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigi
 // ═══════════════════════════════════════════
 // ABA 1 — PRODUTO
 // ═══════════════════════════════════════════
+interface ProductSessionState {
+  productName: string;
+  directCosts: CostItem[];
+  monthlyFixedCosts: number;
+  quantityPerMonth: number;
+  desiredMargin: number;
+  taxPercent: number;
+}
+
+const DEFAULT_DIRECT_COSTS: CostItem[] = [
+  { id: "1", name: "Matéria-prima", value: 0 },
+  { id: "2", name: "Embalagem", value: 0 },
+  { id: "3", name: "Mão de obra direta", value: 0 },
+];
+
+const EMPTY_PRODUCT_STATE: ProductSessionState = {
+  productName: "", directCosts: DEFAULT_DIRECT_COSTS,
+  monthlyFixedCosts: 0, quantityPerMonth: 1, desiredMargin: 30, taxPercent: 10,
+};
+
 function ProductCalculator() {
-  const [productName, setProductName] = useState("");
-  const [directCosts, setDirectCosts] = useState<CostItem[]>([
-    { id: "1", name: "Matéria-prima", value: 0 },
-    { id: "2", name: "Embalagem", value: 0 },
-    { id: "3", name: "Mão de obra direta", value: 0 },
-  ]);
-  const [monthlyFixedCosts, setMonthlyFixedCosts] = useState(0);
-  const [quantityPerMonth, setQuantityPerMonth] = useState(1);
-  const [desiredMargin, setDesiredMargin] = useState(30);
-  const [taxPercent, setTaxPercent] = useState(10);
+  const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<ProductSessionState>(
+    "session_product_calc", EMPTY_PRODUCT_STATE
+  );
+
+  const [productName, setProductName] = useState(sessionState.productName);
+  const [directCosts, setDirectCosts] = useState<CostItem[]>(sessionState.directCosts);
+  const [monthlyFixedCosts, setMonthlyFixedCosts] = useState(sessionState.monthlyFixedCosts);
+  const [quantityPerMonth, setQuantityPerMonth] = useState(sessionState.quantityPerMonth);
+  const [desiredMargin, setDesiredMargin] = useState(sessionState.desiredMargin);
+  const [taxPercent, setTaxPercent] = useState(sessionState.taxPercent);
+
+  useEffect(() => {
+    setSessionState({ productName, directCosts, monthlyFixedCosts, quantityPerMonth, desiredMargin, taxPercent });
+  }, [productName, directCosts, monthlyFixedCosts, quantityPerMonth, desiredMargin, taxPercent, setSessionState]);
 
   // Catalog import state
   const [catalogFiles, setCatalogFiles] = useState<string[]>([]);
@@ -190,6 +214,7 @@ function ProductCalculator() {
 
   return (
     <div className="space-y-4">
+      <SessionIndicator show={hasRestoredSession} onClear={clearSession} />
       <div className="flex items-end gap-2">
         <div className="flex-1">
           <Label>Nome do Produto</Label>
@@ -307,14 +332,36 @@ function ProductCalculator() {
 // ═══════════════════════════════════════════
 // ABA 2 — SERVIÇO
 // ═══════════════════════════════════════════
+interface ServiceSessionState {
+  serviceName: string;
+  services: ServiceItem[];
+  proLabore: number;
+  profitPercent: number;
+  taxPercent: number;
+}
+
+const DEFAULT_SERVICES: ServiceItem[] = [
+  { id: "1", name: "Atendimento", hoursPerMonth: 20, hourlyRate: 50, fixedCosts: 200 },
+];
+
+const EMPTY_SERVICE_STATE: ServiceSessionState = {
+  serviceName: "", services: DEFAULT_SERVICES, proLabore: 0, profitPercent: 30, taxPercent: 10,
+};
+
 function ServiceCalculator() {
-  const [serviceName, setServiceName] = useState("");
-  const [services, setServices] = useState<ServiceItem[]>([
-    { id: "1", name: "Atendimento", hoursPerMonth: 20, hourlyRate: 50, fixedCosts: 200 },
-  ]);
-  const [proLabore, setProLabore] = useState(0);
-  const [profitPercent, setProfitPercent] = useState(30);
-  const [taxPercent, setTaxPercent] = useState(10);
+  const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<ServiceSessionState>(
+    "session_service_calc", EMPTY_SERVICE_STATE
+  );
+
+  const [serviceName, setServiceName] = useState(sessionState.serviceName);
+  const [services, setServices] = useState<ServiceItem[]>(sessionState.services);
+  const [proLabore, setProLabore] = useState(sessionState.proLabore);
+  const [profitPercent, setProfitPercent] = useState(sessionState.profitPercent);
+  const [taxPercent, setTaxPercent] = useState(sessionState.taxPercent);
+
+  useEffect(() => {
+    setSessionState({ serviceName, services, proLabore, profitPercent, taxPercent });
+  }, [serviceName, services, proLabore, profitPercent, taxPercent, setSessionState]);
 
   const addService = () => setServices([...services, { id: Date.now().toString(), name: "", hoursPerMonth: 0, hourlyRate: 0, fixedCosts: 0 }]);
   const removeService = (id: string) => { if (services.length > 1) setServices(services.filter(s => s.id !== id)); };
@@ -352,6 +399,7 @@ function ServiceCalculator() {
 
   return (
     <div className="space-y-4">
+      <SessionIndicator show={hasRestoredSession} onClear={clearSession} />
       <div>
         <Label>Nome do Serviço</Label>
         <Input value={serviceName} onChange={e => setServiceName(e.target.value)} placeholder="Ex: Consultoria de Marketing" />
