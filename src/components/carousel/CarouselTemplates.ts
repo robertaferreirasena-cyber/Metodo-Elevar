@@ -308,6 +308,16 @@ export interface SlideData {
   profileHandle?: string;
   profileImageUrl?: string;
   highlightBgColor?: string;
+  // Advanced formatting
+  titleBold?: boolean;
+  titleItalic?: boolean;
+  bodyBold?: boolean;
+  bodyItalic?: boolean;
+  bodyUnderline?: boolean;
+  titleColor?: string;
+  textShadow?: string;
+  overlayOpacity?: number;
+  bgImageUrl?: string;
 }
 
 export function createSlidesFromTemplate(
