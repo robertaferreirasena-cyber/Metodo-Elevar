@@ -113,6 +113,7 @@ export default function PersonaRaioX() {
   } = usePersonaProfile();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [catalogFiles, setCatalogFiles] = useState<string[]>([]);
 
   const handleChannelToggle = (channelId: string) => {
     const current = formData.sales_channels || [];
