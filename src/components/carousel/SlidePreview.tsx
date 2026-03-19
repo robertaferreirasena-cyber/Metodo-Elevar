@@ -250,7 +250,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               </div>
             )}
 
-            <div className="absolute inset-0 flex flex-col justify-center" style={{ padding: padPx, textAlign: slide.align }}>
+            <div className="absolute inset-0 flex flex-col" style={{ padding: padPx, textAlign: slide.align, justifyContent: slide.verticalAlign === "top" ? "flex-start" : slide.verticalAlign === "bottom" ? "flex-end" : "center" }}>
               <div className="mb-4 font-bold uppercase tracking-widest" style={counterStyle}>
                 {slideIndex + 1} / {totalSlides}
               </div>
