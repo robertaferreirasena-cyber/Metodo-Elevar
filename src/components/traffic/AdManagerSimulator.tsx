@@ -3,15 +3,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronRight, Folder, FolderOpen, FileText, BarChart3, Loader2 } from "lucide-react";
+import { ChevronRight, FolderOpen, FileText, BarChart3, Loader2, Pencil, Check, X, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import jsPDF from "jspdf";
 import CampaignStructurePanel from "./CampaignStructurePanel";
 import AdPreviewMock from "./AdPreviewMock";
 
@@ -31,12 +33,19 @@ interface CampaignRow {
   user_id: string;
 }
 
+interface EditingField {
+  setIdx: number;
+  field: "budget" | "audience";
+  value: string;
+}
+
 export default function AdManagerSimulator() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [expandedSets, setExpandedSets] = useState<Set<number>>(new Set([0]));
   const [selectedAdIndex, setSelectedAdIndex] = useState<{ setIdx: number; adIdx: number } | null>(null);
+  const [editing, setEditing] = useState<EditingField | null>(null);
 
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ["ad-campaigns", user?.id],
@@ -51,6 +60,20 @@ export default function AdManagerSimulator() {
       return data as CampaignRow[];
     },
     enabled: !!user,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, structured_data }: { id: string; structured_data: any }) => {
+      const { error } = await supabase
+        .from("ad_campaigns")
+        .update({ structured_data, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ad-campaigns"] });
+      toast.success("Campanha atualizada");
+    },
   });
 
   const deleteMutation = useMutation({
@@ -82,6 +105,93 @@ export default function AdManagerSimulator() {
     });
   };
 
+  const startEditing = (setIdx: number, field: "budget" | "audience", currentValue: string) => {
+    setEditing({ setIdx, field, value: currentValue });
+  };
+
+  const saveEdit = () => {
+    if (!editing || !selectedCampaign || !sd) return;
+    const newSd = JSON.parse(JSON.stringify(sd));
+    if (editing.field === "budget") {
+      newSd.ad_sets[editing.setIdx].budget = editing.value;
+    } else {
+      newSd.ad_sets[editing.setIdx].audience.description = editing.value;
+    }
+    updateMutation.mutate({ id: selectedCampaign.id, structured_data: newSd });
+    setEditing(null);
+  };
+
+  const cancelEdit = () => setEditing(null);
+
+  const exportPDF = () => {
+    if (!selectedCampaign || !sd) return;
+    const doc = new jsPDF();
+    const margin = 15;
+    let y = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const maxWidth = pageWidth - margin * 2;
+
+    const addText = (text: string, size: number, bold = false, color: [number, number, number] = [33, 33, 33]) => {
+      doc.setFontSize(size);
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setTextColor(...color);
+      const lines = doc.splitTextToSize(text, maxWidth);
+      for (const line of lines) {
+        if (y > 275) { doc.addPage(); y = 20; }
+        doc.text(line, margin, y);
+        y += size * 0.5 + 1;
+      }
+    };
+
+    const addSpacer = (h = 4) => { y += h; };
+
+    // Title
+    addText("PLANO DE CAMPANHA - GERENCIADOR DE ANUNCIOS", 14, true, [100, 50, 200]);
+    addSpacer(6);
+
+    // Campaign info
+    addText(`Campanha: ${sd.campaign?.name}`, 12, true);
+    addText(`Plataforma: ${selectedCampaign.platform}`, 10, false, [100, 100, 100]);
+    addText(`Objetivo: ${sd.campaign?.objective}`, 10, false, [100, 100, 100]);
+    addText(`Orcamento Total: ${sd.campaign?.budget_value}`, 10, false, [100, 100, 100]);
+    addSpacer(8);
+
+    // Ad Sets
+    sd.ad_sets?.forEach((adSet: any, si: number) => {
+      addText(`CONJUNTO ${si + 1}: ${adSet.name}`, 11, true, [30, 100, 200]);
+      addText(`Orcamento: ${adSet.budget}`, 9, false, [80, 80, 80]);
+      addText(`Publico: ${adSet.audience?.description || "N/A"}`, 9, false, [80, 80, 80]);
+      addText(`Posicionamentos: ${adSet.placements?.join(", ") || "N/A"}`, 9, false, [80, 80, 80]);
+      if (adSet.audience?.locations?.length) {
+        addText(`Localizacoes: ${adSet.audience.locations.join(", ")}`, 9, false, [80, 80, 80]);
+      }
+      if (adSet.audience?.interests?.length) {
+        addText(`Interesses: ${adSet.audience.interests.join(", ")}`, 9, false, [80, 80, 80]);
+      }
+      addText(`Faixa etaria: ${adSet.audience?.age_min || "?"}-${adSet.audience?.age_max || "?"} | Genero: ${adSet.audience?.gender || "todos"}`, 9, false, [80, 80, 80]);
+      addSpacer(4);
+
+      adSet.ads?.forEach((ad: any, ai: number) => {
+        addText(`  Anuncio ${ai + 1}: ${ad.name}`, 10, true);
+        addText(`  Formato: ${ad.format} | CTA: ${ad.cta}`, 9, false, [80, 80, 80]);
+        addText(`  Headline: ${ad.headline}`, 9, false, [50, 50, 50]);
+        addText(`  Texto: ${ad.primary_text}`, 9, false, [50, 50, 50]);
+        if (ad.description) addText(`  Descricao: ${ad.description}`, 9, false, [80, 80, 80]);
+        if (ad.video_script) addText(`  Roteiro: ${ad.video_script}`, 9, false, [80, 80, 80]);
+        if (ad.visual_brief) addText(`  Briefing Visual: ${ad.visual_brief}`, 9, false, [80, 80, 80]);
+        addSpacer(3);
+      });
+      addSpacer(6);
+    });
+
+    // Footer
+    addSpacer(8);
+    addText("Gerado pelo Metodo ANDROMEDA - Mentoria Elevar", 8, false, [150, 150, 150]);
+
+    doc.save(`campanha-${sd.campaign?.name?.replace(/\s+/g, "-").toLowerCase() || "export"}.pdf`);
+    toast.success("PDF exportado com sucesso!");
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -94,7 +204,7 @@ export default function AdManagerSimulator() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-      {/* Sidebar - Campaign tree */}
+      {/* Sidebar */}
       <Card className="lg:col-span-1">
         <CardHeader className="pb-2">
           <CardTitle className="text-xs flex items-center gap-1.5">
@@ -112,7 +222,7 @@ export default function AdManagerSimulator() {
         </CardContent>
       </Card>
 
-      {/* Main content - Manager table */}
+      {/* Main content */}
       <div className="lg:col-span-3 space-y-4">
         {!selectedCampaign || !sd ? (
           <Card>
@@ -138,10 +248,16 @@ export default function AdManagerSimulator() {
                     </Badge>
                     <span className="text-sm font-semibold">{sd.campaign?.name}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>Objetivo: <strong>{sd.campaign?.objective}</strong></span>
-                    <span>Orçamento: <strong>{sd.campaign?.budget_value}</strong></span>
-                    <Badge variant="outline" className="text-[10px]">{selectedCampaign.platform}</Badge>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>Objetivo: <strong>{sd.campaign?.objective}</strong></span>
+                      <span>Orçamento: <strong>{sd.campaign?.budget_value}</strong></span>
+                      <Badge variant="outline" className="text-[10px]">{selectedCampaign.platform}</Badge>
+                    </div>
+                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={exportPDF}>
+                      <Download className="h-3 w-3" />
+                      Exportar PDF
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -160,7 +276,7 @@ export default function AdManagerSimulator() {
                         <TableHead className="text-xs">Orçamento</TableHead>
                         <TableHead className="text-xs">Público</TableHead>
                         <TableHead className="text-xs">Posicionamentos</TableHead>
-                        <TableHead className="text-xs w-20">Preview</TableHead>
+                        <TableHead className="text-xs w-20">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -184,9 +300,61 @@ export default function AdManagerSimulator() {
                                     <span className="text-xs font-medium">{adSet.name}</span>
                                   </div>
                                 </TableCell>
-                                <TableCell className="text-xs">{adSet.budget}</TableCell>
-                                <TableCell className="text-[10px] max-w-[150px] truncate">
-                                  {adSet.audience?.description || `${adSet.audience?.gender} ${adSet.audience?.age_min}-${adSet.audience?.age_max}`}
+                                {/* Budget - editable */}
+                                <TableCell onClick={(e) => e.stopPropagation()}>
+                                  {editing?.setIdx === si && editing.field === "budget" ? (
+                                    <div className="flex items-center gap-1">
+                                      <Input
+                                        value={editing.value}
+                                        onChange={(e) => setEditing({ ...editing, value: e.target.value })}
+                                        className="h-6 text-xs w-24"
+                                        autoFocus
+                                        onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
+                                      />
+                                      <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={saveEdit}><Check className="h-3 w-3 text-green-600" /></Button>
+                                      <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={cancelEdit}><X className="h-3 w-3 text-destructive" /></Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1 group">
+                                      <span className="text-xs">{adSet.budget}</span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={(e) => { e.stopPropagation(); startEditing(si, "budget", adSet.budget || ""); }}
+                                      >
+                                        <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                                      </Button>
+                                    </div>
+                                  )}
+                                </TableCell>
+                                {/* Audience - editable */}
+                                <TableCell className="max-w-[150px]" onClick={(e) => e.stopPropagation()}>
+                                  {editing?.setIdx === si && editing.field === "audience" ? (
+                                    <div className="flex items-center gap-1">
+                                      <Input
+                                        value={editing.value}
+                                        onChange={(e) => setEditing({ ...editing, value: e.target.value })}
+                                        className="h-6 text-[10px] w-32"
+                                        autoFocus
+                                        onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
+                                      />
+                                      <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={saveEdit}><Check className="h-3 w-3 text-green-600" /></Button>
+                                      <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={cancelEdit}><X className="h-3 w-3 text-destructive" /></Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1 group">
+                                      <span className="text-[10px] truncate">{adSet.audience?.description || `${adSet.audience?.gender} ${adSet.audience?.age_min}-${adSet.audience?.age_max}`}</span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                        onClick={(e) => { e.stopPropagation(); startEditing(si, "audience", adSet.audience?.description || ""); }}
+                                      >
+                                        <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex gap-1 flex-wrap">
