@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ExternalLink, CheckCircle2, Eye } from "lucide-react";
+import { ExternalLink, CheckCircle2, Eye, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { markMissionPending } from "@/hooks/useMissionAutoComplete";
 import { usePersonaContext } from "@/contexts/PersonaContext";
@@ -67,6 +67,19 @@ const MENTOR_PROMPTS: Record<string, string> = {
   "Criar checklist de processos": "Me ajude a documentar os processos-chave do meu negócio em um checklist com indicadores de controle e rotina de liderança.",
   "Testar ausência estratégica": "Me ajude a planejar um teste de ausência: como simular 1 dia sem operar e avaliar o que funciona sem mim.",
   "Entregar Plano Estratégico ELEVAR 180 dias": "Me ajude a construir meu Plano Estratégico ELEVAR de 180 dias para dobrar o faturamento: time ideal, etapas, indicadores e visão de longo prazo.",
+};
+
+// Prompts contextuais para missões que redirecionam a ferramentas específicas
+// mas também podem abrir a Mentora Gi com contexto pré-carregado
+const TOOL_CONTEXT_PROMPTS: Record<string, string> = {
+  "Organizar números reais do negócio": "Preciso organizar os números reais do meu negócio: faturamento atual, custos fixos e variáveis, pró-labore, margem de lucro real. Me ajude a mapear tudo isso de forma estratégica para entender minha saúde financeira e identificar onde posso melhorar.",
+  "Ajustar posicionamento nas redes": "Me ajude a reposicionar meu perfil nas redes sociais de forma premium. Quero uma bio estratégica, destaques organizados, identidade visual coerente e um plano de conteúdo que transmita autoridade no meu nicho.",
+  "Ajustar preços estrategicamente": "Me ajude a revisar minha estratégia de preços: analisar margem real, comparar com mercado, definir precificação premium e criar uma escada de valor com produtos de entrada, intermediário e premium.",
+  "Definir meta trimestral progressiva": "Me ajude a definir metas trimestrais progressivas e realistas para dobrar meu faturamento. Quero uma projeção mês a mês com ações concretas para cada fase de crescimento.",
+  "Organizar projeção de crescimento": "Me ajude a criar uma projeção financeira de crescimento: quanto preciso investir em tráfego, equipe e estrutura para escalar. Inclua cenários otimista, realista e conservador.",
+  "Ajustar campanha ativa": "Me ajude a analisar minha campanha de tráfego pago atual: métricas de performance (CPC, CPL, ROAS), criativos que estão funcionando, e ajustes estratégicos para melhorar resultados.",
+  "Definir linha premium": "Me ajude a estruturar minha linha premium de produtos/serviços: precificação estratégica, diferenciação competitiva, posicionamento de marca e comunicação de valor percebido.",
+  "Estruturar campanha diferenciada": "Me ajude a criar uma campanha de tráfego pago diferenciada que destaque meu posicionamento único no mercado. Quero copy de alta conversão, segmentação estratégica e criativos que se destaquem da concorrência.",
 };
 
 const fireSmallConfetti = () => {
@@ -132,15 +145,31 @@ export default function MissionChecklist({
       onToggle(mission.id);
     }
 
-    if (mission.activity_type === "mentor" || config.route === "/mentora") {
+    if (mission.activity_type === "mentor" || mission.activity_type === "content") {
       let prompt = MENTOR_PROMPTS[mission.title] || `Me ajude com a missão: ${mission.title}. ${mission.content || ""}`;
       if (personaContext?.enrichPrompt) {
         prompt = personaContext.enrichPrompt(prompt);
       }
       navigate(`/mentora?prompt=${encodeURIComponent(prompt)}`);
     } else {
+      // Store contextual prompt for tool missions so user can ask Mentora for help
+      const contextPrompt = TOOL_CONTEXT_PROMPTS[mission.title];
+      if (contextPrompt) {
+        sessionStorage.setItem("elevar_mission_context", JSON.stringify({
+          missionTitle: mission.title,
+          prompt: personaContext?.enrichPrompt ? personaContext.enrichPrompt(contextPrompt) : contextPrompt,
+          route: config.route,
+        }));
+      }
       navigate(config.route);
     }
+  };
+
+  const handleAskMentora = (mission: Mission) => {
+    const contextPrompt = TOOL_CONTEXT_PROMPTS[mission.title] || MENTOR_PROMPTS[mission.title];
+    if (!contextPrompt) return;
+    let prompt = personaContext?.enrichPrompt ? personaContext.enrichPrompt(contextPrompt) : contextPrompt;
+    navigate(`/mentora?prompt=${encodeURIComponent(prompt)}`);
   };
 
   const handleViewMission = (mission: Mission) => {
@@ -221,7 +250,7 @@ export default function MissionChecklist({
                   </div>
                 </div>
                 {hasRoute && (
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex flex-col gap-1 shrink-0">
                     {mission.completed ? (
                       <Button
                         size="sm"
@@ -239,6 +268,16 @@ export default function MissionChecklist({
                         onClick={(e) => { e.stopPropagation(); handleExecuteMission(mission); }}
                       >
                         Executar <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    )}
+                    {TOOL_CONTEXT_PROMPTS[mission.title] && mission.activity_type !== "mentor" && mission.activity_type !== "content" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-[10px] h-6"
+                        onClick={(e) => { e.stopPropagation(); handleAskMentora(mission); }}
+                      >
+                        <MessageCircle className="h-3 w-3" /> Pedir ajuda à Gi
                       </Button>
                     )}
                   </div>
