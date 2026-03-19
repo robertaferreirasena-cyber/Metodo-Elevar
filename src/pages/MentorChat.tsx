@@ -207,9 +207,16 @@ export default function MentorChat() {
                       </div>
                     ) : (
                       <p className="whitespace-pre-wrap">{msg.content}</p>
-                    )}
-                  </div>
-                </div>
+                      {/* Offer carousel generation from user's topic */}
+                      {msg.content.length > 10 && (
+                        <button
+                          onClick={() => handleGenerateCarousel(msg.content)}
+                          className="flex items-center gap-1 mt-2 text-[10px] text-primary hover:underline"
+                        >
+                          <Palette className="h-3 w-3" /> Gerar Carrossel com esse tema
+                        </button>
+                      )}
+                    </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
