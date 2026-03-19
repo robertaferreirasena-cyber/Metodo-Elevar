@@ -995,13 +995,9 @@ export type Database = {
           goal: string
           id: string
           product: string
-          send_mode: string
           title: string
           total_posts: number
           user_id: string
-          webhook_url: string | null
-          whatsapp_group_id: string | null
-          whatsapp_group_name: string | null
         }
         Insert: {
           created_at?: string
@@ -1010,13 +1006,9 @@ export type Database = {
           goal: string
           id?: string
           product: string
-          send_mode?: string
           title: string
           total_posts?: number
           user_id: string
-          webhook_url?: string | null
-          whatsapp_group_id?: string | null
-          whatsapp_group_name?: string | null
         }
         Update: {
           created_at?: string
@@ -1025,13 +1017,9 @@ export type Database = {
           goal?: string
           id?: string
           product?: string
-          send_mode?: string
           title?: string
           total_posts?: number
           user_id?: string
-          webhook_url?: string | null
-          whatsapp_group_id?: string | null
-          whatsapp_group_name?: string | null
         }
         Relationships: [
           {

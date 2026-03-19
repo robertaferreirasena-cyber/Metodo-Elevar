@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { PersonaSummary } from "@/components/PersonaSummary";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import { PostStatusBadge } from "@/components/sequences/PostStatusBadge";
-import { WebhookConfig } from "@/components/sequences/WebhookConfig";
+
 import { ScheduleConfig } from "@/components/sequences/ScheduleConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
@@ -47,10 +47,6 @@ interface Sequence {
   product?: string;
   goal?: string;
   created_at?: string;
-  webhookUrl?: string;
-  whatsappGroupId?: string;
-  whatsappGroupName?: string;
-  sendMode?: string;
 }
 
 interface SavedSequence {
@@ -62,10 +58,6 @@ interface SavedSequence {
   total_posts: number;
   duration: string | null;
   created_at: string;
-  webhook_url: string | null;
-  whatsapp_group_id: string | null;
-  whatsapp_group_name: string | null;
-  send_mode: string | null;
   sequence_posts: {
     id: string;
     post_order: number;
@@ -346,10 +338,6 @@ export default function GroupSequences() {
       product: saved.product,
       goal: saved.goal,
       created_at: saved.created_at,
-      webhookUrl: saved.webhook_url || "",
-      whatsappGroupId: saved.whatsapp_group_id || "",
-      whatsappGroupName: saved.whatsapp_group_name || "",
-      sendMode: saved.send_mode || "uazapi",
       posts: saved.sequence_posts
         .sort((a, b) => a.post_order - b.post_order)
         .map(post => ({
@@ -516,22 +504,10 @@ export default function GroupSequences() {
               <CardContent className="space-y-4">
                 {/* Webhook & Schedule Config (only for saved sequences) */}
                 {sequence.id && (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <WebhookConfig
-                      sequenceId={sequence.id}
-                      initialWebhookUrl={sequence.webhookUrl || ""}
-                      initialGroupId={sequence.whatsappGroupId || ""}
-                      initialGroupName={sequence.whatsappGroupName || ""}
-                      initialSendMode={sequence.sendMode || "uazapi"}
-                      onSaved={(url, gid, gname) =>
-                        setSequence({ ...sequence, webhookUrl: url, whatsappGroupId: gid, whatsappGroupName: gname })
-                      }
-                    />
-                    <ScheduleConfig
-                      totalPosts={sequence.totalPosts}
-                      onScheduleAll={handleScheduleAll}
-                    />
-                  </div>
+                  <ScheduleConfig
+                    totalPosts={sequence.totalPosts}
+                    onScheduleAll={handleScheduleAll}
+                  />
                 )}
 
                 {/* Posts */}

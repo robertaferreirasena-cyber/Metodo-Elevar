@@ -21,7 +21,7 @@ const knownFunctionNames = [
   'kiwify-webhook',
   'admin-create-user',
   'admin-manage-user',
-  'send-scheduled-posts',
+  
   'admin-credentials',
 ]
 
