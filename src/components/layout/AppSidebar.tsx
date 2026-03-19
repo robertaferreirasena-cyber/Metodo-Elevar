@@ -1,8 +1,9 @@
-import { Home, Smartphone, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target, FileText } from "lucide-react";
+import { Home, Smartphone, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
+import { usePersonaProfile } from "@/hooks/usePersonaProfile";
 import {
   Sidebar,
   SidebarContent,
@@ -53,6 +54,7 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const { profile, subscription, signOut, loading } = useAuth();
   const { isAdmin } = useAdmin();
+  const { hasRaioX, hasProfile, loading: personaLoading } = usePersonaProfile();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (path: string) => {
@@ -115,6 +117,15 @@ export function AppSidebar() {
                     >
                       <item.icon className="mr-2 h-3.5 w-3.5" />
                       <span className="text-xs">{item.title}</span>
+                      {item.title === "Persona" && !personaLoading && (
+                        hasRaioX ? (
+                          <CheckCircle2 className="ml-auto h-3.5 w-3.5 text-green-500" />
+                        ) : hasProfile ? (
+                          <AlertCircle className="ml-auto h-3.5 w-3.5 text-yellow-500" />
+                        ) : (
+                          <AlertCircle className="ml-auto h-3.5 w-3.5 text-muted-foreground/50" />
+                        )
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
