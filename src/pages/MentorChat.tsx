@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Bot, Send, Plus, Trash2, MessageCircle, Sparkles, ChevronLeft } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Bot, Send, Plus, Trash2, MessageCircle, Sparkles, ChevronLeft, Palette } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
