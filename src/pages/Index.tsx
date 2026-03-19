@@ -4,6 +4,7 @@ import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { useChat } from "@/hooks/useChat";
 import { Button } from "@/components/ui/button";
+import { SessionIndicator } from "@/components/SessionIndicator";
 import { useRef, useEffect, ReactNode } from "react";
 
 interface Feature {
