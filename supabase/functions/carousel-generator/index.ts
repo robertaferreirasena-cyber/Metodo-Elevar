@@ -172,8 +172,8 @@ Retorne usando a função generate_carousel.`;
                     items: {
                       type: "object",
                       properties: {
-                        title: { type: "string", description: "Título curto e impactante do slide (max 8 palavras)" },
-                        body: { type: "string", description: "Corpo do slide com 2-3 linhas de conteúdo de valor" },
+                        title: { type: "string", description: "Título emocional e impactante do slide (8-15 palavras), conectado à narrativa" },
+                        body: { type: "string", description: "Corpo do slide com 4-6 linhas de conteúdo denso, envolvente e com exemplos práticos. Use quebras de linha (\\n) para ritmo visual." },
                       },
                       required: ["title", "body"],
                       additionalProperties: false,
