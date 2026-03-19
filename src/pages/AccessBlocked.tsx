@@ -16,6 +16,7 @@ const MODULE_NAMES: Record<ModuleKey, string> = {
   module_photoboss: 'Ensaio Fotográfico',
   module_conversation_analysis: 'Análise de Conversas',
   module_traffic_ads: 'Tráfego Pago',
+  module_manychat_flows: 'Automação Instagram',
 };
 
 export default function AccessBlocked() {

@@ -51,6 +51,7 @@ import MentorChat from "./pages/MentorChat";
 import WhatsAppHub from "./pages/WhatsAppHub";
 import MentoraHub from "./pages/MentoraHub";
 import TrafficAds from "./pages/TrafficAds";
+import ManyChatFlows from "./pages/ManyChatFlows";
 import FormalizeCommitment from "./pages/FormalizeCommitment";
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -382,6 +383,20 @@ const App = () => (
                     <ModuleGuard module="module_traffic_ads">
                       <AppLayout>
                         <TrafficAds />
+                      </AppLayout>
+                    </ModuleGuard>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Automação Instagram - ManyChat */}
+              <Route
+                path="/automacao-instagram"
+                element={
+                  <ProtectedRoute>
+                    <ModuleGuard module="module_manychat_flows">
+                      <AppLayout>
+                        <ManyChatFlows />
                       </AppLayout>
                     </ModuleGuard>
                   </ProtectedRoute>

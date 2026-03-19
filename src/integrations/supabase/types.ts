@@ -1227,6 +1227,7 @@ export type Database = {
           module_group: boolean | null
           module_history: boolean | null
           module_ideas: boolean | null
+          module_manychat_flows: boolean | null
           module_persona: boolean | null
           module_photoboss: boolean | null
           module_private: boolean | null
@@ -1248,6 +1249,7 @@ export type Database = {
           module_group?: boolean | null
           module_history?: boolean | null
           module_ideas?: boolean | null
+          module_manychat_flows?: boolean | null
           module_persona?: boolean | null
           module_photoboss?: boolean | null
           module_private?: boolean | null
@@ -1269,6 +1271,7 @@ export type Database = {
           module_group?: boolean | null
           module_history?: boolean | null
           module_ideas?: boolean | null
+          module_manychat_flows?: boolean | null
           module_persona?: boolean | null
           module_photoboss?: boolean | null
           module_private?: boolean | null
