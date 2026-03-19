@@ -216,9 +216,11 @@ export default function TrafficAds() {
               </Select>
             </div>
 
-            {personaContext && (
+            {hasProfile && (
               <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
                 <p className="text-[10px] text-primary font-medium">✅ Dados do Raio-X da Persona serão usados automaticamente</p>
+              </div>
+            )}
               </div>
             )}
 

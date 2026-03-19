@@ -374,6 +374,20 @@ const App = () => (
                 }
               />
 
+              {/* Tráfego Pago */}
+              <Route
+                path="/trafego-pago"
+                element={
+                  <ProtectedRoute>
+                    <ModuleGuard module="module_traffic_ads">
+                      <AppLayout>
+                        <TrafficAds />
+                      </AppLayout>
+                    </ModuleGuard>
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Legacy redirects */}
               <Route path="/estrategias" element={<Navigate to="/privado/estrategias" replace />} />
               <Route path="/analise" element={<Navigate to="/privado/analise" replace />} />
