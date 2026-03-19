@@ -188,10 +188,50 @@ function ProductCalculator() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label>Nome do Produto</Label>
-        <Input value={productName} onChange={e => setProductName(e.target.value)} placeholder="Ex: Camiseta personalizada" />
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <Label>Nome do Produto</Label>
+          <Input value={productName} onChange={e => setProductName(e.target.value)} placeholder="Ex: Camiseta personalizada" />
+        </div>
+        <Dialog open={catalogDialogOpen} onOpenChange={setCatalogDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+              <FileSearch className="h-3.5 w-3.5" /> Importar Catálogo
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" /> Importar Catálogo de Produtos
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Envie PDFs, fotos ou listas de preços. A IA vai extrair produtos, preços e dar insights de precificação.
+              </p>
+              <CatalogUploader fileUrls={catalogFiles} onFilesChange={setCatalogFiles} />
+              <Button
+                onClick={analyzeCatalog}
+                disabled={catalogFiles.length === 0 || analyzingCatalog}
+                className="w-full"
+              >
+                {analyzingCatalog ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Analisando...</>
+                ) : (
+                  <><FileSearch className="h-4 w-4 mr-2" /> Analisar Catálogo</>
+                )}
+              </Button>
+              {catalogAnalysis && (
+                <CatalogAnalysisResult
+                  analysis={catalogAnalysis}
+                  onImportProduct={handleImportProduct}
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
+
 
       <Card>
         <CardHeader className="pb-3">
