@@ -153,7 +153,7 @@ export default function PersonaRaioX() {
   const handleSaveAndGenerate = async () => {
     const saved = await saveProfile(formData);
     if (saved) {
-      const generated = await generateRaioX();
+      const generated = await generateRaioX(catalogFiles);
       if (generated) {
         setIsEditing(false);
       }
