@@ -578,6 +578,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     <Button size="icon" variant={cur.bodyUnderline ? "default" : "outline"} className="h-7 w-7" onClick={() => updateSlide(currentSlide, { bodyUnderline: !cur.bodyUnderline })}>
                       <Underline className="h-3 w-3" />
                     </Button>
+                    <input type="color" value={cur.bodyColor || cur.textColor} onChange={(e) => updateSlide(currentSlide, { bodyColor: e.target.value })} className="h-7 w-7 rounded border border-input cursor-pointer" title="Cor do corpo" />
                   </div>
                 </div>
 
