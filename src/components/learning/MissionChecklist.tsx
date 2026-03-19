@@ -69,6 +69,19 @@ const MENTOR_PROMPTS: Record<string, string> = {
   "Entregar Plano Estratégico ELEVAR 180 dias": "Me ajude a construir meu Plano Estratégico ELEVAR de 180 dias para dobrar o faturamento: time ideal, etapas, indicadores e visão de longo prazo.",
 };
 
+// Prompts contextuais para missões que redirecionam a ferramentas específicas
+// mas também podem abrir a Mentora Gi com contexto pré-carregado
+const TOOL_CONTEXT_PROMPTS: Record<string, string> = {
+  "Organizar números reais do negócio": "Preciso organizar os números reais do meu negócio: faturamento atual, custos fixos e variáveis, pró-labore, margem de lucro real. Me ajude a mapear tudo isso de forma estratégica para entender minha saúde financeira e identificar onde posso melhorar.",
+  "Ajustar posicionamento nas redes": "Me ajude a reposicionar meu perfil nas redes sociais de forma premium. Quero uma bio estratégica, destaques organizados, identidade visual coerente e um plano de conteúdo que transmita autoridade no meu nicho.",
+  "Ajustar preços estrategicamente": "Me ajude a revisar minha estratégia de preços: analisar margem real, comparar com mercado, definir precificação premium e criar uma escada de valor com produtos de entrada, intermediário e premium.",
+  "Definir meta trimestral progressiva": "Me ajude a definir metas trimestrais progressivas e realistas para dobrar meu faturamento. Quero uma projeção mês a mês com ações concretas para cada fase de crescimento.",
+  "Organizar projeção de crescimento": "Me ajude a criar uma projeção financeira de crescimento: quanto preciso investir em tráfego, equipe e estrutura para escalar. Inclua cenários otimista, realista e conservador.",
+  "Ajustar campanha ativa": "Me ajude a analisar minha campanha de tráfego pago atual: métricas de performance (CPC, CPL, ROAS), criativos que estão funcionando, e ajustes estratégicos para melhorar resultados.",
+  "Definir linha premium": "Me ajude a estruturar minha linha premium de produtos/serviços: precificação estratégica, diferenciação competitiva, posicionamento de marca e comunicação de valor percebido.",
+  "Estruturar campanha diferenciada": "Me ajude a criar uma campanha de tráfego pago diferenciada que destaque meu posicionamento único no mercado. Quero copy de alta conversão, segmentação estratégica e criativos que se destaquem da concorrência.",
+};
+
 const fireSmallConfetti = () => {
   confetti({
     particleCount: 60,
