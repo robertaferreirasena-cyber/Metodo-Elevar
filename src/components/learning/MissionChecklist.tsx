@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ExternalLink, CheckCircle2, Eye } from "lucide-react";
+import { ExternalLink, CheckCircle2, Eye, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { markMissionPending } from "@/hooks/useMissionAutoComplete";
 import { usePersonaContext } from "@/contexts/PersonaContext";
