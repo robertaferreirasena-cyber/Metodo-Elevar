@@ -1,3 +1,11 @@
+export type CarouselLayout =
+  | "text-only"
+  | "image-bg"
+  | "profile-post"
+  | "photo-grid"
+  | "sales-highlight"
+  | "editorial";
+
 export interface CarouselTemplate {
   id: string;
   name: string;
@@ -11,6 +19,8 @@ export interface CarouselTemplate {
   bodySize: number;
   align: "left" | "center";
   bgGradient?: string;
+  layout: CarouselLayout;
+  highlightBgColor?: string;
 }
 
 export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
@@ -26,6 +36,7 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     titleSize: 28,
     bodySize: 18,
     align: "left",
+    layout: "text-only",
   },
   {
     id: "instagram-educativo",
@@ -40,6 +51,7 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     bodySize: 20,
     align: "center",
     bgGradient: "linear-gradient(135deg, #667EEA 0%, #764BA2 100%)",
+    layout: "text-only",
   },
   {
     id: "instagram-minimalista",
@@ -53,6 +65,7 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     titleSize: 30,
     bodySize: 18,
     align: "center",
+    layout: "text-only",
   },
   {
     id: "bold-vibrante",
@@ -67,6 +80,7 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     bodySize: 20,
     align: "center",
     bgGradient: "linear-gradient(135deg, #FF6B35 0%, #F7C948 100%)",
+    layout: "text-only",
   },
   {
     id: "storytelling",
@@ -80,6 +94,7 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     titleSize: 28,
     bodySize: 18,
     align: "left",
+    layout: "text-only",
   },
   {
     id: "dicas-rapidas",
@@ -93,6 +108,7 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     titleSize: 26,
     bodySize: 17,
     align: "left",
+    layout: "text-only",
   },
   {
     id: "depoimentos",
@@ -107,6 +123,7 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     bodySize: 19,
     align: "center",
     bgGradient: "linear-gradient(160deg, #1B1B2F 0%, #2D2B55 100%)",
+    layout: "text-only",
   },
   {
     id: "antes-depois",
@@ -121,6 +138,7 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     bodySize: 18,
     align: "left",
     bgGradient: "linear-gradient(135deg, #065F46 0%, #0E7490 100%)",
+    layout: "text-only",
   },
   {
     id: "lista-beneficios",
@@ -135,6 +153,80 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     bodySize: 18,
     align: "left",
     bgGradient: "linear-gradient(145deg, #1E3A5F 0%, #1A2744 100%)",
+    layout: "text-only",
+  },
+  // ========== NOVOS TEMPLATES VIRAIS ==========
+  {
+    id: "viral-foto",
+    name: "Viral com Foto",
+    description: "Foto de fundo + overlay escuro + texto bold",
+    aspectRatio: "1:1",
+    bgColor: "#1A1A1A",
+    textColor: "#FFFFFF",
+    accentColor: "#FF6B35",
+    fontFamily: "'Arial Black', Arial, sans-serif",
+    titleSize: 32,
+    bodySize: 18,
+    align: "left",
+    layout: "image-bg",
+  },
+  {
+    id: "editorial",
+    name: "Editorial / Notícia",
+    description: "Fundo escuro, headline grande, foto lateral",
+    aspectRatio: "1:1",
+    bgColor: "#0A0A0A",
+    textColor: "#FFFFFF",
+    accentColor: "#FF4500",
+    fontFamily: "'Georgia', 'Times New Roman', serif",
+    titleSize: 28,
+    bodySize: 16,
+    align: "left",
+    layout: "editorial",
+  },
+  {
+    id: "perfil-educativo",
+    name: "Post Educativo",
+    description: "Simula post do Instagram com avatar e @handle",
+    aspectRatio: "1:1",
+    bgColor: "#FFFFFF",
+    textColor: "#1A1A1A",
+    accentColor: "#E11D48",
+    fontFamily: "'Segoe UI', system-ui, sans-serif",
+    titleSize: 22,
+    bodySize: 17,
+    align: "left",
+    layout: "profile-post",
+  },
+  {
+    id: "storytelling-fotos",
+    name: "Storytelling com Fotos",
+    description: "Texto narrativo + grid de fotos",
+    aspectRatio: "1:1",
+    bgColor: "#FFFFFF",
+    textColor: "#1A1A1A",
+    accentColor: "#6366F1",
+    fontFamily: "'Segoe UI', system-ui, sans-serif",
+    titleSize: 22,
+    bodySize: 16,
+    align: "left",
+    layout: "photo-grid",
+  },
+  {
+    id: "slide-vendas",
+    name: "Slide de Vendas",
+    description: "Gradiente marrom, blocos de destaque coloridos",
+    aspectRatio: "1:1",
+    bgColor: "#3D2B1F",
+    textColor: "#FFFFFF",
+    accentColor: "#22C55E",
+    fontFamily: "'Arial Black', Arial, sans-serif",
+    titleSize: 30,
+    bodySize: 18,
+    align: "center",
+    bgGradient: "linear-gradient(160deg, #3D2B1F 0%, #5C3D2E 50%, #2D1B0E 100%)",
+    layout: "sales-highlight",
+    highlightBgColor: "#22C55E",
   },
 ];
 
@@ -149,6 +241,13 @@ export interface SlideData {
   fontFamily: string;
   align: "left" | "center";
   bgGradient?: string;
+  layout: CarouselLayout;
+  imageUrl?: string;
+  imageUrls?: string[];
+  profileName?: string;
+  profileHandle?: string;
+  profileImageUrl?: string;
+  highlightBgColor?: string;
 }
 
 export function createSlidesFromTemplate(
@@ -166,5 +265,7 @@ export function createSlidesFromTemplate(
     fontFamily: template.fontFamily,
     align: template.align,
     bgGradient: template.bgGradient,
+    layout: template.layout,
+    highlightBgColor: template.highlightBgColor,
   }));
 }
