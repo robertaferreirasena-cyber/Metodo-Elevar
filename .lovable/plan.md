@@ -1,50 +1,20 @@
+# Plano: Acesso 4 Meses + Admin Completo + Base de Conhecimento
 
+## Status: ✅ Implementado
 
-## Plano: Auto-preenchimento com Raio-X da Persona
+## O que foi feito
 
-### O que será feito
+### 1. Acesso de 4 Meses
+- `handle_new_user()` agora define `expires_at = NOW() + 4 months`
+- Subscriptions existentes sem `expires_at` atualizadas para `started_at + 4 meses`
 
-Adicionar um botão "Preencher com Raio-X" nas páginas **TrafficAds** e **ManyChatFlows** que puxa os dados completos da persona e preenche automaticamente os campos de **Produto/Serviço** e **Público-alvo**.
+### 2. Admin com Menu de Abas
+- `AdminLayout.tsx` com navegação horizontal: Dashboard, Usuários, Pagamentos, Tokens, Credenciais, Aprendizado, Base IA
+- Todas as páginas admin envolvidas com AdminLayout
+- Breadcrumbs removidos em favor das abas
 
-### Dados mapeados
-
-| Campo do formulário | Dados do Raio-X usados |
-|---|---|
-| **Produto/Serviço** | `product_description` + `main_differentiator` + `transformation` + `price_range` |
-| **Público-alvo** | `target_gender` + `target_age_range` + `target_profession` + `target_location` + `main_pain` + dados do `raioX` (dores, desejos, medos) |
-
-### Comportamento
-
-- O botão só aparece quando `hasProfile === true`
-- Ao clicar, os campos são preenchidos com texto descritivo montado a partir dos dados da persona
-- O usuário pode editar os campos após o preenchimento
-- Substitui o banner passivo atual ("Dados do Raio-X serão usados automaticamente") por um botão ativo + banner informativo
-
-### Arquivos modificados
-
-| Arquivo | Mudança |
-|---|---|
-| `src/pages/TrafficAds.tsx` | Adicionar botão "Preencher com Raio-X" que seta `product` e `audience` |
-| `src/pages/ManyChatFlows.tsx` | Mesmo botão com mesma lógica |
-
-### Detalhes técnicos
-
-Ambas as páginas já importam `usePersonaContext`. Será adicionado acesso a `formData` e `raioX` (já disponíveis no contexto). A função de preenchimento monta strings descritivas:
-
-```typescript
-// Produto
-const productText = [formData.product_description, formData.main_differentiator, formData.transformation]
-  .filter(Boolean).join(". ");
-
-// Público
-const audienceParts = [];
-if (formData.target_gender) audienceParts.push(formData.target_gender);
-if (formData.target_age_range) audienceParts.push(formData.target_age_range);
-if (formData.target_profession) audienceParts.push(formData.target_profession);
-if (formData.target_location) audienceParts.push(formData.target_location);
-if (formData.main_pain) audienceParts.push(`Dor principal: ${formData.main_pain}`);
-if (raioX?.desejos?.length) audienceParts.push(`Desejos: ${raioX.desejos.slice(0,3).join(", ")}`);
-```
-
-O botão terá ícone `Zap` e texto "Preencher com Raio-X", posicionado logo acima dos campos de texto.
-
+### 3. Base de Conhecimento IA
+- Tabela `agent_knowledge_base` (agent_key, agent_name, system_prompt)
+- Página `/admin/base-conhecimento` para editar prompts dos agentes
+- Edge functions (ai-mentor-chat, sales-strategist, conversation-analyzer, sequence-generator) consultam a tabela com fallback para prompts hardcoded
+- Cache de 5 minutos para evitar queries excessivas

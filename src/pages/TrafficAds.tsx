@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Megaphone, Sparkles, Loader2, Copy, Check } from "lucide-react";
+import { Megaphone, Sparkles, Loader2, Copy, Check, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +35,7 @@ const TONES = [
 
 export default function TrafficAds() {
   const { user } = useAuth();
-  const { enrichPrompt, hasProfile } = usePersonaContext();
+  const { enrichPrompt, hasProfile, formData, raioX } = usePersonaContext();
 
   const [platform, setPlatform] = useState("");
   const [objective, setObjective] = useState("");
@@ -49,6 +49,23 @@ export default function TrafficAds() {
   const resultRef = useRef<HTMLDivElement>(null);
 
   const canGenerate = platform && objective && product && audience && tone;
+
+  const handleFillFromPersona = () => {
+    const productParts = [formData.product_description, formData.main_differentiator, formData.transformation, formData.price_range ? `Faixa de preço: ${formData.price_range}` : ""].filter(Boolean);
+    if (productParts.length) setProduct(productParts.join(". "));
+
+    const audienceParts: string[] = [];
+    if (formData.target_gender) audienceParts.push(formData.target_gender);
+    if (formData.target_age_range) audienceParts.push(formData.target_age_range);
+    if (formData.target_profession) audienceParts.push(formData.target_profession);
+    if (formData.target_location) audienceParts.push(formData.target_location);
+    if (formData.main_pain) audienceParts.push(`Dor principal: ${formData.main_pain}`);
+    if (raioX?.desejos?.length) audienceParts.push(`Desejos: ${(raioX.desejos as string[]).slice(0, 3).join(", ")}`);
+    if (raioX?.medos?.length) audienceParts.push(`Medos: ${(raioX.medos as string[]).slice(0, 3).join(", ")}`);
+    if (audienceParts.length) setAudience(audienceParts.join(". "));
+
+    toast.success("Campos preenchidos com dados do Raio-X!");
+  };
 
   const handleGenerate = async () => {
     if (!canGenerate || !user) return;
@@ -217,9 +234,16 @@ export default function TrafficAds() {
             </div>
 
             {hasProfile && (
-              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
-                <p className="text-[10px] text-primary font-medium">✅ Dados do Raio-X da Persona serão usados automaticamente</p>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleFillFromPersona}
+                className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
+              >
+                <Zap className="h-4 w-4" />
+                Preencher com Raio-X da Persona
+              </Button>
             )}
 
             <Button
