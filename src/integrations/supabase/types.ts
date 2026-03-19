@@ -1458,6 +1458,17 @@ export type Database = {
           out_sequence_requests_month: number
         }[]
       }
+      check_and_reset_usage_admin: {
+        Args: { p_user_id: string }
+        Returns: {
+          out_daily_requests: number
+          out_monthly_requests: number
+          out_needs_daily_reset: boolean
+          out_needs_monthly_reset: boolean
+          out_persona_requests_month: number
+          out_sequence_requests_month: number
+        }[]
+      }
       get_all_profiles: {
         Args: never
         Returns: {
@@ -1520,10 +1531,18 @@ export type Database = {
         Args: { p_function_type?: string; p_user_id: string }
         Returns: boolean
       }
+      increment_usage_admin: {
+        Args: { p_function_type?: string; p_user_id: string }
+        Returns: boolean
+      }
       is_admin:
         | { Args: never; Returns: boolean }
         | { Args: { check_user_id: string }; Returns: boolean }
       track_token_usage: {
+        Args: { p_feature: string; p_tokens: number; p_user_id: string }
+        Returns: undefined
+      }
+      track_token_usage_admin: {
         Args: { p_feature: string; p_tokens: number; p_user_id: string }
         Returns: undefined
       }
