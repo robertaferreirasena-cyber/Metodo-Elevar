@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
     if (authResult instanceof Response) return authResult;
     const { userId } = authResult;
 
-    const { profileData } = await req.json();
+    const { profileData, catalogFiles } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -171,6 +171,37 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Extract catalog content if files provided
+    let catalogContext = "";
+    if (catalogFiles && Array.isArray(catalogFiles) && catalogFiles.length > 0) {
+      const extractedTexts: string[] = [];
+      for (const path of catalogFiles.slice(0, 5)) {
+        try {
+          const { data, error } = await supabase.storage
+            .from("product-catalogs")
+            .download(path);
+          if (error || !data) continue;
+
+          const ext = path.split(".").pop()?.toLowerCase() || "";
+          if (["txt", "csv"].includes(ext)) {
+            const text = await data.text();
+            extractedTexts.push(`[${path.split("/").pop()}]: ${text.slice(0, 1500)}`);
+          } else if (ext === "pdf") {
+            const text = await data.text();
+            const readable = text.replace(/[^\x20-\x7E\xC0-\xFF\n]/g, " ").replace(/\s+/g, " ").trim();
+            extractedTexts.push(`[PDF ${path.split("/").pop()}]: ${readable.slice(0, 1500)}`);
+          } else if (["jpg", "jpeg", "png", "webp"].includes(ext)) {
+            extractedTexts.push(`[Imagem: ${path.split("/").pop()} - conteúdo visual do catálogo]`);
+          }
+        } catch (err) {
+          console.error("Error extracting:", path, err);
+        }
+      }
+      if (extractedTexts.length > 0) {
+        catalogContext = `\n\nMATERIAIS DO CATÁLOGO/PRODUTOS ENVIADOS:\n${extractedTexts.join("\n").slice(0, 3000)}`;
+      }
+    }
+
     const userMessage = `Crie RAIO-X DE PERSONA completo:
 
 NEGÓCIO: ${profileData.business_name || "?"} | ${profileData.niche || "?"} / ${profileData.sub_niche || "?"}
@@ -185,12 +216,13 @@ Onde: ${profileData.target_location || "?"} | Dor: ${profileData.main_pain || "?
 Já tentou: ${profileData.previous_attempts || "?"}
 
 DESAFIOS: Vendas: ${profileData.sales_challenges || "?"}
-Objeções: ${profileData.common_objections || "?"} | Melhorar: ${profileData.improvement_goals || "?"}
+Objeções: ${profileData.common_objections || "?"} | Melhorar: ${profileData.improvement_goals || "?"}${catalogContext}
 
 IMPORTANTE:
 1. Identifique o nível de consciência PREDOMINANTE do público
 2. Recomende os 3 melhores formatos de copy para este nicho
-3. Gere JSON completo conforme especificado`;
+3. ${catalogContext ? "USE os materiais do catálogo como base para entender melhor os produtos/serviços e gerar análise mais precisa" : "Gere análise baseada nas informações fornecidas"}
+4. Gere JSON completo conforme especificado`;
 
     console.log("[persona-generator] user:", userId.slice(0,8), "business:", profileData.business_name);
 
