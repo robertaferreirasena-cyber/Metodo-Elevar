@@ -1,4 +1,4 @@
-import { BotMessageSquare, Lightbulb, Brain, Camera, ArrowRight, MessageSquare } from "lucide-react";
+import { BotMessageSquare, Lightbulb, Brain, Camera, ArrowRight, MessageSquare, Megaphone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
