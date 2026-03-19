@@ -16,6 +16,7 @@ import { Calculator, Download, Plus, Trash2, Package, Briefcase, BarChart3, Help
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import FinishMissionButton from "@/components/learning/FinishMissionButton";
+import { MissionContextBanner } from "@/components/learning/MissionContextBanner";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -1315,6 +1316,7 @@ export default function PriceCalculator() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
+      <MissionContextBanner />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Calculator className="h-6 w-6 text-primary" />

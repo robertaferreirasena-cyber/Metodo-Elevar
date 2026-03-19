@@ -19,6 +19,7 @@ import ReactMarkdown from "react-markdown";
 import AdManagerSimulator from "@/components/traffic/AdManagerSimulator";
 import MetricsCalculator from "@/components/traffic/MetricsCalculator";
 import ABComparison from "@/components/traffic/ABComparison";
+import { MissionContextBanner } from "@/components/learning/MissionContextBanner";
 import { useQuery } from "@tanstack/react-query";
 
 const PLATFORMS = [
@@ -267,6 +268,7 @@ export default function TrafficAds() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      <MissionContextBanner />
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-3 rounded-2xl bg-violet-500/10">
