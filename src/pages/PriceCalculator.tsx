@@ -215,6 +215,7 @@ function ProductCalculator() {
 
   return (
     <div className="space-y-4">
+      <SessionIndicator show={hasRestoredSession} onClear={clearSession} />
       <div className="flex items-end gap-2">
         <div className="flex-1">
           <Label>Nome do Produto</Label>
