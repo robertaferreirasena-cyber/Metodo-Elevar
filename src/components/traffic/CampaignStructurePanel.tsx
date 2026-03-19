@@ -34,6 +34,7 @@ export default function CampaignStructurePanel({
   selectedCampaignId,
   onSelectCampaign,
   onDeleteCampaign,
+  onDuplicateCampaign,
 }: CampaignStructurePanelProps) {
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
 
