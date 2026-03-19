@@ -101,7 +101,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 <ImagePlus style={{ color: slide.textColor, width: 80 * fontScale, height: 80 * fontScale }} />
               </div>
             )}
-            <div className="absolute inset-0 flex flex-col justify-end" style={{ padding: padPx, textAlign: slide.align }}>
+            <div className="absolute inset-0 flex flex-col" style={{ padding: padPx, textAlign: slide.align, justifyContent: slide.verticalAlign === "top" ? "flex-start" : slide.verticalAlign === "bottom" ? "flex-end" : "flex-end" }}>
               <div className="mb-2 font-bold uppercase tracking-widest" style={counterStyle}>
                 {slideIndex + 1} / {totalSlides}
               </div>
