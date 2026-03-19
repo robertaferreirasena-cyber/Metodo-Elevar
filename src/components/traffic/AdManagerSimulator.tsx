@@ -121,6 +121,38 @@ export default function AdManagerSimulator() {
     },
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: async (campaign: CampaignRow) => {
+      const existingVariations = campaigns.filter(c =>
+        c.structured_data?.campaign?.name?.startsWith(campaign.structured_data?.campaign?.name?.replace(/ \(Variação [A-Z]\)$/, ""))
+      ).length;
+      const suffix = String.fromCharCode(65 + existingVariations); // A, B, C...
+      const baseName = campaign.structured_data?.campaign?.name?.replace(/ \(Variação [A-Z]\)$/, "") || "Campanha";
+      const newSd = JSON.parse(JSON.stringify(campaign.structured_data));
+      newSd.campaign.name = `${baseName} (Variação ${suffix})`;
+
+      const { data, error } = await supabase.from("ad_campaigns").insert({
+        user_id: campaign.user_id,
+        platform: campaign.platform,
+        objective: campaign.objective,
+        product: campaign.product,
+        audience: campaign.audience,
+        budget: campaign.budget,
+        tone: campaign.tone,
+        raw_result: campaign.raw_result,
+        structured_data: newSd,
+        status: "approved",
+      }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["ad-campaigns"] });
+      if (data) setSelectedCampaignId(data.id);
+      toast.success("Variação A/B criada com sucesso!");
+    },
+  });
+
   useEffect(() => {
     if (campaigns.length > 0 && !selectedCampaignId) {
       setSelectedCampaignId(campaigns[0].id);
