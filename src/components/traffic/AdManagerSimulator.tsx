@@ -9,8 +9,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronRight, FolderOpen, FileText, BarChart3, Loader2, Pencil, Check, X, Download, Copy, ClipboardCheck } from "lucide-react";
+import {
+  ChevronRight, ChevronDown, FolderOpen, FileText, BarChart3, Loader2,
+  Pencil, Check, X, Download, Copy, ClipboardCheck, Users, MapPin,
+  Target, Zap, Eye, MonitorPlay, Image, LayoutGrid, Clipboard
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -72,12 +75,65 @@ interface EditingField {
   value: string;
 }
 
+function copyToClipboard(text: string, label: string) {
+  navigator.clipboard.writeText(text).then(() => {
+    toast.success(`${label} copiado!`);
+  }).catch(() => {
+    toast.error("Erro ao copiar");
+  });
+}
+
+function CopyButton({ text, label }: { text: string; label: string }) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+      onClick={(e) => { e.stopPropagation(); copyToClipboard(text, label); }}
+      title={`Copiar ${label}`}
+    >
+      <Clipboard className="h-3 w-3 text-muted-foreground" />
+    </Button>
+  );
+}
+
+function CopyableField({ label, value, className }: { label: string; value: string; className?: string }) {
+  if (!value) return null;
+  return (
+    <div className={cn("group flex items-start gap-2", className)}>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
+        <p className="text-xs mt-0.5 whitespace-pre-wrap">{value}</p>
+      </div>
+      <CopyButton text={value} label={label} />
+    </div>
+  );
+}
+
+function FormatIcon({ format }: { format: string }) {
+  if (format === "video") return <MonitorPlay className="h-3.5 w-3.5 text-red-500" />;
+  if (format === "carousel") return <LayoutGrid className="h-3.5 w-3.5 text-blue-500" />;
+  return <Image className="h-3.5 w-3.5 text-green-500" />;
+}
+
+function FormatBadge({ ad }: { ad: any }) {
+  const label = ad.creative_format_label || ad.format;
+  const dims = ad.recommended_dimensions;
+  return (
+    <div className="flex items-center gap-1.5">
+      <FormatIcon format={ad.format} />
+      <Badge variant="outline" className="text-[9px] h-5">{label}</Badge>
+      {dims && <span className="text-[9px] text-muted-foreground">{dims}</span>}
+    </div>
+  );
+}
+
 export default function AdManagerSimulator() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [expandedSets, setExpandedSets] = useState<Set<number>>(new Set([0]));
-  const [selectedAdIndex, setSelectedAdIndex] = useState<{ setIdx: number; adIdx: number } | null>(null);
+  const [expandedAds, setExpandedAds] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<EditingField | null>(null);
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
 
@@ -127,7 +183,7 @@ export default function AdManagerSimulator() {
       const existingVariations = campaigns.filter(c =>
         c.structured_data?.campaign?.name?.startsWith(campaign.structured_data?.campaign?.name?.replace(/ \(Variação [A-Z]\)$/, ""))
       ).length;
-      const suffix = String.fromCharCode(65 + existingVariations); // A, B, C...
+      const suffix = String.fromCharCode(65 + existingVariations);
       const baseName = campaign.structured_data?.campaign?.name?.replace(/ \(Variação [A-Z]\)$/, "") || "Campanha";
       const newSd = JSON.parse(JSON.stringify(campaign.structured_data));
       newSd.campaign.name = `${baseName} (Variação ${suffix})`;
@@ -167,6 +223,14 @@ export default function AdManagerSimulator() {
     setExpandedSets(prev => {
       const next = new Set(prev);
       next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
+  };
+
+  const toggleAd = (key: string) => {
+    setExpandedAds(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
       return next;
     });
   };
@@ -211,38 +275,38 @@ export default function AdManagerSimulator() {
 
     const addSpacer = (h = 4) => { y += h; };
 
-    // Title
     addText("PLANO DE CAMPANHA - GERENCIADOR DE ANUNCIOS", 14, true, [100, 50, 200]);
     addSpacer(6);
-
-    // Campaign info
     addText(`Campanha: ${sd.campaign?.name}`, 12, true);
     addText(`Plataforma: ${selectedCampaign.platform}`, 10, false, [100, 100, 100]);
     addText(`Objetivo: ${sd.campaign?.objective}`, 10, false, [100, 100, 100]);
     addText(`Orcamento Total: ${sd.campaign?.budget_value}`, 10, false, [100, 100, 100]);
     addSpacer(8);
 
-    // Ad Sets
     sd.ad_sets?.forEach((adSet: any, si: number) => {
       addText(`CONJUNTO ${si + 1}: ${adSet.name}`, 11, true, [30, 100, 200]);
+      if (adSet.optimization_goal) addText(`Otimizacao: ${adSet.optimization_goal}`, 9, false, [80, 80, 80]);
       addText(`Orcamento: ${adSet.budget}`, 9, false, [80, 80, 80]);
       addText(`Publico: ${adSet.audience?.description || "N/A"}`, 9, false, [80, 80, 80]);
-      addText(`Posicionamentos: ${adSet.placements?.join(", ") || "N/A"}`, 9, false, [80, 80, 80]);
-      if (adSet.audience?.locations?.length) {
-        addText(`Localizacoes: ${adSet.audience.locations.join(", ")}`, 9, false, [80, 80, 80]);
-      }
-      if (adSet.audience?.interests?.length) {
-        addText(`Interesses: ${adSet.audience.interests.join(", ")}`, 9, false, [80, 80, 80]);
-      }
       addText(`Faixa etaria: ${adSet.audience?.age_min || "?"}-${adSet.audience?.age_max || "?"} | Genero: ${adSet.audience?.gender || "todos"}`, 9, false, [80, 80, 80]);
+      if (adSet.audience?.locations?.length) addText(`Localizacoes: ${adSet.audience.locations.join(", ")}`, 9, false, [80, 80, 80]);
+      const dt = adSet.audience?.detailed_targeting;
+      if (dt?.interests?.length) addText(`Interesses: ${dt.interests.join(", ")}`, 9, false, [80, 80, 80]);
+      if (dt?.behaviors?.length) addText(`Comportamentos: ${dt.behaviors.join(", ")}`, 9, false, [80, 80, 80]);
+      if (dt?.demographics?.length) addText(`Demograficos: ${dt.demographics.join(", ")}`, 9, false, [80, 80, 80]);
+      if (adSet.audience?.custom_audiences?.length) addText(`Publicos personalizados: ${adSet.audience.custom_audiences.join(", ")}`, 9, false, [80, 80, 80]);
+      if (adSet.audience?.advantage_plus) addText(`Advantage+ Audience: Ativado`, 9, true, [0, 130, 80]);
+      addText(`Posicionamentos: ${adSet.placements?.join(", ") || "N/A"}`, 9, false, [80, 80, 80]);
       addSpacer(4);
 
       adSet.ads?.forEach((ad: any, ai: number) => {
         addText(`  Anuncio ${ai + 1}: ${ad.name}`, 10, true);
-        addText(`  Formato: ${ad.format} | CTA: ${ad.cta}`, 9, false, [80, 80, 80]);
+        const fmtLabel = ad.creative_format_label || ad.format;
+        addText(`  Formato: ${fmtLabel}${ad.recommended_dimensions ? ` (${ad.recommended_dimensions})` : ""} | CTA: ${ad.cta}`, 9, false, [80, 80, 80]);
         addText(`  Headline: ${ad.headline}`, 9, false, [50, 50, 50]);
         addText(`  Texto: ${ad.primary_text}`, 9, false, [50, 50, 50]);
         if (ad.description) addText(`  Descricao: ${ad.description}`, 9, false, [80, 80, 80]);
+        if (ad.creative_description) addText(`  Criativo: ${ad.creative_description}`, 9, false, [80, 80, 80]);
         if (ad.video_script) addText(`  Roteiro: ${ad.video_script}`, 9, false, [80, 80, 80]);
         if (ad.visual_brief) addText(`  Briefing Visual: ${ad.visual_brief}`, 9, false, [80, 80, 80]);
         addSpacer(3);
@@ -250,7 +314,6 @@ export default function AdManagerSimulator() {
       addSpacer(6);
     });
 
-    // Footer
     addSpacer(8);
     addText("Gerado pelo Metodo ANDROMEDA - Mentoria Elevar", 8, false, [150, 150, 150]);
 
@@ -265,8 +328,6 @@ export default function AdManagerSimulator() {
       </div>
     );
   }
-
-  const selectedAd = selectedAdIndex && sd?.ad_sets?.[selectedAdIndex.setIdx]?.ads?.[selectedAdIndex.adIdx];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -343,160 +404,253 @@ export default function AdManagerSimulator() {
               </CardContent>
             </Card>
 
-            {/* Hierarchical table */}
-            <Card>
-              <CardContent className="p-0">
-                <ScrollArea className="max-h-[500px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-8"></TableHead>
-                        <TableHead className="text-xs">Status</TableHead>
-                        <TableHead className="text-xs">Nome</TableHead>
-                        <TableHead className="text-xs">Orçamento</TableHead>
-                        <TableHead className="text-xs">Público</TableHead>
-                        <TableHead className="text-xs">Posicionamentos</TableHead>
-                        <TableHead className="text-xs w-20">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sd.ad_sets?.map((adSet: any, si: number) => (
-                        <Collapsible key={si} open={expandedSets.has(si)} onOpenChange={() => toggleSet(si)} asChild>
-                          <>
-                            <CollapsibleTrigger asChild>
-                              <TableRow className="cursor-pointer hover:bg-muted/50">
-                                <TableCell className="p-2">
-                                  <ChevronRight className={cn("h-3 w-3 transition-transform", expandedSets.has(si) && "rotate-90")} />
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-1.5">
-                                    <Switch defaultChecked className="scale-75" />
-                                    <span className="text-[10px] text-green-600">Ativo</span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-1.5">
-                                    <FolderOpen className="h-3.5 w-3.5 text-blue-500" />
-                                    <span className="text-xs font-medium">{adSet.name}</span>
-                                  </div>
-                                </TableCell>
-                                {/* Budget - editable */}
-                                <TableCell onClick={(e) => e.stopPropagation()}>
-                                  {editing?.setIdx === si && editing.field === "budget" ? (
-                                    <div className="flex items-center gap-1">
-                                      <Input
-                                        value={editing.value}
-                                        onChange={(e) => setEditing({ ...editing, value: e.target.value })}
-                                        className="h-6 text-xs w-24"
-                                        autoFocus
-                                        onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-                                      />
-                                      <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={saveEdit}><Check className="h-3 w-3 text-green-600" /></Button>
-                                      <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={cancelEdit}><X className="h-3 w-3 text-destructive" /></Button>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-1 group">
-                                      <span className="text-xs">{adSet.budget}</span>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={(e) => { e.stopPropagation(); startEditing(si, "budget", adSet.budget || ""); }}
-                                      >
-                                        <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
-                                      </Button>
-                                    </div>
-                                  )}
-                                </TableCell>
-                                {/* Audience - editable */}
-                                <TableCell className="max-w-[150px]" onClick={(e) => e.stopPropagation()}>
-                                  {editing?.setIdx === si && editing.field === "audience" ? (
-                                    <div className="flex items-center gap-1">
-                                      <Input
-                                        value={editing.value}
-                                        onChange={(e) => setEditing({ ...editing, value: e.target.value })}
-                                        className="h-6 text-[10px] w-32"
-                                        autoFocus
-                                        onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-                                      />
-                                      <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={saveEdit}><Check className="h-3 w-3 text-green-600" /></Button>
-                                      <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={cancelEdit}><X className="h-3 w-3 text-destructive" /></Button>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-1 group">
-                                      <span className="text-[10px] truncate">{adSet.audience?.description || `${adSet.audience?.gender} ${adSet.audience?.age_min}-${adSet.audience?.age_max}`}</span>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                                        onClick={(e) => { e.stopPropagation(); startEditing(si, "audience", adSet.audience?.description || ""); }}
-                                      >
-                                        <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
-                                      </Button>
-                                    </div>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex gap-1 flex-wrap">
-                                    {adSet.placements?.map((p: string, pi: number) => (
-                                      <Badge key={pi} variant="outline" className="text-[8px] h-4">{p}</Badge>
-                                    ))}
-                                  </div>
-                                </TableCell>
-                                <TableCell></TableCell>
-                              </TableRow>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent asChild>
-                              <>
-                                {adSet.ads?.map((ad: any, ai: number) => (
-                                  <TableRow key={ai} className="bg-muted/20">
-                                    <TableCell></TableCell>
-                                    <TableCell>
-                                      <div className="flex items-center gap-1.5 pl-4">
-                                        <Switch defaultChecked className="scale-75" />
-                                        <span className="text-[10px] text-green-600">Ativo</span>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="flex items-center gap-1.5 pl-4">
-                                        <FileText className="h-3 w-3 text-green-500" />
-                                        <span className="text-xs">{ad.name}</span>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="text-xs text-muted-foreground">—</TableCell>
-                                    <TableCell className="text-[10px] text-muted-foreground truncate max-w-[120px]">
-                                      {ad.headline}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Badge variant="outline" className="text-[8px] h-4">{ad.format}</Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 text-[10px]"
-                                        onClick={() => setSelectedAdIndex({ setIdx: si, adIdx: ai })}
-                                      >
-                                        👁 Ver
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </>
-                            </CollapsibleContent>
-                          </>
-                        </Collapsible>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            {/* Ad Sets - Detailed Cards */}
+            {sd.ad_sets?.map((adSet: any, si: number) => {
+              const isExpanded = expandedSets.has(si);
+              const audience = adSet.audience || {};
+              const dt = audience.detailed_targeting || {};
 
-            {/* Ad Preview */}
-            {selectedAd && (
-              <AdPreviewMock ad={selectedAd} platform={selectedCampaign.platform} />
-            )}
+              return (
+                <Card key={si}>
+                  <Collapsible open={isExpanded} onOpenChange={() => toggleSet(si)}>
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="pb-2 cursor-pointer hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            <FolderOpen className="h-4 w-4 text-blue-500" />
+                            <CardTitle className="text-sm">{adSet.name}</CardTitle>
+                            <Switch defaultChecked className="scale-75" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {adSet.optimization_goal && (
+                              <Badge variant="secondary" className="text-[9px]">
+                                <Target className="h-3 w-3 mr-1" />
+                                {adSet.optimization_goal}
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-[9px]">{adSet.budget}</Badge>
+                            {audience.advantage_plus && (
+                              <Badge className="bg-blue-500/10 text-blue-600 border-blue-200 text-[9px]">
+                                <Zap className="h-3 w-3 mr-0.5" />
+                                Advantage+
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent>
+                      <CardContent className="space-y-4 pt-0">
+                        {/* Audience Section */}
+                        <div className="rounded-lg border p-3 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-semibold flex items-center gap-1.5">
+                              <Users className="h-3.5 w-3.5 text-violet-500" />
+                              Público-Alvo
+                            </h4>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-[10px] gap-1"
+                              onClick={() => {
+                                const parts = [
+                                  `Gênero: ${audience.gender || "todos"}`,
+                                  `Idade: ${audience.age_min || "18"}-${audience.age_max || "65"}`,
+                                  `Localizações: ${audience.locations?.join(", ") || "N/A"}`,
+                                  dt.interests?.length ? `Interesses: ${dt.interests.join(", ")}` : "",
+                                  dt.behaviors?.length ? `Comportamentos: ${dt.behaviors.join(", ")}` : "",
+                                  dt.demographics?.length ? `Dados demográficos: ${dt.demographics.join(", ")}` : "",
+                                  audience.custom_audiences?.length ? `Públicos personalizados: ${audience.custom_audiences.join(", ")}` : "",
+                                ].filter(Boolean).join("\n");
+                                copyToClipboard(parts, "Configuração de público");
+                              }}
+                            >
+                              <Clipboard className="h-3 w-3" />
+                              Copiar tudo
+                            </Button>
+                          </div>
+
+                          {/* Audience description */}
+                          {audience.description && (
+                            <p className="text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2">
+                              {audience.description}
+                            </p>
+                          )}
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div>
+                              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Gênero</p>
+                              <p className="mt-0.5">{audience.gender === "all" ? "Todos" : audience.gender === "male" ? "Masculino" : "Feminino"}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Faixa Etária</p>
+                              <p className="mt-0.5">{audience.age_min || 18} — {audience.age_max || 65} anos</p>
+                            </div>
+                            <div className="group">
+                              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Localizações</p>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                                <p className="truncate">{audience.locations?.join(", ") || "N/A"}</p>
+                                {audience.locations?.length > 0 && (
+                                  <CopyButton text={audience.locations.join(", ")} label="Localizações" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Detailed Targeting */}
+                          {(dt.interests?.length > 0 || dt.behaviors?.length > 0 || dt.demographics?.length > 0) && (
+                            <div className="space-y-2 pt-1">
+                              <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">
+                                Segmentação Detalhada (Meta Ads 2026)
+                              </p>
+                              {dt.interests?.length > 0 && (
+                                <div className="group">
+                                  <p className="text-[10px] text-muted-foreground mb-1">Interesses</p>
+                                  <div className="flex flex-wrap gap-1 items-center">
+                                    {dt.interests.map((i: string, idx: number) => (
+                                      <Badge key={idx} variant="outline" className="text-[9px] h-5 cursor-pointer hover:bg-primary/10"
+                                        onClick={() => copyToClipboard(i, "Interesse")}
+                                      >{i}</Badge>
+                                    ))}
+                                    <CopyButton text={dt.interests.join(", ")} label="Interesses" />
+                                  </div>
+                                </div>
+                              )}
+                              {dt.behaviors?.length > 0 && (
+                                <div className="group">
+                                  <p className="text-[10px] text-muted-foreground mb-1">Comportamentos</p>
+                                  <div className="flex flex-wrap gap-1 items-center">
+                                    {dt.behaviors.map((b: string, idx: number) => (
+                                      <Badge key={idx} variant="secondary" className="text-[9px] h-5 cursor-pointer hover:bg-primary/10"
+                                        onClick={() => copyToClipboard(b, "Comportamento")}
+                                      >{b}</Badge>
+                                    ))}
+                                    <CopyButton text={dt.behaviors.join(", ")} label="Comportamentos" />
+                                  </div>
+                                </div>
+                              )}
+                              {dt.demographics?.length > 0 && (
+                                <div className="group">
+                                  <p className="text-[10px] text-muted-foreground mb-1">Dados Demográficos</p>
+                                  <div className="flex flex-wrap gap-1 items-center">
+                                    {dt.demographics.map((d: string, idx: number) => (
+                                      <Badge key={idx} variant="outline" className="text-[9px] h-5 border-dashed cursor-pointer hover:bg-primary/10"
+                                        onClick={() => copyToClipboard(d, "Demográfico")}
+                                      >{d}</Badge>
+                                    ))}
+                                    <CopyButton text={dt.demographics.join(", ")} label="Dados Demográficos" />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Custom Audiences */}
+                          {audience.custom_audiences?.length > 0 && (
+                            <div className="group">
+                              <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">
+                                Públicos Personalizados / Lookalike
+                              </p>
+                              <div className="flex flex-wrap gap-1 items-center">
+                                {audience.custom_audiences.map((ca: string, idx: number) => (
+                                  <Badge key={idx} className="bg-violet-500/10 text-violet-600 border-violet-200 text-[9px] h-5 cursor-pointer hover:bg-violet-500/20"
+                                    onClick={() => copyToClipboard(ca, "Público")}
+                                  >{ca}</Badge>
+                                ))}
+                                <CopyButton text={audience.custom_audiences.join(", ")} label="Públicos Personalizados" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Placements Section */}
+                        <div className="rounded-lg border p-3">
+                          <h4 className="text-xs font-semibold flex items-center gap-1.5 mb-2">
+                            <MapPin className="h-3.5 w-3.5 text-orange-500" />
+                            Posicionamentos
+                          </h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {adSet.placements?.map((p: string, pi: number) => (
+                              <Badge key={pi} variant="outline" className="text-[10px] h-6 capitalize">{p}</Badge>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Ads Section */}
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-semibold flex items-center gap-1.5">
+                            <FileText className="h-3.5 w-3.5 text-green-500" />
+                            Anúncios ({adSet.ads?.length || 0})
+                          </h4>
+
+                          {adSet.ads?.map((ad: any, ai: number) => {
+                            const adKey = `${si}-${ai}`;
+                            const isAdExpanded = expandedAds.has(adKey);
+
+                            return (
+                              <Card key={ai} className="border-dashed">
+                                <Collapsible open={isAdExpanded} onOpenChange={() => toggleAd(adKey)}>
+                                  <CollapsibleTrigger asChild>
+                                    <CardHeader className="py-2 px-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          {isAdExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                                          <FormatIcon format={ad.format} />
+                                          <span className="text-xs font-medium">{ad.name}</span>
+                                        </div>
+                                        <FormatBadge ad={ad} />
+                                      </div>
+                                    </CardHeader>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <CardContent className="pt-0 pb-3 px-3 space-y-3">
+                                      {/* Creative info */}
+                                      {ad.creative_description && (
+                                        <div className="rounded-md bg-muted/50 p-2">
+                                          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mb-1">Descrição do Criativo</p>
+                                          <p className="text-xs">{ad.creative_description}</p>
+                                        </div>
+                                      )}
+
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Ad copy fields */}
+                                        <div className="space-y-3">
+                                          <CopyableField label="Texto Principal" value={ad.primary_text} />
+                                          <CopyableField label="Headline" value={ad.headline} />
+                                          <CopyableField label="Descrição" value={ad.description} />
+                                          <div className="flex items-center gap-2">
+                                            <Badge className="text-[10px]">{ad.cta}</Badge>
+                                            <CopyButton text={ad.cta} label="CTA" />
+                                          </div>
+                                          {ad.video_script && (
+                                            <CopyableField label="Roteiro de Vídeo" value={ad.video_script} />
+                                          )}
+                                          {ad.visual_brief && (
+                                            <CopyableField label="Briefing Visual" value={ad.visual_brief} />
+                                          )}
+                                        </div>
+
+                                        {/* Preview */}
+                                        <div>
+                                          <AdPreviewMock ad={ad} platform={selectedCampaign.platform} />
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Card>
+              );
+            })}
 
             {/* Implementation Checklist */}
             {(() => {
