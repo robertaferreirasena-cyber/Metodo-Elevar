@@ -35,7 +35,7 @@ const TONES = [
 
 export default function TrafficAds() {
   const { user } = useAuth();
-  const { enrichPrompt, hasProfile } = usePersonaContext();
+  const { enrichPrompt, hasProfile, formData, raioX } = usePersonaContext();
 
   const [platform, setPlatform] = useState("");
   const [objective, setObjective] = useState("");
