@@ -37,11 +37,17 @@ const ACTIVITY_CONFIG: Record<string, { route: string; label: string }> = {
   compromisso: { route: "/compromisso", label: "Compromisso Estratégico" },
   persona: { route: "/persona", label: "Raio-X Persona" },
   calculator: { route: "/calculadora", label: "Calculadora de Preços" },
+  calculadora: { route: "/calculadora", label: "Calculadora de Preços" },
   mentor: { route: "/mentora", label: "Mentora Gi" },
   content: { route: "/mentora", label: "Conteúdo / Copy" },
   photo: { route: "/ensaio-fotografico", label: "PhotoBoss" },
+  foto: { route: "/ensaio-fotografico", label: "PhotoBoss" },
   whatsapp_private: { route: "/privado", label: "WhatsApp Privado" },
   whatsapp_group: { route: "/grupo", label: "WhatsApp Grupo" },
+  financeiro: { route: "/financeiro", label: "Central Financeira" },
+  metas: { route: "/metas-elevar", label: "Metas Elevar" },
+  trafego: { route: "/trafego-pago", label: "Tráfego Pago" },
+  instapro: { route: "/aprendizado?tab=instapro", label: "Insta PRO" },
 };
 
 const MENTOR_PROMPTS: Record<string, string> = {
