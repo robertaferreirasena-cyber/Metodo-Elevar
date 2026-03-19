@@ -45,7 +45,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     };
 
     const bodyStyle: React.CSSProperties = {
-      color: slide.textColor,
+      color: slide.bodyColor || slide.textColor,
       fontSize: `${slide.bodySize * fontScale}px`,
       opacity: 0.9,
       fontWeight: slide.bodyBold ? "bold" : "normal",

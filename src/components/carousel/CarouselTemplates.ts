@@ -331,9 +331,11 @@ export interface SlideData {
   bodyItalic?: boolean;
   bodyUnderline?: boolean;
   titleColor?: string;
+  bodyColor?: string;
   textShadow?: string;
   overlayOpacity?: number;
   bgImageUrl?: string;
+  verticalAlign?: "top" | "center" | "bottom";
 }
 
 export function createSlidesFromTemplate(
