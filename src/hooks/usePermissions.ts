@@ -29,6 +29,7 @@ interface UserPermissions {
   module_photoboss: boolean;
   module_conversation_analysis: boolean;
   module_traffic_ads: boolean;
+  module_manychat_flows: boolean;
   custom_daily_limit: number | null;
   custom_monthly_limit: number | null;
   custom_persona_limit: number | null;
