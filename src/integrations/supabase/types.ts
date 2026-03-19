@@ -904,6 +904,33 @@ export type Database = {
           },
         ]
       }
+      saved_instagram_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          profile_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          profile_data?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          profile_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sequence_posts: {
         Row: {
           content: string
