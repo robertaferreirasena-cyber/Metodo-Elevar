@@ -20,7 +20,7 @@ const features: Feature[] = [
 ];
 
 const Index = () => {
-  const { messages, isLoading, sendMessage, clearMessages } = useChat();
+  const { messages, isLoading, sendMessage, clearMessages, hasRestoredSession } = useChat();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
