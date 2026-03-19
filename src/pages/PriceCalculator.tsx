@@ -333,14 +333,36 @@ function ProductCalculator() {
 // ═══════════════════════════════════════════
 // ABA 2 — SERVIÇO
 // ═══════════════════════════════════════════
+interface ServiceSessionState {
+  serviceName: string;
+  services: ServiceItem[];
+  proLabore: number;
+  profitPercent: number;
+  taxPercent: number;
+}
+
+const DEFAULT_SERVICES: ServiceItem[] = [
+  { id: "1", name: "Atendimento", hoursPerMonth: 20, hourlyRate: 50, fixedCosts: 200 },
+];
+
+const EMPTY_SERVICE_STATE: ServiceSessionState = {
+  serviceName: "", services: DEFAULT_SERVICES, proLabore: 0, profitPercent: 30, taxPercent: 10,
+};
+
 function ServiceCalculator() {
-  const [serviceName, setServiceName] = useState("");
-  const [services, setServices] = useState<ServiceItem[]>([
-    { id: "1", name: "Atendimento", hoursPerMonth: 20, hourlyRate: 50, fixedCosts: 200 },
-  ]);
-  const [proLabore, setProLabore] = useState(0);
-  const [profitPercent, setProfitPercent] = useState(30);
-  const [taxPercent, setTaxPercent] = useState(10);
+  const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<ServiceSessionState>(
+    "session_service_calc", EMPTY_SERVICE_STATE
+  );
+
+  const [serviceName, setServiceName] = useState(sessionState.serviceName);
+  const [services, setServices] = useState<ServiceItem[]>(sessionState.services);
+  const [proLabore, setProLabore] = useState(sessionState.proLabore);
+  const [profitPercent, setProfitPercent] = useState(sessionState.profitPercent);
+  const [taxPercent, setTaxPercent] = useState(sessionState.taxPercent);
+
+  useEffect(() => {
+    setSessionState({ serviceName, services, proLabore, profitPercent, taxPercent });
+  }, [serviceName, services, proLabore, profitPercent, taxPercent, setSessionState]);
 
   const addService = () => setServices([...services, { id: Date.now().toString(), name: "", hoursPerMonth: 0, hourlyRate: 0, fixedCosts: 0 }]);
   const removeService = (id: string) => { if (services.length > 1) setServices(services.filter(s => s.id !== id)); };
