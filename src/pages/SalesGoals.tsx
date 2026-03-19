@@ -10,6 +10,7 @@ import { Target, Save, TrendingUp, AlertTriangle, CheckCircle2, Plus, DollarSign
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { MissionContextBanner } from "@/components/learning/MissionContextBanner";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, isBefore, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
