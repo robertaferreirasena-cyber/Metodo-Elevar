@@ -48,6 +48,7 @@ const DEFAULT_PERMISSIONS: UserPermissions = {
   module_photoboss: true,
   module_conversation_analysis: true,
   module_traffic_ads: true,
+  module_manychat_flows: true,
   custom_daily_limit: null,
   custom_monthly_limit: null,
   custom_persona_limit: null,
