@@ -14,7 +14,8 @@ export type ModuleKey =
   | 'module_community'
   | 'module_photoboss'
   | 'module_conversation_analysis'
-  | 'module_traffic_ads';
+  | 'module_traffic_ads'
+  | 'module_manychat_flows';
 
 interface UserPermissions {
   module_private: boolean;
