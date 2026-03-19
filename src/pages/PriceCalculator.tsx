@@ -98,6 +98,12 @@ function ProductCalculator() {
   const [desiredMargin, setDesiredMargin] = useState(30);
   const [taxPercent, setTaxPercent] = useState(10);
 
+  // Catalog import state
+  const [catalogFiles, setCatalogFiles] = useState<string[]>([]);
+  const [catalogAnalysis, setCatalogAnalysis] = useState<CatalogAnalysis | null>(null);
+  const [analyzingCatalog, setAnalyzingCatalog] = useState(false);
+  const [catalogDialogOpen, setCatalogDialogOpen] = useState(false);
+
   const addCost = () => setDirectCosts([...directCosts, { id: Date.now().toString(), name: "", value: 0 }]);
   const removeCost = (id: string) => { if (directCosts.length > 1) setDirectCosts(directCosts.filter(c => c.id !== id)); };
   const updateCost = (id: string, field: keyof CostItem, value: string | number) => setDirectCosts(directCosts.map(c => c.id === id ? { ...c, [field]: value } : c));
@@ -112,6 +118,47 @@ function ProductCalculator() {
   const realMargin = sellingPrice > 0 ? (unitProfit / sellingPrice) * 100 : 0;
   const monthlyRevenue = sellingPrice * quantityPerMonth;
   const monthlyProfit = unitProfit * quantityPerMonth;
+
+  const analyzeCatalog = async () => {
+    if (catalogFiles.length === 0) {
+      toast.error("Envie pelo menos um arquivo");
+      return;
+    }
+    setAnalyzingCatalog(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/catalog-price-analyzer`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ filePaths: catalogFiles, niche: "" }),
+        }
+      );
+      if (response.status === 429) { toast.error("Limite de requisições excedido"); return; }
+      if (response.status === 402) { toast.error("Créditos esgotados"); return; }
+      if (!response.ok) throw new Error("Erro na análise");
+      const { analysis } = await response.json();
+      setCatalogAnalysis(analysis);
+      toast.success("Catálogo analisado!");
+    } catch (err) {
+      toast.error("Erro ao analisar catálogo");
+    } finally {
+      setAnalyzingCatalog(false);
+    }
+  };
+
+  const handleImportProduct = (product: any) => {
+    if (product.name) setProductName(product.name);
+    if (product.estimated_cost) {
+      setDirectCosts([{ id: Date.now().toString(), name: "Custo estimado (catálogo)", value: product.estimated_cost }]);
+    }
+    toast.success(`Produto "${product.name}" importado!`);
+    setCatalogDialogOpen(false);
+  };
 
   const exportPDF = () => {
     const doc = new jsPDF();
