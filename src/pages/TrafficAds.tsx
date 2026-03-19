@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Megaphone, Sparkles, Loader2, Copy, Check, Zap, CheckCircle, BarChart3 } from "lucide-react";
+import { Megaphone, Sparkles, Loader2, Copy, Check, Zap, CheckCircle, BarChart3, Calculator, GitCompare } from "lucide-react";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import AdManagerSimulator from "@/components/traffic/AdManagerSimulator";
+import MetricsCalculator from "@/components/traffic/MetricsCalculator";
+import ABComparison from "@/components/traffic/ABComparison";
+import { useQuery } from "@tanstack/react-query";
 
 const PLATFORMS = [
   { value: "meta-ads", label: "Meta Ads (Facebook/Instagram)" },
@@ -38,6 +41,17 @@ const TONES = [
   { value: "aspiracional", label: "✨ Aspiracional" },
 ];
 
+const DESTINATIONS = [
+  { value: "whatsapp", label: "📱 WhatsApp" },
+  { value: "pagina-vendas", label: "🛒 Página de Vendas" },
+  { value: "pagina-captura", label: "📋 Página de Captura (Lead)" },
+  { value: "perfil-instagram", label: "📸 Perfil do Instagram" },
+  { value: "link-bio", label: "🔗 Link na Bio / Linktree" },
+  { value: "loja-online", label: "🏪 Loja Online / E-commerce" },
+  { value: "messenger", label: "💬 Messenger" },
+  { value: "app", label: "📲 Aplicativo" },
+];
+
 interface TrafficSessionState {
   platform: string;
   objective: string;
@@ -45,11 +59,12 @@ interface TrafficSessionState {
   audience: string;
   budget: string;
   tone: string;
+  destination: string;
   result: string;
 }
 
 const EMPTY_TRAFFIC_STATE: TrafficSessionState = {
-  platform: "", objective: "", product: "", audience: "", budget: "", tone: "", result: "",
+  platform: "", objective: "", product: "", audience: "", budget: "", tone: "", destination: "", result: "",
 };
 
 export default function TrafficAds() {
@@ -68,15 +83,32 @@ export default function TrafficAds() {
   const [audience, setAudience] = useState(sessionState.audience);
   const [budget, setBudget] = useState(sessionState.budget);
   const [tone, setTone] = useState(sessionState.tone);
+  const [destination, setDestination] = useState(sessionState.destination);
   const [result, setResult] = useState(sessionState.result);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
+  // Fetch campaigns for AB comparison
+  const { data: allCampaigns = [] } = useQuery({
+    queryKey: ["ad-campaigns", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("ad_campaigns")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!user,
+  });
+
   useEffect(() => {
-    setSessionState({ platform, objective, product, audience, budget, tone, result });
-  }, [platform, objective, product, audience, budget, tone, result, setSessionState]);
+    setSessionState({ platform, objective, product, audience, budget, tone, destination, result });
+  }, [platform, objective, product, audience, budget, tone, destination, result, setSessionState]);
 
   const canGenerate = platform && objective && product && audience && tone;
 
@@ -135,6 +167,7 @@ export default function TrafficAds() {
           audience,
           budget,
           tone: TONES.find(t => t.value === tone)?.label || tone,
+          destination: DESTINATIONS.find(d => d.value === destination)?.label || destination || "não especificado",
           personaContext: hasProfile ? enrichPrompt("") : null,
         }),
       });
@@ -204,6 +237,7 @@ export default function TrafficAds() {
           audience,
           budget,
           tone: TONES.find(t => t.value === tone)?.label || tone,
+          destination: DESTINATIONS.find(d => d.value === destination)?.label || destination || "não especificado",
         }),
       });
 
@@ -256,7 +290,7 @@ export default function TrafficAds() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full max-w-md">
+        <TabsList className="w-full max-w-2xl">
           <TabsTrigger value="create" className="flex-1 gap-1.5">
             <Sparkles className="h-3.5 w-3.5" />
             Criar Anúncio
@@ -264,6 +298,14 @@ export default function TrafficAds() {
           <TabsTrigger value="simulator" className="flex-1 gap-1.5">
             <BarChart3 className="h-3.5 w-3.5" />
             Gerenciador
+          </TabsTrigger>
+          <TabsTrigger value="calculator" className="flex-1 gap-1.5">
+            <Calculator className="h-3.5 w-3.5" />
+            Métricas
+          </TabsTrigger>
+          <TabsTrigger value="ab-test" className="flex-1 gap-1.5">
+            <GitCompare className="h-3.5 w-3.5" />
+            A/B Test
           </TabsTrigger>
         </TabsList>
 
@@ -294,6 +336,29 @@ export default function TrafficAds() {
                       {OBJECTIVES.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* NEW: Destination Format */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Destino do Anúncio</label>
+                  <Select value={destination} onValueChange={setDestination}>
+                    <SelectTrigger><SelectValue placeholder="Para onde o tráfego vai?" /></SelectTrigger>
+                    <SelectContent>
+                      {DESTINATIONS.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {destination && (
+                    <p className="text-[10px] text-muted-foreground">
+                      {destination === "whatsapp" && "A IA vai otimizar copy e CTA para conversão via WhatsApp (botão de mensagem)."}
+                      {destination === "pagina-vendas" && "Copy otimizada para levar direto à página de vendas com CTA de compra."}
+                      {destination === "pagina-captura" && "Foco em captura de lead com isca digital, formulário e urgência."}
+                      {destination === "perfil-instagram" && "Copy para gerar seguidores, engajamento e visitas ao perfil."}
+                      {destination === "link-bio" && "Estratégia para direcionar ao link na bio com múltiplas opções."}
+                      {destination === "loja-online" && "Copy focada em catálogo, ofertas e compra direta no e-commerce."}
+                      {destination === "messenger" && "CTA para iniciar conversa no Messenger com qualificação automática."}
+                      {destination === "app" && "Estratégia de download e instalação de aplicativo."}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -385,6 +450,14 @@ export default function TrafficAds() {
 
         <TabsContent value="simulator">
           <AdManagerSimulator />
+        </TabsContent>
+
+        <TabsContent value="calculator">
+          <MetricsCalculator />
+        </TabsContent>
+
+        <TabsContent value="ab-test">
+          <ABComparison campaigns={allCampaigns.filter(c => c.structured_data)} />
         </TabsContent>
       </Tabs>
     </div>
