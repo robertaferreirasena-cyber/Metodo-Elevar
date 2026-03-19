@@ -19,6 +19,7 @@ import ReactMarkdown from "react-markdown";
 import AdManagerSimulator from "@/components/traffic/AdManagerSimulator";
 import MetricsCalculator from "@/components/traffic/MetricsCalculator";
 import ABComparison from "@/components/traffic/ABComparison";
+import { MissionContextBanner } from "@/components/learning/MissionContextBanner";
 import { useQuery } from "@tanstack/react-query";
 
 const PLATFORMS = [
