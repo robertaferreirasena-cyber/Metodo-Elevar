@@ -28,6 +28,7 @@ const mainItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "WhatsApp", url: "/whatsapp", icon: Smartphone },
   { title: "Mentora Gi", url: "/mentora-hub", icon: BotMessageSquare },
+  { title: "Persona", url: "/persona", icon: Brain },
   { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap },
   { title: "Conquistas", url: "/conquistas", icon: Trophy },
 ];
@@ -39,7 +40,6 @@ const financeItems = [
 ];
 
 const moreItems = [
-  { title: "Raio-X Persona", url: "/persona", icon: Brain },
   { title: "Ideias", url: "/ideias", icon: Lightbulb },
   { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera },
   { title: "Comunidade", url: "/comunidade", icon: MessageSquare },
