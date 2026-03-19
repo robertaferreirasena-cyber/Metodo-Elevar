@@ -44,7 +44,7 @@ const STEPS_OPTIONS = [
 
 export default function ManyChatFlows() {
   const { user } = useAuth();
-  const { enrichPrompt, hasProfile } = usePersonaContext();
+  const { enrichPrompt, hasProfile, formData, raioX } = usePersonaContext();
 
   const [flowType, setFlowType] = useState("");
   const [product, setProduct] = useState("");
