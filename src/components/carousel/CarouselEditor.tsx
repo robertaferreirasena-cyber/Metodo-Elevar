@@ -239,6 +239,41 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     );
   };
 
+  const applyTemplateToSlide = (template: CarouselTemplate, index: number) => {
+    setSelectedTemplate(template);
+    updateSlide(index, {
+      bgColor: template.bgColor, textColor: template.textColor, accentColor: template.accentColor,
+      titleSize: template.titleSize, bodySize: template.bodySize, fontFamily: template.fontFamily,
+      align: template.align, bgGradient: template.bgGradient, layout: template.layout,
+      highlightBgColor: template.highlightBgColor,
+    });
+  };
+
+  const applyTemplatePreservingFormatting = (template: CarouselTemplate, index?: number) => {
+    setSelectedTemplate(template);
+    const applyToSlide = (s: SlideData): SlideData => ({
+      ...s,
+      bgColor: template.bgColor,
+      bgGradient: template.bgGradient,
+      layout: template.layout,
+      fontFamily: template.fontFamily,
+      align: s.align, // preserve user alignment
+      titleSize: s.titleSize, // preserve user sizes
+      bodySize: s.bodySize,
+      textColor: s.titleColor ? s.textColor : template.textColor, // preserve if user customized
+      accentColor: template.accentColor,
+      highlightBgColor: template.highlightBgColor,
+      // Preserve: titleColor, bodyColor, titleBold, titleItalic, bodyBold, bodyItalic, bodyUnderline, textShadow, bgImageUrl, overlayOpacity, verticalAlign
+    });
+    if (index !== undefined) {
+      setSlides(prev => prev.map((s, i) => i === index ? applyToSlide(s) : s));
+    } else {
+      setSlides(prev => prev.map(applyToSlide));
+    }
+  };
+
+  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">("all");
+
   const handleImageUpload = async (index: number, file: File) => {
     try { updateSlide(index, { imageUrl: await fileToDataUrl(file) }); }
     catch { toast.error("Erro ao carregar imagem"); }
