@@ -174,6 +174,15 @@ export default function MentorChat() {
                   </button>
                 ))}
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 mt-2"
+                onClick={() => navigate("/aprendizado?tab=carousel")}
+              >
+                <Palette className="h-4 w-4 text-primary" />
+                Criar Carrossel Viral
+              </Button>
             </div>
           ) : (
             <div className="space-y-4 max-w-3xl mx-auto">
