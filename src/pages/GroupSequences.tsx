@@ -58,10 +58,6 @@ interface SavedSequence {
   total_posts: number;
   duration: string | null;
   created_at: string;
-  webhook_url: string | null;
-  whatsapp_group_id: string | null;
-  whatsapp_group_name: string | null;
-  send_mode: string | null;
   sequence_posts: {
     id: string;
     post_order: number;
