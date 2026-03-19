@@ -34,7 +34,7 @@ export default function LearningModules() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="encontros"><BookOpen className="h-4 w-4 mr-1" /> Encontros</TabsTrigger>
           <TabsTrigger value="carousel"><Palette className="h-4 w-4 mr-1" /> Carrossel</TabsTrigger>
-          <TabsTrigger value="profile"><UserCircle className="h-4 w-4 mr-1" /> Perfil</TabsTrigger>
+          <TabsTrigger value="instapro"><Instagram className="h-4 w-4 mr-1" /> Insta PRO</TabsTrigger>
         </TabsList>
 
         <TabsContent value="encontros"><EncontrosTab /></TabsContent>
