@@ -106,6 +106,14 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [exporting, setExporting] = useState(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // Mentora Gi mini-chat state
+  const [giOpen, setGiOpen] = useState(false);
+  const [giInput, setGiInput] = useState("");
+  const [giMessages, setGiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [giLoading, setGiLoading] = useState(false);
+
+  const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-mentor-chat`;
+
   // Sync to session storage
   useEffect(() => {
     setSessionState({
