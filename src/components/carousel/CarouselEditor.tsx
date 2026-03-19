@@ -669,6 +669,11 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                             <div className={`inline-block max-w-[90%] rounded-lg px-3 py-2 ${msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
                               <p className="whitespace-pre-wrap text-xs">{msg.content}</p>
                             </div>
+                            {msg.role === "assistant" && !giLoading && (
+                              <Button size="sm" variant="outline" className="mt-1 text-xs h-7" onClick={() => applyGiSuggestions(msg.content)}>
+                                <Wand2 className="h-3 w-3 mr-1" /> Aplicar nos slides
+                              </Button>
+                            )}
                           </div>
                         ))}
                         {giLoading && (
