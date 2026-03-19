@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronRight, FolderOpen, Folder, FileText, Trash2, Eye } from "lucide-react";
+import { ChevronRight, FolderOpen, Folder, FileText, Trash2, Eye, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CampaignItem {
