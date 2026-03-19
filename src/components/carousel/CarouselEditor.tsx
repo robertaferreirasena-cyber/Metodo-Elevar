@@ -284,6 +284,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   return (
     <div className="space-y-4 mt-4">
+      <SessionIndicator show={hasRestoredSession && slides.length > 0} onClear={clearSession} />
       {/* Generation Form */}
       <Card>
         <CardHeader className="pb-3">

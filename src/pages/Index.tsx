@@ -80,6 +80,11 @@ const Index = () => {
           {/* Chat Section */}
           {hasMessages && (
             <div className="flex flex-col min-h-[300px] sm:min-h-[400px]">
+              <SessionIndicator
+                show={hasRestoredSession}
+                onClear={clearMessages}
+                className="mb-3"
+              />
               <div className="mb-4 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary glow-pink shrink-0">

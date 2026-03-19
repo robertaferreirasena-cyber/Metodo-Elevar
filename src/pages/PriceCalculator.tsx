@@ -1280,7 +1280,7 @@ export default function PriceCalculator() {
         <FinishMissionButton />
       </div>
 
-      <Tabs defaultValue="product">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full">
           <TabsTrigger value="product" className="flex-1 gap-1 text-[11px] px-1">
             <Package className="h-3.5 w-3.5" /> Produto

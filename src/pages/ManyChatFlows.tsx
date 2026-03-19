@@ -235,6 +235,7 @@ export default function ManyChatFlows() {
 
         {/* Create Tab */}
         <TabsContent value="create">
+          <SessionIndicator show={hasRestoredSession} onClear={clearSession} className="mb-4" />
           {/* Flow Types Visual */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
             {FLOW_TYPES.map((ft) => (
