@@ -315,11 +315,14 @@ export default function AdManagerSimulator() {
       doc.line(x1, yy, x2, yy);
     };
 
+    const sanitize = (text: string): string =>
+      text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
     const writeText = (text: string, x: number, size: number, bold = false, color: [number, number, number] = [40, 40, 40]) => {
       doc.setFontSize(size);
       doc.setFont("helvetica", bold ? "bold" : "normal");
       doc.setTextColor(...color);
-      const lines = doc.splitTextToSize(text, maxW - (x - ml));
+      const lines = doc.splitTextToSize(sanitize(text), maxW - (x - ml));
       for (const line of lines) {
         checkPage(size * 0.45);
         doc.text(line, x, y);
