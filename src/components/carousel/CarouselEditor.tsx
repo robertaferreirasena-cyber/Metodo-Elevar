@@ -318,6 +318,30 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     sendToGi("Analise todos os slides acima e reescreva cada um com copy mais envolvente, profunda e persuasiva. Mantenha o arco narrativo com começo, meio e fim. Para cada slide, forneça o novo título e corpo no formato:\n\nSlide X:\nTítulo: ...\nCorpo: ...");
   };
 
+  const applyGiSuggestions = (content: string) => {
+    const slideRegex = /Slide\s*(\d+)\s*:\s*\n?\s*T[ií]tulo:\s*(.+?)(?:\n)\s*Corpo:\s*([\s\S]*?)(?=\nSlide\s*\d+\s*:|$)/gi;
+    let match: RegExpExecArray | null;
+    let appliedCount = 0;
+
+    const newSlides = [...slides];
+    while ((match = slideRegex.exec(content)) !== null) {
+      const idx = parseInt(match[1], 10) - 1;
+      const title = match[2].trim();
+      const body = match[3].trim();
+      if (idx >= 0 && idx < newSlides.length && (title || body)) {
+        newSlides[idx] = { ...newSlides[idx], ...(title && { title }), ...(body && { body }) };
+        appliedCount++;
+      }
+    }
+
+    if (appliedCount > 0) {
+      setSlides(newSlides);
+      toast.success(`✨ ${appliedCount} slide(s) atualizado(s) com as sugestões da Mentora Gi!`);
+    } else {
+      toast.error("Não foi possível identificar slides no formato esperado. Peça à Gi para usar o formato: Slide X:\\nTítulo: ...\\nCorpo: ...");
+    }
+  };
+
   const cur = slides[currentSlide];
   const curLayout = cur?.layout || "text-only";
   const showImageUpload = IMAGE_LAYOUTS.includes(curLayout);
