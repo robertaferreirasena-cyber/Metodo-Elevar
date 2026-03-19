@@ -35,6 +35,8 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePersonaContext } from "@/contexts/PersonaContext";
+import { useSessionPersistence } from "@/hooks/useSessionPersistence";
+import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
 import {
   CAROUSEL_TEMPLATES,
