@@ -13,7 +13,8 @@ export type ModuleKey =
   | 'module_history'
   | 'module_community'
   | 'module_photoboss'
-  | 'module_conversation_analysis';
+  | 'module_conversation_analysis'
+  | 'module_traffic_ads';
 
 interface UserPermissions {
   module_private: boolean;
