@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Download, Grid3X3, TrendingUp, Image, Film, Layers } from "lucide-react";
+import { Copy, Download, Grid3X3, TrendingUp, Image, Film, Layers, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
 
@@ -26,6 +26,7 @@ export interface InstaProfile {
 interface Props {
   profile: InstaProfile;
   onRegenerate: () => void;
+  onCreateContent?: (post: InstaProfile["posts_sugeridos"][0]) => void;
 }
 
 const POST_COLORS: Record<string, string> = {
@@ -40,7 +41,7 @@ const POST_ICONS: Record<string, typeof Layers> = {
   stories: Image,
 };
 
-export default function InstagramProfilePreview({ profile, onRegenerate }: Props) {
+export default function InstagramProfilePreview({ profile, onRegenerate, onCreateContent }: Props) {
   const [selectedPost, setSelectedPost] = useState<typeof profile.posts_sugeridos[0] | null>(null);
   const [selectedUsername, setSelectedUsername] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -101,13 +102,11 @@ export default function InstagramProfilePreview({ profile, onRegenerate }: Props
         {/* Header */}
         <div className="p-4">
           <div className="flex items-center gap-4">
-            {/* Avatar */}
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 p-[3px] shrink-0">
               <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-2xl">
                 {profile.nome_perfil.charAt(0).toUpperCase()}
               </div>
             </div>
-            {/* Stats */}
             <div className="flex-1 flex justify-around text-center">
               {[
                 { n: profile.posts_sugeridos.length, l: "posts" },
@@ -122,7 +121,6 @@ export default function InstagramProfilePreview({ profile, onRegenerate }: Props
             </div>
           </div>
 
-          {/* Name & Bio */}
           <div className="mt-3">
             <p className="font-bold text-sm">{profile.nome_perfil}</p>
             <p className="text-[11px] text-gray-400">{profile.categoria}</p>
@@ -130,7 +128,6 @@ export default function InstagramProfilePreview({ profile, onRegenerate }: Props
             <p className="text-xs text-blue-600 mt-1">{profile.link_sugerido}</p>
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-2 mt-3">
             <button className="flex-1 bg-blue-500 text-white text-xs font-semibold py-1.5 rounded-lg">Seguir</button>
             <button className="flex-1 border border-gray-300 text-xs font-semibold py-1.5 rounded-lg">Mensagem</button>
@@ -228,17 +225,31 @@ export default function InstagramProfilePreview({ profile, onRegenerate }: Props
                 <p className="text-xs font-medium mb-1">Legenda sugerida:</p>
                 <pre className="text-xs whitespace-pre-wrap bg-muted p-3 rounded-md font-sans">{selectedPost.legenda}</pre>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full gap-1"
-                onClick={() => {
-                  navigator.clipboard.writeText(selectedPost.legenda);
-                  toast.success("Legenda copiada!");
-                }}
-              >
-                <Copy className="h-3 w-3" /> Copiar Legenda
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full gap-1"
+                  onClick={() => {
+                    navigator.clipboard.writeText(selectedPost.legenda);
+                    toast.success("Legenda copiada!");
+                  }}
+                >
+                  <Copy className="h-3 w-3" /> Copiar Legenda
+                </Button>
+                {selectedPost.tipo === "carrossel" && onCreateContent && (
+                  <Button
+                    size="sm"
+                    className="w-full gap-1"
+                    onClick={() => {
+                      onCreateContent(selectedPost);
+                      setSelectedPost(null);
+                    }}
+                  >
+                    <Palette className="h-3 w-3" /> Criar no Carrossel
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
