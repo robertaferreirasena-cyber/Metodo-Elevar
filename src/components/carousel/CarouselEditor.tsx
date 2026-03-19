@@ -262,11 +262,19 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     catch { toast.error("Erro ao carregar foto de perfil"); }
   };
 
+  // Hidden export refs for native-size rendering
+  const exportRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const setExportRef = useCallback(
+    (index: number) => (el: HTMLDivElement | null) => { exportRefs.current[index] = el; },
+    []
+  );
+
   const exportSlide = async (index: number) => {
-    const el = slideRefs.current[index];
+    const el = exportRefs.current[index] || slideRefs.current[index];
     if (!el) return;
+    const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
     try {
-      const dataUrl = await toPng(el, { cacheBust: true, pixelRatio: 2, width: el.offsetWidth, height: el.offsetHeight });
+      const dataUrl = await toPng(el, { cacheBust: true, pixelRatio: 1, width: spec.width, height: spec.height });
       const link = document.createElement("a");
       link.download = `slide-${index + 1}.png`;
       link.href = dataUrl;
