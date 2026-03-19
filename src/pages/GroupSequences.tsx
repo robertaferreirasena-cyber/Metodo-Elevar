@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { PersonaSummary } from "@/components/PersonaSummary";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import { PostStatusBadge } from "@/components/sequences/PostStatusBadge";
-import { WebhookConfig } from "@/components/sequences/WebhookConfig";
+
 import { ScheduleConfig } from "@/components/sequences/ScheduleConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
