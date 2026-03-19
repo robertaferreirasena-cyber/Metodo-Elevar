@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronRight, FolderOpen, FileText, BarChart3, Loader2, Pencil, Check, X, Download } from "lucide-react";
+import { ChevronRight, FolderOpen, FileText, BarChart3, Loader2, Pencil, Check, X, Download, Copy, ClipboardCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -16,6 +18,37 @@ import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import CampaignStructurePanel from "./CampaignStructurePanel";
 import AdPreviewMock from "./AdPreviewMock";
+
+const CHECKLIST_STEPS: Record<string, string[]> = {
+  Meta: [
+    "Criar campanha no Meta Ads Manager",
+    "Configurar objetivo da campanha",
+    "Definir orçamento diário/total",
+    "Configurar público-alvo (idade, gênero, localização, interesses)",
+    "Selecionar posicionamentos (Feed, Stories, Reels)",
+    "Criar anúncios com criativos e textos",
+    "Instalar e configurar o Meta Pixel",
+    "Revisar e publicar campanha",
+  ],
+  Google: [
+    "Criar campanha no Google Ads",
+    "Configurar objetivo da campanha",
+    "Definir estratégia de lances",
+    "Configurar grupos de anúncios e palavras-chave",
+    "Criar anúncios com títulos e descrições",
+    "Vincular conversões (Google Tag)",
+    "Revisar e publicar campanha",
+  ],
+  TikTok: [
+    "Criar campanha no TikTok Ads Manager",
+    "Configurar objetivo da campanha",
+    "Definir orçamento diário/total",
+    "Configurar público-alvo (idade, gênero, interesses)",
+    "Criar anúncios com criativos de vídeo",
+    "Instalar e configurar o TikTok Pixel",
+    "Revisar e publicar campanha",
+  ],
+};
 
 interface CampaignRow {
   id: string;
