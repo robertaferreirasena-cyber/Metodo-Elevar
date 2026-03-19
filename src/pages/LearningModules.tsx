@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { GraduationCap, BookOpen, Palette, Sparkles, AlertTriangle, Instagram } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,16 @@ import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useMissionAutoComplete } from "@/hooks/useMissionAutoComplete";
 import { useNavigate } from "react-router-dom";
 import InstaProGenerator from "@/components/instagram/InstaProGenerator";
+import type { InstaProfile } from "@/components/instagram/InstagramProfilePreview";
 
 export default function LearningModules() {
+  const [activeTab, setActiveTab] = useState("encontros");
+
+  const handleCreateContent = useCallback((post: InstaProfile["posts_sugeridos"][0]) => {
+    toast.success(`Abrindo Carrossel com: "${post.titulo}"`);
+    setActiveTab("carousel");
+  }, []);
+
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
@@ -31,7 +39,7 @@ export default function LearningModules() {
         </div>
       </div>
 
-      <Tabs defaultValue="encontros" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="encontros"><BookOpen className="h-4 w-4 mr-1" /> Encontros</TabsTrigger>
           <TabsTrigger value="carousel"><Palette className="h-4 w-4 mr-1" /> Carrossel</TabsTrigger>
@@ -40,7 +48,7 @@ export default function LearningModules() {
 
         <TabsContent value="encontros"><EncontrosTab /></TabsContent>
         <TabsContent value="carousel"><CarouselEditor /></TabsContent>
-        <TabsContent value="instapro"><InstaProTab /></TabsContent>
+        <TabsContent value="instapro"><InstaProTab onCreateContent={handleCreateContent} /></TabsContent>
       </Tabs>
     </div>
   );
@@ -53,7 +61,6 @@ function EncontrosTab() {
   const currentModule = getCurrentModule();
   const nextMission = getNextMission();
 
-  // Auto-expand the current incomplete module
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,7 +76,6 @@ function EncontrosTab() {
     // fallback
   }
 
-  // Auto-complete pending missions when returning to this page
   useMissionAutoComplete((lessonId) => {
     const alreadyDone = progress.find(p => p.lesson_id === lessonId && p.completed);
     if (!alreadyDone) {
@@ -78,7 +84,6 @@ function EncontrosTab() {
     }
   });
 
-  // Show toast on mount if pending missions
   useEffect(() => {
     if (!loading && currentModule && nextMission) {
       const pending = getPendingCount(currentModule.id);
@@ -105,7 +110,6 @@ function EncontrosTab() {
 
   return (
     <div className="space-y-4 mt-4">
-      {/* Strategic Plan Tracker - Always Visible */}
       <StrategicPlanTracker
         modules={modules}
         getModuleProgress={getModuleProgress}
@@ -115,7 +119,6 @@ function EncontrosTab() {
         onGoToCurrentModule={handleGoToCurrentModule}
       />
 
-      {/* Alert: pending missions warning */}
       {currentModule && nextMission && (
         <Alert className="border-amber-500/30 bg-amber-500/5">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -128,7 +131,6 @@ function EncontrosTab() {
         </Alert>
       )}
 
-      {/* Persona Summary Card */}
       {persona && persona.hasProfile && (
         <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
           <CardContent className="pt-4 pb-3">
@@ -153,12 +155,10 @@ function EncontrosTab() {
         </Card>
       )}
 
-      {/* Strategic Commitment (Encontro 0 special) */}
       {modules.length > 0 && modules[0].position === 0 && (
         <StrategicCommitmentForm />
       )}
 
-      {/* Encontros List */}
       <div className="space-y-3">
         {modules.map(mod => {
           const moduleLessons = getModuleLessons(mod.id);
@@ -191,7 +191,7 @@ function EncontrosTab() {
 }
 
 
-function InstaProTab() {
+function InstaProTab({ onCreateContent }: { onCreateContent: (post: InstaProfile["posts_sugeridos"][0]) => void }) {
   let persona: ReturnType<typeof usePersonaContext> | null = null;
   try { persona = usePersonaContext(); } catch {}
 
@@ -205,5 +205,5 @@ function InstaProTab() {
     brandName: persona.formData.business_name || undefined,
   } : undefined;
 
-  return <InstaProGenerator personaData={personaData} />;
+  return <InstaProGenerator personaData={personaData} onCreateContent={onCreateContent} />;
 }
