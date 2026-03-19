@@ -373,7 +373,7 @@ export default function AdManagerSimulator() {
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(255, 255, 255);
-      doc.text(`CONJUNTO ${si + 1}: ${adSet.name}`, ml + 4, y + 5.5);
+      doc.text(sanitize(`CONJUNTO ${si + 1}: ${adSet.name}`), ml + 4, y + 5.5);
       y += 14;
 
       // Optimization & Budget
