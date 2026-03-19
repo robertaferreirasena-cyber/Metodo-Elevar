@@ -67,19 +67,46 @@ interface CarouselEditorProps {
   initialTopic?: string;
 }
 
+interface CarouselSessionState {
+  topic: string;
+  slideCount: number;
+  tone: string;
+  formatFilter: FormatFilter;
+  selectedTemplateId: string;
+  slides: SlideData[];
+  currentSlide: number;
+}
+
+const EMPTY_CAROUSEL_STATE: CarouselSessionState = {
+  topic: "", slideCount: 5, tone: "profissional", formatFilter: "all",
+  selectedTemplateId: CAROUSEL_TEMPLATES[0].id, slides: [], currentSlide: 0,
+};
+
 export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {}) {
-  const [topic, setTopic] = useState(initialTopic || "");
-  const [slideCount, setSlideCount] = useState(5);
-  const [tone, setTone] = useState("profissional");
-  const [formatFilter, setFormatFilter] = useState<FormatFilter>("all");
-  const [selectedTemplate, setSelectedTemplate] = useState<CarouselTemplate>(
-    CAROUSEL_TEMPLATES[0]
+  const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<CarouselSessionState>(
+    "session_carousel_editor", EMPTY_CAROUSEL_STATE
   );
-  const [slides, setSlides] = useState<SlideData[]>([]);
-  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const [topic, setTopic] = useState(initialTopic || sessionState.topic);
+  const [slideCount, setSlideCount] = useState(sessionState.slideCount);
+  const [tone, setTone] = useState(sessionState.tone);
+  const [formatFilter, setFormatFilter] = useState<FormatFilter>(sessionState.formatFilter);
+  const [selectedTemplate, setSelectedTemplate] = useState<CarouselTemplate>(
+    CAROUSEL_TEMPLATES.find(t => t.id === sessionState.selectedTemplateId) || CAROUSEL_TEMPLATES[0]
+  );
+  const [slides, setSlides] = useState<SlideData[]>(sessionState.slides);
+  const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Sync to session storage
+  useEffect(() => {
+    setSessionState({
+      topic, slideCount, tone, formatFilter,
+      selectedTemplateId: selectedTemplate.id, slides, currentSlide,
+    });
+  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, setSessionState]);
 
   const { hasProfile, hasRaioX, formData, raioX } = usePersonaContext();
 
