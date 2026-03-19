@@ -28,6 +28,7 @@ const mainItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "WhatsApp", url: "/whatsapp", icon: Smartphone },
   { title: "Mentora Gi", url: "/mentora-hub", icon: BotMessageSquare },
+  { title: "Persona", url: "/persona", icon: Brain },
   { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap },
   { title: "Conquistas", url: "/conquistas", icon: Trophy },
 ];
