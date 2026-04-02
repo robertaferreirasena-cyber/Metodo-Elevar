@@ -89,16 +89,18 @@ export default function FormalizeCommitment() {
         body: data,
       });
       if (error) throw error;
-      const generatedCopy = result.copy || "";
+      const generatedCopy = result?.copy || "";
       setCopy(generatedCopy);
 
       // Save generated copy to DB so we never call the API again
       if (user && generatedCopy) {
         const { data: existing } = await (supabase.from("strategic_commitments" as any).select("id").eq("user_id", user.id).maybeSingle() as any);
         if (existing) {
-          await (supabase.from("strategic_commitments" as any) as any).update({ generated_copy: generatedCopy }).eq("user_id", user.id);
+          const { error: updateErr } = await (supabase.from("strategic_commitments" as any) as any).update({ generated_copy: generatedCopy, updated_at: new Date().toISOString() }).eq("user_id", user.id);
+          if (updateErr) console.error("Error saving copy:", updateErr);
         } else {
-          await (supabase.from("strategic_commitments" as any) as any).insert({ user_id: user.id, generated_copy: generatedCopy });
+          const { error: insertErr } = await (supabase.from("strategic_commitments" as any) as any).insert({ user_id: user.id, generated_copy: generatedCopy });
+          if (insertErr) console.error("Error inserting copy:", insertErr);
         }
       }
     } catch (e) {
