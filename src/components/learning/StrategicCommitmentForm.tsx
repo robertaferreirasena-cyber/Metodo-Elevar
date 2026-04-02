@@ -60,10 +60,18 @@ export default function StrategicCommitmentForm() {
     setSaving(true);
     try {
       const payload = { ...form, user_id: user.id, updated_at: new Date().toISOString() };
+      let saveError;
       if (saved) {
-        await (supabase.from("strategic_commitments" as any) as any).update(payload).eq("user_id", user.id);
+        const { error } = await (supabase.from("strategic_commitments" as any) as any).update(payload).eq("user_id", user.id);
+        saveError = error;
       } else {
-        await (supabase.from("strategic_commitments" as any) as any).insert(payload);
+        const { error } = await (supabase.from("strategic_commitments" as any) as any).insert(payload);
+        saveError = error;
+      }
+      if (saveError) {
+        console.error("Error saving goals:", saveError);
+        toast.error("Erro ao salvar metas. Tente novamente.");
+        return;
       }
       setSaved(true);
       confetti({ particleCount: 60, spread: 55, origin: { y: 0.7 } });
