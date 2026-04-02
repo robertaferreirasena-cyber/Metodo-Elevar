@@ -513,6 +513,17 @@ Deno.serve(async (req) => {
         );
       }
 
+      case 'confirm_email': {
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+          email_confirm: true,
+        });
+        if (error) throw error;
+        return new Response(
+          JSON.stringify({ success: true, message: 'Email confirmado com sucesso' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: 'Invalid action' }),
