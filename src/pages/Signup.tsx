@@ -73,10 +73,11 @@ export default function Signup() {
       const { error } = await signUp(email, password, fullName);
 
       if (error) {
-        if (error.message.includes('already registered')) {
+        const msg = error.message || '';
+        if (msg.includes('already registered')) {
           toast.error('Este email já está cadastrado');
         } else {
-          toast.error(error.message);
+          toast.error(msg || 'Erro ao criar conta. Tente novamente.');
         }
         return;
       }
