@@ -1521,7 +1521,7 @@ export default function PriceCalculator() {
             <PieChartIcon className="h-3.5 w-3.5" /> Financeiro
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="product"><ProductCalculator /></TabsContent>
+        <TabsContent value="product"><ProductCalculator mapFixedCosts={mapFixedCosts} /></TabsContent>
         <TabsContent value="service"><ServiceCalculator /></TabsContent>
         <TabsContent value="financial">
           <FinancialMap 
