@@ -1426,6 +1426,15 @@ export default function PriceCalculator() {
   const [savedMapData, setSavedMapData] = useState<any>(null);
   const [saving, setSaving] = useState(false);
 
+  // Compute map fixed costs from live data or saved data
+  const mapFixedCosts = useMemo(() => {
+    if (financialData.totalFixed > 0) return financialData.totalFixed;
+    if (savedMapData?.fixedCosts) {
+      return (savedMapData.fixedCosts as CostItem[]).reduce((s: number, c: any) => s + (c.value || 0), 0);
+    }
+    return 0;
+  }, [financialData.totalFixed, savedMapData]);
+
   useEffect(() => {
     setSessionState({ activeTab });
   }, [activeTab, setSessionState]);
