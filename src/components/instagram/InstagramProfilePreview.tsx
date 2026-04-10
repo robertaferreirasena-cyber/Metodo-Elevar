@@ -66,10 +66,30 @@ export default function InstagramProfilePreview({ profile, onRegenerate, onCreat
   const exportImage = async () => {
     if (!previewRef.current) return;
     try {
-      const url = await toPng(previewRef.current, { backgroundColor: "#ffffff" });
+      // Force full dimensions capture
+      const el = previewRef.current;
+      const originalOverflow = el.style.overflow;
+      const originalHeight = el.style.height;
+      el.style.overflow = "visible";
+      el.style.height = "auto";
+      
+      const url = await toPng(el, { 
+        backgroundColor: "#ffffff",
+        pixelRatio: 3,
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+        style: {
+          overflow: "visible",
+          height: "auto",
+        }
+      });
+      
+      el.style.overflow = originalOverflow;
+      el.style.height = originalHeight;
+      
       const a = document.createElement("a");
       a.href = url;
-      a.download = "perfil-instagram.png";
+      a.download = `perfil-instagram-${username.replace("@", "")}.png`;
       a.click();
       toast.success("Imagem exportada!");
     } catch {

@@ -202,12 +202,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    const userMessage = `Crie RAIO-X DE PERSONA completo:
+    const businessType = profileData.business_type || "";
+    const isLojista = businessType.toLowerCase().includes("lojista");
+    const isPrestador = businessType.toLowerCase().includes("serviço") || businessType.toLowerCase().includes("prestador");
+    const contextLabel = isLojista 
+      ? "CLIENTE IDEAL (comprador de produtos)" 
+      : isPrestador 
+        ? "CLIENTE IDEAL (contratante de serviços)" 
+        : "CLIENTE IDEAL";
 
+    const userMessage = `Crie RAIO-X DE PERSONA completo do ${contextLabel} deste negócio.
+
+IMPORTANTE: Você está criando o perfil do CLIENTE IDEAL deste negócio, não do dono. ${isLojista ? "Este é um LOJISTA que vende produtos. Foque em comportamento de compra, ticket médio e frequência." : isPrestador ? "Este é um PRESTADOR DE SERVIÇOS. Foque em gatilhos de contratação, confiança e ciclo de decisão." : "Analise o tipo de negócio e adapte."}
+
+TIPO DE NEGÓCIO: ${businessType || "Não informado"}
 NEGÓCIO: ${profileData.business_name || "?"} | ${profileData.niche || "?"} / ${profileData.sub_niche || "?"}
 Tempo: ${profileData.time_in_market || "?"} | Canais: ${profileData.sales_channels?.join(", ") || "?"}
 
-PRODUTO: ${profileData.product_description || "?"}
+PRODUTO/SERVIÇO: ${profileData.product_description || "?"}
 Preço: ${profileData.price_range || "?"} | Diferencial: ${profileData.main_differentiator || "?"}
 Transforma: ${profileData.transformation || "?"}
 
