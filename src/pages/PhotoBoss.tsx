@@ -53,8 +53,7 @@ export default function PhotoBoss() {
   const navigate = useNavigate();
 
   const handleAccessTool = () => {
-    // Navigate to the PhotoBoss tool/chat
-    navigate("/modo-privado");
+    window.open("https://gemini.google.com/share/eaf942c57a5f", "_blank");
   };
 
   return (

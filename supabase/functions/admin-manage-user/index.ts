@@ -146,6 +146,28 @@ Deno.serve(async (req) => {
           .eq('user_id', userId);
 
         if (error) throw error;
+
+        // When upgrading plan to pro, reset usage limits to unlock tokens
+        if (plan === 'pro' || status === 'active') {
+          const today = new Date().toISOString().split('T')[0];
+          const monthStart = today.slice(0, 7) + '-01';
+          await supabaseAdmin
+            .from('usage_limits')
+            .update({
+              daily_requests: 0,
+              monthly_requests: 0,
+              persona_requests_month: 0,
+              sequence_requests_month: 0,
+              tokens_used_daily: 0,
+              tokens_used_monthly: 0,
+              tokens_by_feature: {},
+              reset_daily_at: today,
+              reset_monthly_at: monthStart,
+            })
+            .eq('user_id', userId);
+          console.log(`Reset usage limits for user ${userId} after subscription update`);
+        }
+
         return new Response(
           JSON.stringify({ success: true, message: 'Assinatura atualizada' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
