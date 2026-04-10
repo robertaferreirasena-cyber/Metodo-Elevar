@@ -97,6 +97,11 @@ export default function InstagramProfilePreview({ profile, onRegenerate, onCreat
     }
   };
 
+  // Remove emojis that jsPDF can't render
+  const sanitize = (text: string): string => {
+    return text.replace(/[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\u{FE00}-\u{FEFF}]|[\u{1F900}-\u{1F9FF}]|[\u{200D}]|[\u{20E3}]|[\u{E0020}-\u{E007F}]|[\u{D800}-\u{DFFF}]/gu, "").replace(/\s+/g, " ").trim();
+  };
+
   const exportPdf = async () => {
     setExportingPdf(true);
     try {
@@ -105,136 +110,180 @@ export default function InstagramProfilePreview({ profile, onRegenerate, onCreat
       const margin = 15;
       const contentW = W - margin * 2;
 
-      // Helper
-      const addTitle = (text: string, y: number) => {
-        pdf.setFontSize(18);
-        pdf.setTextColor(99, 102, 241);
-        pdf.text(text, margin, y);
-        return y + 10;
-      };
-      const addSubtitle = (text: string, y: number) => {
-        pdf.setFontSize(12);
-        pdf.setTextColor(55, 65, 81);
+      // Brand colors
+      const PRIMARY = [139, 92, 246]; // purple
+      const DARK = [30, 30, 46];
+      const GRAY = [107, 114, 128];
+      const LIGHT_BG = [248, 247, 255];
+
+      // Helper functions
+      const drawHeader = (text: string, y: number) => {
+        pdf.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
+        pdf.roundedRect(margin - 2, y - 6, contentW + 4, 12, 3, 3, "F");
+        pdf.setFontSize(16);
+        pdf.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
         pdf.setFont("helvetica", "bold");
         pdf.text(text, margin, y);
         pdf.setFont("helvetica", "normal");
-        return y + 7;
+        return y + 14;
       };
-      const addBody = (text: string, y: number, maxW = contentW) => {
-        pdf.setFontSize(10);
-        pdf.setTextColor(75, 85, 99);
-        const lines = pdf.splitTextToSize(text, maxW);
+
+      const drawSubtitle = (text: string, y: number) => {
+        pdf.setFontSize(11);
+        pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(sanitize(text), margin, y);
+        pdf.setFont("helvetica", "normal");
+        return y + 6;
+      };
+
+      const drawBody = (text: string, y: number, maxW = contentW) => {
+        pdf.setFontSize(9);
+        pdf.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+        const lines = pdf.splitTextToSize(sanitize(text), maxW);
         pdf.text(lines, margin, y);
-        return y + lines.length * 5;
+        return y + lines.length * 4.5;
+      };
+
+      const checkPage = (y: number, needed = 30) => {
+        if (y > H - needed) { pdf.addPage(); return margin + 5; }
+        return y;
       };
 
       // === PAGE 1: Profile Overview ===
-      let y = margin;
-      y = addTitle(`Perfil Instagram — ${profile.nome_perfil}`, y);
-      y += 2;
+      // Top bar
+      pdf.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+      pdf.rect(0, 0, W, 8, "F");
+
+      let y = 20;
+      pdf.setFontSize(20);
+      pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(sanitize(`Perfil Instagram - ${profile.nome_perfil}`), margin, y);
+      y += 8;
       pdf.setFontSize(10);
-      pdf.setTextColor(107, 114, 128);
-      pdf.text(`@${username}  •  ${profile.categoria}`, margin, y);
-      y += 10;
+      pdf.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`@${sanitize(username)}  |  ${sanitize(profile.categoria)}`, margin, y);
+      y += 12;
 
-      y = addSubtitle("Bio", y);
-      y = addBody(bio, y);
+      // Divider
+      pdf.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, y, W - margin, y);
+      y += 8;
+
+      y = drawSubtitle("Bio", y);
+      y = drawBody(bio, y);
       y += 5;
 
-      y = addSubtitle("Link sugerido", y);
-      y = addBody(profile.link_sugerido, y);
+      y = drawSubtitle("Link sugerido", y);
+      y = drawBody(profile.link_sugerido, y);
       y += 5;
 
-      y = addSubtitle("Usernames sugeridos", y);
-      y = addBody(profile.username_sugestoes.join("  •  "), y);
+      y = drawSubtitle("Usernames sugeridos", y);
+      y = drawBody(profile.username_sugestoes.join("  |  "), y);
       y += 5;
 
-      y = addSubtitle("Destaques", y);
-      const destaquesText = profile.destaques.map(d => `${d.emoji} ${d.nome}`).join("  •  ");
-      y = addBody(destaquesText, y);
-
-      // Capture preview image if available
-      if (previewRef.current) {
-        try {
-          const imgUrl = await toPng(previewRef.current, { backgroundColor: "#ffffff", pixelRatio: 2 });
-          const imgW = 80;
-          const imgH = 120;
-          if (W - margin - imgW > margin) {
-            pdf.addImage(imgUrl, "PNG", W - margin - imgW, 20, imgW, imgH);
-          }
-        } catch { /* skip image */ }
-      }
+      y = drawSubtitle("Destaques", y);
+      const destaquesText = profile.destaques.map(d => sanitize(`${d.emoji} ${d.nome}`)).join("  |  ");
+      y = drawBody(destaquesText, y);
 
       // === PAGE 2: Destaques Detalhados ===
       if (profile.destaques_detalhados?.length) {
         pdf.addPage();
-        y = margin;
-        y = addTitle("Documento de Destaques — Estratégia Detalhada", y);
-        y += 3;
+        pdf.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+        pdf.rect(0, 0, W, 8, "F");
+        y = 20;
+        y = drawHeader("Documento de Destaques - Estrategia Detalhada", y);
 
         for (const dest of profile.destaques_detalhados) {
-          if (y > H - 40) { pdf.addPage(); y = margin; }
-          y = addSubtitle(`${dest.emoji} ${dest.nome}`, y);
-          y = addBody(`Conteúdo: ${dest.conteudo_sugerido}`, y);
-          y = addBody(`Estrutura: ${dest.estrutura}`, y);
-          y = addBody(`Motivo estratégico: ${dest.motivo}`, y);
-          y += 5;
+          y = checkPage(y, 40);
+          y = drawSubtitle(sanitize(`${dest.emoji} ${dest.nome}`), y);
+          y = drawBody(`Conteudo: ${dest.conteudo_sugerido}`, y);
+          y = drawBody(`Estrutura: ${dest.estrutura}`, y);
+          
+          // Highlight strategic reason
+          pdf.setFillColor(LIGHT_BG[0], LIGHT_BG[1], LIGHT_BG[2]);
+          const motivo = sanitize(`Motivo estrategico: ${dest.motivo}`);
+          const mLines = pdf.splitTextToSize(motivo, contentW - 6);
+          pdf.roundedRect(margin - 1, y - 3, contentW + 2, mLines.length * 4.5 + 4, 2, 2, "F");
+          pdf.setFontSize(9);
+          pdf.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+          pdf.text(mLines, margin + 2, y);
+          y += mLines.length * 4.5 + 8;
         }
       }
 
       // === PAGE 3: Strategy ===
       pdf.addPage();
-      y = margin;
-      y = addTitle("Estratégia de Conteúdo", y);
-      y += 3;
+      pdf.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+      pdf.rect(0, 0, W, 8, "F");
+      y = 20;
+      y = drawHeader("Estrategia de Conteudo", y);
 
-      y = addSubtitle("Pilares de Conteúdo", y);
+      y = drawSubtitle("Pilares de Conteudo", y);
       for (const p of profile.estrategia.pilares) {
-        y = addBody(`• ${p}`, y);
+        y = drawBody(`  - ${p}`, y);
       }
       y += 5;
 
-      y = addSubtitle("Frequência", y);
-      y = addBody(profile.estrategia.frequencia, y);
+      y = drawSubtitle("Frequencia", y);
+      y = drawBody(profile.estrategia.frequencia, y);
       y += 5;
 
-      y = addSubtitle("Melhores Horários", y);
-      y = addBody(profile.estrategia.horarios.join("  •  "), y);
+      y = drawSubtitle("Melhores Horarios", y);
+      y = drawBody(profile.estrategia.horarios.join("  |  "), y);
       y += 5;
 
-      y = addSubtitle("Dicas de Crescimento", y);
+      y = drawSubtitle("Dicas de Crescimento", y);
       for (const d of profile.estrategia.dicas_crescimento) {
-        y = addBody(`• ${d}`, y);
-        if (y > H - 20) { pdf.addPage(); y = margin; }
+        y = checkPage(y);
+        y = drawBody(`  - ${d}`, y);
       }
 
       // === PAGE 4+: Posts ===
       const fases = ["atração", "retenção", "conversão"];
+      const faseLabels: Record<string, string> = { "atração": "Atracao", "retenção": "Retencao", "conversão": "Conversao" };
+      const faseColors: Record<string, number[]> = {
+        "atração": [16, 185, 129],
+        "retenção": [59, 130, 246],
+        "conversão": [245, 158, 11],
+      };
+
       for (const fase of fases) {
         const postsInFase = profile.posts_sugeridos.filter(p => p.fase === fase);
         if (!postsInFase.length) continue;
 
         pdf.addPage();
-        y = margin;
-        const faseLabel = fase.charAt(0).toUpperCase() + fase.slice(1);
-        y = addTitle(`Posts de ${faseLabel}`, y);
-        y += 3;
+        const fc = faseColors[fase] || PRIMARY;
+        pdf.setFillColor(fc[0], fc[1], fc[2]);
+        pdf.rect(0, 0, W, 8, "F");
+        y = 20;
+        y = drawHeader(`Posts de ${faseLabels[fase] || fase}`, y);
 
         for (const post of postsInFase) {
-          if (y > H - 50) { pdf.addPage(); y = margin; }
-          y = addSubtitle(`[${post.tipo.toUpperCase()}] ${post.titulo}`, y);
-          y = addBody(post.descricao, y);
+          y = checkPage(y, 50);
+          y = drawSubtitle(`[${post.tipo.toUpperCase()}] ${sanitize(post.titulo)}`, y);
+          y = drawBody(post.descricao, y);
           y += 2;
-          pdf.setFontSize(9);
-          pdf.setTextColor(107, 114, 128);
+          pdf.setFontSize(8);
+          pdf.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+          pdf.setFont("helvetica", "italic");
           pdf.text("Legenda:", margin, y);
-          y += 5;
-          y = addBody(post.legenda, y, contentW - 5);
+          pdf.setFont("helvetica", "normal");
+          y += 4;
+          y = drawBody(post.legenda, y, contentW - 5);
           y += 8;
         }
       }
 
-      pdf.save(`perfil-instagram-${username.replace("@", "")}.pdf`);
+      // Footer on last page
+      pdf.setFontSize(7);
+      pdf.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+      pdf.text("Gerado por Mentora IA - Metodo Elevar", margin, H - 5);
+
+      pdf.save(`perfil-instagram-${sanitize(username).replace("@", "")}.pdf`);
       toast.success("PDF exportado com sucesso!");
     } catch (err) {
       console.error("PDF export error:", err);
