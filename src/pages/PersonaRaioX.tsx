@@ -243,6 +243,23 @@ export default function PersonaRaioX() {
           {currentStep === 1 && (
             <>
               <div className="space-y-2">
+                <Label>Tipo de Negócio *</Label>
+                <Select value={(formData as any).business_type || ""} onValueChange={(v) => updateFormData({ business_type: v } as any)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Você é lojista ou prestador de serviços?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BUSINESS_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground">
+                  💡 Isso ajuda a IA a entender se deve criar o Raio-X do seu cliente ideal como comprador de produtos ou contratante de serviços.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="business_name">Nome do Negócio/Marca *</Label>
                 <Input
                   id="business_name"
@@ -398,17 +415,15 @@ export default function PersonaRaioX() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Faixa Etária</Label>
-                  <Select value={formData.target_age_range} onValueChange={(v) => updateFormData({ target_age_range: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AGE_RANGES.map((a) => (
-                        <SelectItem key={a} value={a}>{a}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Faixa Etária dos Clientes que Mais Compram</Label>
+                  <Input
+                    placeholder="Ex: 25-40 anos — escreva a faixa etária dos clientes que mais compram"
+                    value={formData.target_age_range}
+                    onChange={(e) => updateFormData({ target_age_range: e.target.value })}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    💡 Dica: Pense nos clientes que já compraram de você. Qual a idade da maioria?
+                  </p>
                 </div>
               </div>
 
