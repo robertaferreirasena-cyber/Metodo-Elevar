@@ -79,12 +79,10 @@ const GENDER_OPTIONS = [
   "Misto",
 ];
 
-const AGE_RANGES = [
-  "18-25 anos",
-  "25-35 anos",
-  "35-45 anos",
-  "45-55 anos",
-  "55+ anos",
+const BUSINESS_TYPES = [
+  "Lojista (vendo produtos físicos ou digitais)",
+  "Prestador de Serviços",
+  "Ambos (produtos + serviços)",
 ];
 
 const STEPS = [
