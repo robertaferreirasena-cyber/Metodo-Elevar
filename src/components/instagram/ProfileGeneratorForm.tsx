@@ -109,7 +109,7 @@ export default function ProfileGeneratorForm({ onSubmit, isGenerating, personaDa
   };
 
   const canAdvance = () => {
-    if (step === 0) return !!form.niche && !!form.showsFace;
+    if (step === 0) return !!form.niche && form.niche !== "__outro__" && !!form.showsFace;
     if (step === 1) return !!form.targetAudience && form.mainGoals.length > 0;
     if (step === 2) return !!form.brandName && !!form.whatSells;
     return true;
