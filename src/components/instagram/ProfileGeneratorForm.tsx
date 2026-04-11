@@ -109,7 +109,7 @@ export default function ProfileGeneratorForm({ onSubmit, isGenerating, personaDa
   };
 
   const canAdvance = () => {
-    if (step === 0) return !!form.niche && !!form.showsFace;
+    if (step === 0) return !!form.niche && form.niche !== "__outro__" && !!form.showsFace;
     if (step === 1) return !!form.targetAudience && form.mainGoals.length > 0;
     if (step === 2) return !!form.brandName && !!form.whatSells;
     return true;
@@ -154,12 +154,24 @@ export default function ProfileGeneratorForm({ onSubmit, isGenerating, personaDa
             <>
               <div>
                 <Label>Qual é o seu nicho? *</Label>
-                <Select value={NICHES.includes(form.niche) ? form.niche : form.niche ? "Outro" : ""} onValueChange={v => v !== "Outro" && set("niche", v)}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>{NICHES.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
+                <Select value={NICHES.includes(form.niche) ? form.niche : form.niche ? "__outro__" : ""} onValueChange={v => { if (v === "__outro__") { set("niche", "__outro__"); } else { set("niche", v); } }}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione seu nicho..." /></SelectTrigger>
+                  <SelectContent>
+                    {NICHES.filter(n => n !== "Outro").map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                    <SelectItem value="__outro__">✏️ Outro (digitar)</SelectItem>
+                  </SelectContent>
                 </Select>
-                {(form.niche === "Outro" || (form.niche && !NICHES.includes(form.niche))) && (
-                  <Input placeholder="Digite seu nicho" value={form.niche === "Outro" ? "" : form.niche} onChange={e => set("niche", e.target.value)} className="mt-2" />
+                {(form.niche === "__outro__" || (form.niche && !NICHES.includes(form.niche) && form.niche !== "__outro__")) && (
+                  <div className="mt-2">
+                    <Input 
+                      placeholder="Digite seu nicho personalizado..." 
+                      value={form.niche === "__outro__" ? "" : form.niche} 
+                      onChange={e => set("niche", e.target.value || "__outro__")} 
+                      className="border-primary/30 focus:border-primary"
+                      autoFocus
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">💡 A IA vai identificar e usar seu nicho automaticamente</p>
+                  </div>
                 )}
               </div>
               <div>
