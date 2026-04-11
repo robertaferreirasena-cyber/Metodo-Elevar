@@ -54,7 +54,9 @@ const STEPS = [
 const NICHES = [
   "Moda feminina", "Coaching financeiro", "Fitness", "Nutrição", "Marketing digital",
   "Confeitaria", "Estética", "Psicologia", "Direito", "Educação", "Tecnologia",
-  "Fotografia", "Arquitetura", "Saúde mental", "Outro",
+  "Fotografia", "Arquitetura", "Saúde mental", "Gastronomia", "Pet Shop",
+  "Imobiliário", "Turismo", "Artesanato", "Beleza", "Consultoria", "E-commerce",
+  "Automotivo", "Agronegócio", "Outro",
 ];
 
 const GOALS = ["Vender curso/produto", "Atrair clientes", "Construir autoridade", "Gerar leads", "Crescer seguidores"];
