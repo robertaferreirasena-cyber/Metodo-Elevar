@@ -133,7 +133,7 @@ serve(async (req) => {
     }
 
     // Check subscription
-    const { data: sub } = await supabase.from("subscriptions").select("status, expires_at").eq("user_id", user.id).maybeSingle();
+    const { data: sub } = await supabase.from("subscriptions").select("status, expires_at, plan").eq("user_id", user.id).maybeSingle();
     if (!sub || sub.status !== "active") {
       return new Response(JSON.stringify({ error: "Assinatura inativa" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -145,21 +145,26 @@ serve(async (req) => {
       });
     }
 
-    // Usage limits
-    const { data: limits } = await supabase.rpc("check_and_reset_usage_admin", { p_user_id: user.id });
-    // deno-lint-ignore no-explicit-any
-    if (limits && (limits as any[]).length > 0) {
+    // Pro users bypass all usage limits
+    const isProUser = sub.plan === "pro";
+
+    if (!isProUser) {
+      // Usage limits only for non-pro users
+      const { data: limits } = await supabase.rpc("check_and_reset_usage_admin", { p_user_id: user.id });
       // deno-lint-ignore no-explicit-any
-      const usage = (limits as any[])[0];
-      if (usage.out_daily_requests >= 15) {
-        return new Response(JSON.stringify({ error: "Limite diário atingido (15/dia)" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (usage.out_monthly_requests >= 100) {
-        return new Response(JSON.stringify({ error: "Limite mensal atingido (100/mês)" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (limits && (limits as any[]).length > 0) {
+        // deno-lint-ignore no-explicit-any
+        const usage = (limits as any[])[0];
+        if (usage.out_daily_requests >= 15) {
+          return new Response(JSON.stringify({ error: "Limite diário atingido (15/dia)" }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (usage.out_monthly_requests >= 100) {
+          return new Response(JSON.stringify({ error: "Limite mensal atingido (100/mês)" }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
     }
     await supabase.rpc("increment_usage_admin", { p_user_id: user.id, p_function_type: "general" });
