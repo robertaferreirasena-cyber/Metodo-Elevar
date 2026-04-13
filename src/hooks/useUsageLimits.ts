@@ -93,10 +93,17 @@ export function useUsageLimits() {
     return Math.max(0, diffDays);
   }, [subscription?.expires_at]);
 
+  const isPro = subscription?.plan === 'pro' && subscription?.status === 'active';
+
   // Check if user can make a request
   const canMakeRequest = useCallback((type: 'general' | 'persona' | 'sequence' = 'general') => {
     if (!isSubscriptionValid()) {
       return { allowed: false, reason: 'Assinatura expirada ou inativa' };
+    }
+
+    // Pro users bypass all usage limits
+    if (isPro) {
+      return { allowed: true, reason: null };
     }
 
     if (!limits) {
@@ -123,7 +130,7 @@ export function useUsageLimits() {
     }
 
     return { allowed: true, reason: null };
-  }, [limits, isSubscriptionValid]);
+  }, [limits, isSubscriptionValid, isPro]);
 
   // Get usage percentages
   const getUsagePercentages = useCallback(() => {
@@ -156,6 +163,7 @@ export function useUsageLimits() {
     loading,
     error,
     config: DEFAULT_LIMITS,
+    isPro,
     isSubscriptionValid,
     canMakeRequest,
     getUsagePercentages,

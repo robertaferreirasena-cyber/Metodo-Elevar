@@ -88,7 +88,7 @@ async function checkUsageLimits(supabase: any, userId: string): Promise<{ allowe
   try {
     const { data: sub } = await supabase
       .from("subscriptions")
-      .select("status, expires_at")
+      .select("status, expires_at, plan")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -98,6 +98,12 @@ async function checkUsageLimits(supabase: any, userId: string): Promise<{ allowe
 
     if (sub.expires_at && new Date(sub.expires_at as string) < new Date()) {
       return { allowed: false, reason: "Assinatura expirada" };
+    }
+
+    // Pro users bypass all usage limits
+    if (sub.plan === "pro") {
+      await supabase.rpc("increment_usage_admin", { p_user_id: userId, p_function_type: "sequence" });
+      return { allowed: true };
     }
 
     const { data: limits } = await supabase.rpc("check_and_reset_usage_admin", { p_user_id: userId });

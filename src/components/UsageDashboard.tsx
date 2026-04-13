@@ -2,13 +2,14 @@ import { useUsageLimits } from '@/hooks/useUsageLimits';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Clock, Calendar, Zap, Brain, ListOrdered } from 'lucide-react';
+import { AlertTriangle, Clock, Calendar, Zap, Brain, ListOrdered, Crown } from 'lucide-react';
 
 export function UsageDashboard() {
   const {
     limits,
     loading,
     config,
+    isPro,
     isSubscriptionValid,
     getUsagePercentages,
     getDaysRemaining,
@@ -43,6 +44,40 @@ export function UsageDashboard() {
           Sua assinatura expirou ou está inativa. Renove para continuar usando o app.
         </AlertDescription>
       </Alert>
+    );
+  }
+
+  // Pro users see a simplified unlimited dashboard
+  if (isPro) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Crown className="h-4 w-4 text-yellow-500" />
+            Plano Pro — Uso Ilimitado
+          </CardTitle>
+          <CardDescription className="text-xs">
+            {daysRemaining !== null && (
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {daysRemaining} dias restantes na assinatura
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5" />
+              Hoje: {limits?.daily_requests || 0} usos
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5" />
+              Mês: {limits?.monthly_requests || 0} usos
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
