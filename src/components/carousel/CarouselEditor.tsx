@@ -25,6 +25,7 @@ import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
+import TemplatePreviewTooltip from "./TemplatePreviewTooltip";
 import {
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
