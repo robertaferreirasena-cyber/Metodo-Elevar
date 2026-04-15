@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Download, Grid3X3, TrendingUp, Image, Film, Layers, Palette, FileText, FileDown } from "lucide-react";
+import { Copy, Download, Grid3X3, TrendingUp, Image, Film, Layers, Palette, FileText, FileDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { toPng } from "html-to-image";
+import { toBlob, toPng } from "html-to-image";
 import jsPDF from "jspdf";
 
 export interface InstaProfile {
@@ -53,6 +53,7 @@ export default function InstagramProfilePreview({ profile, onRegenerate, onCreat
   const [selectedPost, setSelectedPost] = useState<typeof profile.posts_sugeridos[0] | null>(null);
   const [selectedUsername, setSelectedUsername] = useState(0);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingImage, setExportingImage] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const username = profile.username_sugestoes[selectedUsername] || "@username";
@@ -65,35 +66,79 @@ export default function InstagramProfilePreview({ profile, onRegenerate, onCreat
 
   const exportImage = async () => {
     if (!previewRef.current) return;
+    setExportingImage(true);
     try {
-      // Force full dimensions capture
       const el = previewRef.current;
-      const originalOverflow = el.style.overflow;
-      const originalHeight = el.style.height;
+
+      // Save originals
+      const origOverflow = el.style.overflow;
+      const origHeight = el.style.height;
+      const origMaxH = el.style.maxHeight;
       el.style.overflow = "visible";
       el.style.height = "auto";
-      
-      const url = await toPng(el, { 
+      el.style.maxHeight = "none";
+
+      // Wait for any reflow
+      await new Promise(r => setTimeout(r, 200));
+
+      const opts = {
         backgroundColor: "#ffffff",
-        pixelRatio: 3,
+        pixelRatio: 2,
         width: el.scrollWidth,
         height: el.scrollHeight,
+        cacheBusts: true,
+        skipFonts: true,
         style: {
           overflow: "visible",
           height: "auto",
+          maxHeight: "none",
+        },
+        filter: (node: HTMLElement) => {
+          // Skip elements that cause rendering issues
+          if (node.tagName === "NOSCRIPT") return false;
+          return true;
+        },
+      };
+
+      let url: string | null = null;
+
+      // Try toPng first, fallback to toBlob
+      try {
+        // Warm-up render (fixes blank on first call)
+        await toPng(el, opts);
+        url = await toPng(el, opts);
+      } catch {
+        console.warn("toPng failed, trying toBlob fallback");
+        try {
+          const blob = await toBlob(el, opts);
+          if (blob) {
+            url = URL.createObjectURL(blob);
+          }
+        } catch (e2) {
+          console.error("toBlob also failed:", e2);
         }
-      });
-      
-      el.style.overflow = originalOverflow;
-      el.style.height = originalHeight;
-      
+      }
+
+      // Restore
+      el.style.overflow = origOverflow;
+      el.style.height = origHeight;
+      el.style.maxHeight = origMaxH;
+
+      if (!url) {
+        toast.error("Não foi possível exportar. Tente o PDF.");
+        return;
+      }
+
       const a = document.createElement("a");
       a.href = url;
       a.download = `perfil-instagram-${username.replace("@", "")}.png`;
       a.click();
       toast.success("Imagem exportada!");
-    } catch {
-      toast.error("Erro ao exportar imagem");
+    } catch (err) {
+      console.error("Export image error:", err);
+      toast.error("Erro ao exportar imagem. Tente exportar como PDF.");
+    } finally {
+      setExportingImage(false);
     }
   };
 
