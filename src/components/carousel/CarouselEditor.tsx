@@ -119,6 +119,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Mentora Gi mini-chat state
