@@ -350,7 +350,46 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     } finally { setExporting(false); }
   };
 
-  // ========== MENTORA GI MINI-CHAT ==========
+  // ========== SLIDE MANAGEMENT ==========
+  const duplicateSlide = (index: number) => {
+    const newSlide = { ...slides[index] };
+    const newSlides = [...slides];
+    newSlides.splice(index + 1, 0, newSlide);
+    setSlides(newSlides);
+    setCurrentSlide(index + 1);
+    slideRefs.current = new Array(newSlides.length).fill(null);
+    toast.success(`Slide ${index + 1} duplicado!`);
+  };
+
+  const deleteSlide = (index: number) => {
+    if (slides.length <= 1) { toast.error("Mínimo de 1 slide"); return; }
+    const newSlides = slides.filter((_, i) => i !== index);
+    setSlides(newSlides);
+    setCurrentSlide(Math.min(currentSlide, newSlides.length - 1));
+    slideRefs.current = new Array(newSlides.length).fill(null);
+    toast.success(`Slide ${index + 1} removido`);
+  };
+
+  // ========== FULLSCREEN PRESENTATION ==========
+  const toggleFullscreen = () => setFullscreen(prev => !prev);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullscreen(false);
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        setCurrentSlide(p => Math.min(p + 1, slides.length - 1));
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setCurrentSlide(p => Math.max(p - 1, 0));
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [fullscreen, slides.length]);
+
   const buildSlidesContext = () =>
     slides.map((s, i) => `Slide ${i + 1}:\nTítulo: ${s.title}\nCorpo: ${s.body}`).join("\n\n");
 
