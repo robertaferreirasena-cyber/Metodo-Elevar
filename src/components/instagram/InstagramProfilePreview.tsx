@@ -345,8 +345,9 @@ export default function InstagramProfilePreview({ profile, onRegenerate, onCreat
         <Button size="sm" variant="outline" onClick={copyBio} className="gap-1">
           <Copy className="h-3 w-3" /> Copiar Bio
         </Button>
-        <Button size="sm" variant="outline" onClick={exportImage} className="gap-1">
-          <Download className="h-3 w-3" /> Exportar Imagem
+        <Button size="sm" variant="outline" onClick={exportImage} disabled={exportingImage} className="gap-1">
+          {exportingImage ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+          {exportingImage ? "Exportando..." : "Exportar Imagem"}
         </Button>
         <Button size="sm" variant="outline" onClick={exportPdf} disabled={exportingPdf} className="gap-1">
           <FileDown className="h-3 w-3" /> {exportingPdf ? "Gerando..." : "Exportar PDF"}
