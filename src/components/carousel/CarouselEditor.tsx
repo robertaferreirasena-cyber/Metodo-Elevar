@@ -309,20 +309,40 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     if (!el) return;
     const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
     try {
-      const dataUrl = await toPng(el, { cacheBust: true, pixelRatio: 1, width: spec.width, height: spec.height });
+      // Wait for all fonts to be loaded before capturing
+      await document.fonts.ready;
+      // Small delay to ensure rendering is complete
+      await new Promise((r) => setTimeout(r, 200));
+      const dataUrl = await toPng(el, {
+        cacheBust: true,
+        pixelRatio: 1,
+        width: spec.width,
+        height: spec.height,
+        style: { transform: 'none', position: 'static' },
+        filter: (node: HTMLElement) => {
+          // Skip hidden elements that might interfere
+          return !(node instanceof HTMLElement && node.getAttribute?.('aria-hidden') === 'true');
+        },
+      });
       const link = document.createElement("a");
       link.download = `slide-${index + 1}.png`;
       link.href = dataUrl;
       link.click();
-    } catch { toast.error("Erro ao exportar slide"); }
+    } catch (err) {
+      console.error("Export error:", err);
+      toast.error("Erro ao exportar slide");
+    }
   };
 
   const exportAll = async () => {
     setExporting(true);
     try {
+      // Pre-load fonts
+      await document.fonts.ready;
+      await new Promise((r) => setTimeout(r, 300));
       for (let i = 0; i < slides.length; i++) {
         await exportSlide(i);
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 500));
       }
       toast.success("Todos os slides exportados!");
     } finally { setExporting(false); }
