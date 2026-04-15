@@ -720,6 +720,46 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </div>
                 </div>
 
+                {/* ===== GRADIENT PRESETS ===== */}
+                <div>
+                  <Label className="text-xs flex items-center gap-1"><Palette className="h-3 w-3" /> Gradientes Premium</Label>
+                  <div className="grid grid-cols-4 gap-1.5 mt-1.5">
+                    {GRADIENT_PRESETS.map((g) => (
+                      <button
+                        key={g.name}
+                        title={g.name}
+                        className={`h-8 rounded-md border-2 transition-all hover:scale-105 ${cur.bgGradient === g.value ? "border-primary ring-1 ring-primary/50" : "border-transparent hover:border-primary/40"}`}
+                        style={{ background: g.value }}
+                        onClick={() => updateSlide(currentSlide, { bgGradient: g.value })}
+                      />
+                    ))}
+                    <button
+                      title="Remover gradiente"
+                      className={`h-8 rounded-md border-2 transition-all text-[10px] font-medium text-muted-foreground hover:border-primary/40 ${!cur.bgGradient ? "border-primary" : "border-border"}`}
+                      style={{ background: cur.bgColor }}
+                      onClick={() => updateSlide(currentSlide, { bgGradient: undefined })}
+                    >✕</button>
+                  </div>
+                </div>
+
+                {/* ===== FONT SELECTOR ===== */}
+                <div>
+                  <Label className="text-xs flex items-center gap-1"><Type className="h-3 w-3" /> Fonte</Label>
+                  <div className="grid grid-cols-1 gap-1 mt-1.5 max-h-48 overflow-y-auto rounded-md border border-border p-1">
+                    {FONT_OPTIONS.map((f) => (
+                      <button
+                        key={f.name}
+                        onClick={() => updateSlide(currentSlide, { fontFamily: f.family })}
+                        className={`flex items-center gap-2 px-2 py-1.5 rounded text-left transition-all ${cur.fontFamily === f.family ? "bg-primary/10 border border-primary/30" : "hover:bg-accent/50 border border-transparent"}`}
+                      >
+                        <span className="text-lg leading-none min-w-[28px]" style={{ fontFamily: f.family }}>Aa</span>
+                        <span className="text-xs font-medium">{f.name}</span>
+                        <span className="text-[9px] text-muted-foreground ml-auto">{f.category}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Font sizes */}
                 <div>
                   <Label className="text-xs flex items-center gap-1"><Type className="h-3 w-3" /> Tamanho do título: {cur.titleSize}px</Label>
