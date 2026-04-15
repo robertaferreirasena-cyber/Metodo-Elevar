@@ -4,7 +4,10 @@ export type CarouselLayout =
   | "profile-post"
   | "photo-grid"
   | "sales-highlight"
-  | "editorial";
+  | "editorial"
+  | "tweet-post"
+  | "prompt-card"
+  | "sticker-card";
 
 export type AspectRatio = "1:1" | "16:9" | "9:16";
 
@@ -534,6 +537,82 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     align: "center",
     bgGradient: "linear-gradient(180deg, #1a0e05 0%, #2d1a0a 100%)",
     layout: "text-only",
+  },
+
+  // ========== TEMPLATES VIRAIS PostStudio ==========
+  {
+    id: "tweet-3img",
+    name: "🐦 Tweet 3 Fotos",
+    description: "Estilo tweet com texto + 3 imagens grid",
+    aspectRatio: "1:1",
+    bgColor: "#f5f5f5",
+    textColor: "#0f1419",
+    accentColor: "#1DA1F2",
+    fontFamily: "'DM Sans', sans-serif",
+    titleSize: 18,
+    bodySize: 15,
+    align: "left",
+    layout: "tweet-post",
+  },
+  {
+    id: "tweet-2img",
+    name: "🐦 Tweet 2 Fotos",
+    description: "Estilo tweet com texto + 2 imagens lado a lado",
+    aspectRatio: "1:1",
+    bgColor: "#f5f5f5",
+    textColor: "#0f1419",
+    accentColor: "#1DA1F2",
+    fontFamily: "'DM Sans', sans-serif",
+    titleSize: 18,
+    bodySize: 15,
+    align: "left",
+    layout: "tweet-post",
+  },
+  {
+    id: "prompt-branco",
+    name: "📌 Prompt Card",
+    description: "Fundo branco com avatar e texto estilo prompt",
+    aspectRatio: "1:1",
+    bgColor: "#ffffff",
+    textColor: "#000000",
+    accentColor: "#E11D48",
+    fontFamily: "'DM Sans', sans-serif",
+    titleSize: 22,
+    bodySize: 17,
+    align: "left",
+    layout: "prompt-card",
+  },
+  {
+    id: "sticker-rotated",
+    name: "📌 Sticker Cards",
+    description: "Cards rotacionados estilo post-it em fundo verde",
+    aspectRatio: "1:1",
+    bgColor: "#4a5a48",
+    textColor: "#FFFFFF",
+    accentColor: "#c9965a",
+    fontFamily: "'DM Sans', sans-serif",
+    titleSize: 22,
+    bodySize: 16,
+    align: "left",
+    bgGradient: "linear-gradient(160deg, #4a5a48 0%, #2a3a28 100%)",
+    layout: "sticker-card",
+    highlightBgColor: "rgba(92,61,46,.94)",
+  },
+  {
+    id: "caixa-clara",
+    name: "🔲 Caixa Clara",
+    description: "Fundo escuro com caixa branca centralizada",
+    aspectRatio: "1:1",
+    bgColor: "#2d1a0a",
+    textColor: "#4a2511",
+    accentColor: "#c9965a",
+    fontFamily: "'Bebas Neue', sans-serif",
+    titleSize: 34,
+    bodySize: 22,
+    align: "center",
+    bgGradient: "linear-gradient(160deg, #2d1a0a 0%, #1a1209 100%)",
+    layout: "sales-highlight",
+    highlightBgColor: "rgba(255,255,255,0.95)",
   },
 ];
 
