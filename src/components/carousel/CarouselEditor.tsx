@@ -25,7 +25,7 @@ import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
 import {
-  CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS,
+  CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
 } from "./CarouselTemplates";
 
