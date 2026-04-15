@@ -22,6 +22,53 @@ export const FORMAT_SPECS: Record<AspectRatio, FormatSpec> = {
   "16:9": { width: 1920, height: 1080, label: "Wide 16:9",    titleSize: 48, bodySize: 28 },
 };
 
+// ========== GOOGLE FONTS ==========
+export interface FontOption {
+  name: string;
+  family: string;
+  style: string; // CSS preview style
+  category: "serif" | "sans-serif" | "display" | "handwriting";
+}
+
+export const FONT_OPTIONS: FontOption[] = [
+  { name: "Playfair Display", family: "'Playfair Display', serif", style: "font-style:italic;font-weight:700", category: "serif" },
+  { name: "Bebas Neue", family: "'Bebas Neue', sans-serif", style: "letter-spacing:2px", category: "display" },
+  { name: "DM Sans", family: "'DM Sans', sans-serif", style: "font-weight:800", category: "sans-serif" },
+  { name: "Cormorant Garamond", family: "'Cormorant Garamond', serif", style: "font-style:italic;font-weight:600", category: "serif" },
+  { name: "Montserrat", family: "'Montserrat', sans-serif", style: "font-weight:800", category: "sans-serif" },
+  { name: "Oswald", family: "'Oswald', sans-serif", style: "font-weight:700", category: "sans-serif" },
+  { name: "Abril Fatface", family: "'Abril Fatface', serif", style: "", category: "display" },
+  { name: "Caveat", family: "'Caveat', cursive", style: "font-weight:700", category: "handwriting" },
+  { name: "Nunito", family: "'Nunito', sans-serif", style: "font-weight:900", category: "sans-serif" },
+  { name: "Pacifico", family: "'Pacifico', cursive", style: "", category: "handwriting" },
+  { name: "Georgia", family: "'Georgia', 'Times New Roman', serif", style: "", category: "serif" },
+  { name: "Arial Black", family: "'Arial Black', Arial, sans-serif", style: "", category: "sans-serif" },
+  { name: "Impact", family: "'Impact', 'Arial Black', sans-serif", style: "", category: "display" },
+  { name: "Segoe UI", family: "'Segoe UI', system-ui, sans-serif", style: "", category: "sans-serif" },
+  { name: "Trebuchet MS", family: "'Trebuchet MS', 'Helvetica', sans-serif", style: "", category: "sans-serif" },
+];
+
+// ========== PREMIUM GRADIENTS ==========
+export interface GradientPreset {
+  name: string;
+  value: string;
+}
+
+export const GRADIENT_PRESETS: GradientPreset[] = [
+  { name: "Sunset Gold", value: "linear-gradient(160deg, #3d1f0a 0%, #0e0905 100%)" },
+  { name: "Forest Night", value: "linear-gradient(160deg, #1e2e1a 0%, #0e1a0a 100%)" },
+  { name: "Ocean Deep", value: "linear-gradient(135deg, #0a1628 0%, #1a3a5f 50%, #0e2444 100%)" },
+  { name: "Royal Purple", value: "linear-gradient(160deg, #1B1B2F 0%, #2D2B55 100%)" },
+  { name: "Fire Storm", value: "linear-gradient(135deg, #FF6B35 0%, #E11D48 100%)" },
+  { name: "Midnight Blue", value: "linear-gradient(145deg, #1E3A5F 0%, #1A2744 100%)" },
+  { name: "Copper Elegance", value: "linear-gradient(160deg, #1a0e05 0%, #2d1a0a 100%)" },
+  { name: "Dark Carbon", value: "linear-gradient(180deg, #1A1A2E 0%, #0A0A0A 100%)" },
+  { name: "Emerald", value: "linear-gradient(135deg, #065F46 0%, #0E7490 100%)" },
+  { name: "Violet Dream", value: "linear-gradient(135deg, #667EEA 0%, #764BA2 100%)" },
+  { name: "Warm Brown", value: "linear-gradient(160deg, #3D2B1F 0%, #5C3D2E 50%, #2D1B0E 100%)" },
+  { name: "Pure Black", value: "linear-gradient(180deg, #0a0808 0%, #1a1209 100%)" },
+];
+
 export interface CarouselTemplate {
   id: string;
   name: string;
@@ -40,6 +87,7 @@ export interface CarouselTemplate {
 }
 
 export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
+  // ========== TEMPLATES ORIGINAIS ==========
   {
     id: "twitter-thread",
     name: "Twitter Thread",
@@ -171,7 +219,7 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     bgGradient: "linear-gradient(145deg, #1E3A5F 0%, #1A2744 100%)",
     layout: "text-only",
   },
-  // ========== TEMPLATES VIRAIS ==========
+  // ========== TEMPLATES VIRAIS (ORIGINAIS) ==========
   {
     id: "viral-foto",
     name: "Viral com Foto",
@@ -244,6 +292,158 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     layout: "sales-highlight",
     highlightBgColor: "#22C55E",
   },
+
+  // ========== NOVOS TEMPLATES PostStudio ==========
+  {
+    id: "imersao",
+    name: "✨ Imersão",
+    description: "Gradiente dourado escuro, Playfair italic premium",
+    aspectRatio: "1:1",
+    bgColor: "#0e0905",
+    textColor: "#f0ebe3",
+    accentColor: "#c9965a",
+    fontFamily: "'Playfair Display', serif",
+    titleSize: 36,
+    bodySize: 20,
+    align: "center",
+    bgGradient: "linear-gradient(160deg, #3d1f0a 0%, #0e0905 100%)",
+    layout: "text-only",
+  },
+  {
+    id: "cta-bold",
+    name: "🔥 CTA Bold",
+    description: "Bebas Neue gigante, lettering impactante",
+    aspectRatio: "1:1",
+    bgColor: "#1a0e05",
+    textColor: "#FFFFFF",
+    accentColor: "#c9965a",
+    fontFamily: "'Bebas Neue', sans-serif",
+    titleSize: 44,
+    bodySize: 18,
+    align: "center",
+    bgGradient: "linear-gradient(160deg, #1a0e05 0%, #2d1a0a 100%)",
+    layout: "text-only",
+  },
+  {
+    id: "handwrite",
+    name: "✍️ Handwrite",
+    description: "Caveat cursivo grande, fundo floresta",
+    aspectRatio: "1:1",
+    bgColor: "#1e2e1a",
+    textColor: "#FFFFFF",
+    accentColor: "#7ecf71",
+    fontFamily: "'Caveat', cursive",
+    titleSize: 42,
+    bodySize: 20,
+    align: "left",
+    bgGradient: "linear-gradient(160deg, #1e2e1a 0%, #0e1a0a 100%)",
+    layout: "text-only",
+  },
+  {
+    id: "card-post",
+    name: "📱 Card Post",
+    description: "Box escuro com avatar, simula post Instagram",
+    aspectRatio: "1:1",
+    bgColor: "#0a0a0a",
+    textColor: "#FFFFFF",
+    accentColor: "#e07d5b",
+    fontFamily: "'DM Sans', sans-serif",
+    titleSize: 26,
+    bodySize: 17,
+    align: "left",
+    bgGradient: "linear-gradient(160deg, #0a0a0a 0%, #1a1209 100%)",
+    layout: "profile-post",
+  },
+  {
+    id: "chat-bubble",
+    name: "💬 Chat Bubble",
+    description: "Playfair grande + corpo DM Sans, fundo verde",
+    aspectRatio: "1:1",
+    bgColor: "#0d1a0a",
+    textColor: "#FFFFFF",
+    accentColor: "#4ade80",
+    fontFamily: "'Playfair Display', serif",
+    titleSize: 36,
+    bodySize: 18,
+    align: "left",
+    bgGradient: "linear-gradient(180deg, #0d1a0a 0%, #1a2010 100%)",
+    layout: "text-only",
+  },
+  {
+    id: "pergunta-retorica",
+    name: "❓ Pergunta",
+    description: "Playfair italic, pergunta retórica em fundo escuro",
+    aspectRatio: "1:1",
+    bgColor: "#0a0808",
+    textColor: "#FFFFFF",
+    accentColor: "#c9965a",
+    fontFamily: "'Playfair Display', serif",
+    titleSize: 34,
+    bodySize: 18,
+    align: "left",
+    bgGradient: "linear-gradient(180deg, #0a0808 0%, #1a1209 100%)",
+    layout: "text-only",
+  },
+  {
+    id: "lista-numerada",
+    name: "📋 Lista Numerada",
+    description: "Box marrom com lista, tipografia mista",
+    aspectRatio: "1:1",
+    bgColor: "#2d1a0a",
+    textColor: "#FFFFFF",
+    accentColor: "#c9965a",
+    fontFamily: "'DM Sans', sans-serif",
+    titleSize: 28,
+    bodySize: 17,
+    align: "left",
+    bgGradient: "linear-gradient(135deg, #2d1a0a 0%, #1a1209 100%)",
+    layout: "text-only",
+  },
+  {
+    id: "tweet-light",
+    name: "🐦 Tweet Light",
+    description: "Fundo branco limpo, tipografia preta",
+    aspectRatio: "1:1",
+    bgColor: "#f9f9f9",
+    textColor: "#0f1419",
+    accentColor: "#1DA1F2",
+    fontFamily: "'DM Sans', sans-serif",
+    titleSize: 28,
+    bodySize: 18,
+    align: "left",
+    layout: "text-only",
+  },
+  {
+    id: "destaque-dourado",
+    name: "🏆 Destaque",
+    description: "Fundo cobre dourado com texto bold branco",
+    aspectRatio: "1:1",
+    bgColor: "#c96542",
+    textColor: "#FFFFFF",
+    accentColor: "#FFF740",
+    fontFamily: "'Montserrat', sans-serif",
+    titleSize: 34,
+    bodySize: 20,
+    align: "center",
+    layout: "sales-highlight",
+    highlightBgColor: "#c96542",
+  },
+  {
+    id: "sticker-notes",
+    name: "📌 Sticker Notes",
+    description: "Boxes rotacionados tipo post-its orgânicos",
+    aspectRatio: "1:1",
+    bgColor: "#4a5a48",
+    textColor: "#FFFFFF",
+    accentColor: "#c9965a",
+    fontFamily: "'DM Sans', sans-serif",
+    titleSize: 28,
+    bodySize: 18,
+    align: "left",
+    bgGradient: "linear-gradient(160deg, #4a5a48 0%, #2a3a28 100%)",
+    layout: "text-only",
+  },
+
   // ========== TEMPLATES STORIES (9:16) ==========
   {
     id: "stories-bold",
@@ -302,6 +502,37 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     bodySize: 18,
     align: "center",
     bgGradient: "linear-gradient(180deg, #667EEA 0%, #764BA2 100%)",
+    layout: "text-only",
+  },
+  // ========== STORIES PostStudio ==========
+  {
+    id: "stories-imersao",
+    name: "Stories Imersão",
+    description: "Playfair italic vertical, gradiente dourado",
+    aspectRatio: "9:16",
+    bgColor: "#0e0905",
+    textColor: "#f0ebe3",
+    accentColor: "#c9965a",
+    fontFamily: "'Playfair Display', serif",
+    titleSize: 40,
+    bodySize: 22,
+    align: "center",
+    bgGradient: "linear-gradient(180deg, #3d1f0a 0%, #0e0905 100%)",
+    layout: "text-only",
+  },
+  {
+    id: "stories-cta",
+    name: "Stories CTA",
+    description: "Bebas Neue vertical, CTA impactante",
+    aspectRatio: "9:16",
+    bgColor: "#1a0e05",
+    textColor: "#FFFFFF",
+    accentColor: "#e07d5b",
+    fontFamily: "'Bebas Neue', sans-serif",
+    titleSize: 48,
+    bodySize: 20,
+    align: "center",
+    bgGradient: "linear-gradient(180deg, #1a0e05 0%, #2d1a0a 100%)",
     layout: "text-only",
   },
 ];
