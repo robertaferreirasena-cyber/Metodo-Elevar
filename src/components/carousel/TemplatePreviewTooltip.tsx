@@ -57,7 +57,7 @@ export default function TemplatePreviewTooltip({ template, children }: TemplateP
               pointerEvents: "none",
             }}
           >
-            <SlidePreview slide={sampleSlide} aspectRatio={aspectRatio} />
+            <SlidePreview slide={sampleSlide} aspectRatio={aspectRatio} slideIndex={0} totalSlides={1} />
           </div>
         </div>
         <p className="text-[10px] text-muted-foreground mt-1.5 px-1 max-w-[220px]">{template.description}</p>
