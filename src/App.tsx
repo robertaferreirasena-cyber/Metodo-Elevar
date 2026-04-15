@@ -390,6 +390,18 @@ const App = () => (
                 }
               />
 
+              {/* Central Instagram */}
+              <Route
+                path="/instagram"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <InstagramHub />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Automação Instagram - ManyChat */}
               <Route
                 path="/automacao-instagram"
