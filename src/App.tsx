@@ -53,6 +53,7 @@ import MentoraHub from "./pages/MentoraHub";
 import TrafficAds from "./pages/TrafficAds";
 import ManyChatFlows from "./pages/ManyChatFlows";
 import FormalizeCommitment from "./pages/FormalizeCommitment";
+import InstagramHub from "./pages/InstagramHub";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
