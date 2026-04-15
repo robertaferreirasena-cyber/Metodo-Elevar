@@ -583,13 +583,24 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                 </Button>
               ))}
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <Button size="icon" variant="outline" disabled={currentSlide === 0} onClick={() => setCurrentSlide((p) => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
                 <Badge variant="secondary">Slide {currentSlide + 1} / {slides.length}</Badge>
                 <Button size="icon" variant="outline" disabled={currentSlide === slides.length - 1} onClick={() => setCurrentSlide((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                <div className="border-l border-border pl-2 flex gap-1">
+                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Duplicar slide" onClick={() => duplicateSlide(currentSlide)}>
+                    <CopyPlus className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" title="Excluir slide" onClick={() => deleteSlide(currentSlide)} disabled={slides.length <= 1}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={toggleFullscreen} title="Modo apresentação">
+                  <Maximize className="h-4 w-4 mr-1" /> Apresentar
+                </Button>
                 <Button size="sm" variant="outline" onClick={() => exportSlide(currentSlide)}><Download className="h-4 w-4 mr-1" /> PNG</Button>
                 <Button size="sm" onClick={exportAll} disabled={exporting}><DownloadCloud className="h-4 w-4 mr-1" />{exporting ? "Exportando..." : "Baixar Todos"}</Button>
               </div>
