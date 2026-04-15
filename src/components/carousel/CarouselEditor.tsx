@@ -31,8 +31,8 @@ import {
 } from "./CarouselTemplates";
 
 const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial"];
-const MULTI_IMAGE_LAYOUTS: CarouselLayout[] = ["photo-grid"];
-const PROFILE_LAYOUTS: CarouselLayout[] = ["profile-post", "photo-grid"];
+const MULTI_IMAGE_LAYOUTS: CarouselLayout[] = ["photo-grid", "tweet-post"];
+const PROFILE_LAYOUTS: CarouselLayout[] = ["profile-post", "photo-grid", "tweet-post", "prompt-card", "sticker-card"];
 const HIGHLIGHT_LAYOUTS: CarouselLayout[] = ["sales-highlight"];
 
 type FormatFilter = "all" | "1:1" | "16:9" | "9:16";
