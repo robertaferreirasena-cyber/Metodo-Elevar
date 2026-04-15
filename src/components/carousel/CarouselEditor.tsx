@@ -5,6 +5,7 @@ import {
   AlignLeft, AlignCenter, DownloadCloud, ImagePlus, User, X, Smartphone,
   Square, Monitor, Sparkles, Send, ChevronDown, ChevronUp,
   Bold, Italic, Underline, ArrowUpFromLine, AlignVerticalSpaceAround, ArrowDownFromLine, Palette, Copy,
+  CopyPlus, Trash2, Maximize, Minimize,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -118,6 +119,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Mentora Gi mini-chat state
@@ -348,7 +350,46 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     } finally { setExporting(false); }
   };
 
-  // ========== MENTORA GI MINI-CHAT ==========
+  // ========== SLIDE MANAGEMENT ==========
+  const duplicateSlide = (index: number) => {
+    const newSlide = { ...slides[index] };
+    const newSlides = [...slides];
+    newSlides.splice(index + 1, 0, newSlide);
+    setSlides(newSlides);
+    setCurrentSlide(index + 1);
+    slideRefs.current = new Array(newSlides.length).fill(null);
+    toast.success(`Slide ${index + 1} duplicado!`);
+  };
+
+  const deleteSlide = (index: number) => {
+    if (slides.length <= 1) { toast.error("Mínimo de 1 slide"); return; }
+    const newSlides = slides.filter((_, i) => i !== index);
+    setSlides(newSlides);
+    setCurrentSlide(Math.min(currentSlide, newSlides.length - 1));
+    slideRefs.current = new Array(newSlides.length).fill(null);
+    toast.success(`Slide ${index + 1} removido`);
+  };
+
+  // ========== FULLSCREEN PRESENTATION ==========
+  const toggleFullscreen = () => setFullscreen(prev => !prev);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullscreen(false);
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        setCurrentSlide(p => Math.min(p + 1, slides.length - 1));
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setCurrentSlide(p => Math.max(p - 1, 0));
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [fullscreen, slides.length]);
+
   const buildSlidesContext = () =>
     slides.map((s, i) => `Slide ${i + 1}:\nTítulo: ${s.title}\nCorpo: ${s.body}`).join("\n\n");
 
@@ -542,13 +583,24 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                 </Button>
               ))}
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <Button size="icon" variant="outline" disabled={currentSlide === 0} onClick={() => setCurrentSlide((p) => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
                 <Badge variant="secondary">Slide {currentSlide + 1} / {slides.length}</Badge>
                 <Button size="icon" variant="outline" disabled={currentSlide === slides.length - 1} onClick={() => setCurrentSlide((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                <div className="border-l border-border pl-2 flex gap-1">
+                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Duplicar slide" onClick={() => duplicateSlide(currentSlide)}>
+                    <CopyPlus className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" title="Excluir slide" onClick={() => deleteSlide(currentSlide)} disabled={slides.length <= 1}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={toggleFullscreen} title="Modo apresentação">
+                  <Maximize className="h-4 w-4 mr-1" /> Apresentar
+                </Button>
                 <Button size="sm" variant="outline" onClick={() => exportSlide(currentSlide)}><Download className="h-4 w-4 mr-1" /> PNG</Button>
                 <Button size="sm" onClick={exportAll} disabled={exporting}><DownloadCloud className="h-4 w-4 mr-1" />{exporting ? "Exportando..." : "Baixar Todos"}</Button>
               </div>
@@ -896,6 +948,62 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
             ))}
           </div>
         </>
+      )}
+
+      {/* ========== FULLSCREEN PRESENTATION MODE ========== */}
+      {fullscreen && slides.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center" onClick={(e) => { if (e.target === e.currentTarget) setFullscreen(false); }}>
+          {/* Top bar */}
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-3 bg-gradient-to-b from-black/80 to-transparent z-10 opacity-0 hover:opacity-100 transition-opacity duration-300">
+            <Badge variant="secondary" className="text-sm">
+              Slide {currentSlide + 1} / {slides.length}
+            </Badge>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10" onClick={() => setFullscreen(false)}>
+                <Minimize className="h-4 w-4 mr-1" /> Sair (Esc)
+              </Button>
+            </div>
+          </div>
+
+          {/* Slide */}
+          <div className="flex items-center justify-center w-full h-full p-8">
+            <div style={{ maxWidth: "90vw", maxHeight: "85vh" }}>
+              <SlidePreview
+                slide={slides[currentSlide]}
+                slideIndex={currentSlide}
+                totalSlides={slides.length}
+                aspectRatio={selectedTemplate.aspectRatio}
+              />
+            </div>
+          </div>
+
+          {/* Navigation arrows */}
+          <button
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors disabled:opacity-20"
+            onClick={() => setCurrentSlide(p => Math.max(p - 1, 0))}
+            disabled={currentSlide === 0}
+          >
+            <ChevronLeft className="h-6 w-6 text-white" />
+          </button>
+          <button
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors disabled:opacity-20"
+            onClick={() => setCurrentSlide(p => Math.min(p + 1, slides.length - 1))}
+            disabled={currentSlide === slides.length - 1}
+          >
+            <ChevronRight className="h-6 w-6 text-white" />
+          </button>
+
+          {/* Bottom dots */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentSlide(i)}
+                className={`w-3 h-3 rounded-full transition-all ${i === currentSlide ? "bg-white scale-125" : "bg-white/30 hover:bg-white/60"}`}
+              />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
