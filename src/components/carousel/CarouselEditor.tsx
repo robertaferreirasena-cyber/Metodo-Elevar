@@ -25,7 +25,7 @@ import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
 import {
-  CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS,
+  CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
 } from "./CarouselTemplates";
 
@@ -309,20 +309,40 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     if (!el) return;
     const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
     try {
-      const dataUrl = await toPng(el, { cacheBust: true, pixelRatio: 1, width: spec.width, height: spec.height });
+      // Wait for all fonts to be loaded before capturing
+      await document.fonts.ready;
+      // Small delay to ensure rendering is complete
+      await new Promise((r) => setTimeout(r, 200));
+      const dataUrl = await toPng(el, {
+        cacheBust: true,
+        pixelRatio: 1,
+        width: spec.width,
+        height: spec.height,
+        style: { transform: 'none', position: 'static' },
+        filter: (node: HTMLElement) => {
+          // Skip hidden elements that might interfere
+          return !(node instanceof HTMLElement && node.getAttribute?.('aria-hidden') === 'true');
+        },
+      });
       const link = document.createElement("a");
       link.download = `slide-${index + 1}.png`;
       link.href = dataUrl;
       link.click();
-    } catch { toast.error("Erro ao exportar slide"); }
+    } catch (err) {
+      console.error("Export error:", err);
+      toast.error("Erro ao exportar slide");
+    }
   };
 
   const exportAll = async () => {
     setExporting(true);
     try {
+      // Pre-load fonts
+      await document.fonts.ready;
+      await new Promise((r) => setTimeout(r, 300));
       for (let i = 0; i < slides.length; i++) {
         await exportSlide(i);
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 500));
       }
       toast.success("Todos os slides exportados!");
     } finally { setExporting(false); }
@@ -697,6 +717,46 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   <div>
                     <Label className="text-xs">Destaque</Label>
                     <input type="color" value={cur.accentColor} onChange={(e) => updateSlide(currentSlide, { accentColor: e.target.value })} className="w-full h-9 rounded border border-input cursor-pointer mt-1" />
+                  </div>
+                </div>
+
+                {/* ===== GRADIENT PRESETS ===== */}
+                <div>
+                  <Label className="text-xs flex items-center gap-1"><Palette className="h-3 w-3" /> Gradientes Premium</Label>
+                  <div className="grid grid-cols-4 gap-1.5 mt-1.5">
+                    {GRADIENT_PRESETS.map((g) => (
+                      <button
+                        key={g.name}
+                        title={g.name}
+                        className={`h-8 rounded-md border-2 transition-all hover:scale-105 ${cur.bgGradient === g.value ? "border-primary ring-1 ring-primary/50" : "border-transparent hover:border-primary/40"}`}
+                        style={{ background: g.value }}
+                        onClick={() => updateSlide(currentSlide, { bgGradient: g.value })}
+                      />
+                    ))}
+                    <button
+                      title="Remover gradiente"
+                      className={`h-8 rounded-md border-2 transition-all text-[10px] font-medium text-muted-foreground hover:border-primary/40 ${!cur.bgGradient ? "border-primary" : "border-border"}`}
+                      style={{ background: cur.bgColor }}
+                      onClick={() => updateSlide(currentSlide, { bgGradient: undefined })}
+                    >✕</button>
+                  </div>
+                </div>
+
+                {/* ===== FONT SELECTOR ===== */}
+                <div>
+                  <Label className="text-xs flex items-center gap-1"><Type className="h-3 w-3" /> Fonte</Label>
+                  <div className="grid grid-cols-1 gap-1 mt-1.5 max-h-48 overflow-y-auto rounded-md border border-border p-1">
+                    {FONT_OPTIONS.map((f) => (
+                      <button
+                        key={f.name}
+                        onClick={() => updateSlide(currentSlide, { fontFamily: f.family })}
+                        className={`flex items-center gap-2 px-2 py-1.5 rounded text-left transition-all ${cur.fontFamily === f.family ? "bg-primary/10 border border-primary/30" : "hover:bg-accent/50 border border-transparent"}`}
+                      >
+                        <span className="text-lg leading-none min-w-[28px]" style={{ fontFamily: f.family }}>Aa</span>
+                        <span className="text-xs font-medium">{f.name}</span>
+                        <span className="text-[9px] text-muted-foreground ml-auto">{f.category}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 

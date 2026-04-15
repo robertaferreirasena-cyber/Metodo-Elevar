@@ -42,6 +42,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
       fontStyle: slide.titleItalic ? "italic" : "normal",
       textShadow: slide.textShadow || undefined,
       lineHeight: 1.15,
+      fontFamily: slide.fontFamily, // Inline font for export fidelity
     };
 
     const bodyStyle: React.CSSProperties = {
@@ -53,15 +54,16 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
       textDecoration: slide.bodyUnderline ? "underline" : "none",
       textShadow: slide.textShadow || undefined,
       lineHeight: 1.5,
+      fontFamily: slide.fontFamily, // Inline font for export fidelity
     };
 
     const counterStyle: React.CSSProperties = {
       color: slide.accentColor,
       fontSize: `${14 * fontScale}px`,
+      fontFamily: slide.fontFamily,
     };
 
     const padSize = Math.round(40 * fontScale);
-    const padClass = `p-[${padSize}px]`;
     // Use inline padding for exact control
     const padPx = `${padSize}px`;
 
