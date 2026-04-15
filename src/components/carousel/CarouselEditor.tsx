@@ -25,6 +25,7 @@ import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
+import TemplatePreviewTooltip from "./TemplatePreviewTooltip";
 import {
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
@@ -532,31 +533,32 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
             )}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
               {filteredTemplates.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => {
-                    setSelectedTemplate(t);
-                    if (slides.length > 0) {
-                      if (templateApplyMode === "current") {
-                        applyTemplateToSlide(t, currentSlide);
-                        toast.success(`Template aplicado ao slide ${currentSlide + 1}`);
-                      } else if (templateApplyMode === "preserve") {
-                        applyTemplatePreservingFormatting(t);
-                        toast.success("Template aplicado preservando formatação personalizada");
-                      } else {
-                        applyTemplateToAll(t);
+                <TemplatePreviewTooltip key={t.id} template={t}>
+                  <button
+                    onClick={() => {
+                      setSelectedTemplate(t);
+                      if (slides.length > 0) {
+                        if (templateApplyMode === "current") {
+                          applyTemplateToSlide(t, currentSlide);
+                          toast.success(`Template aplicado ao slide ${currentSlide + 1}`);
+                        } else if (templateApplyMode === "preserve") {
+                          applyTemplatePreservingFormatting(t);
+                          toast.success("Template aplicado preservando formatação personalizada");
+                        } else {
+                          applyTemplateToAll(t);
+                        }
                       }
-                    }
-                  }}
-                  className={`p-3 rounded-lg border-2 text-left transition-all ${selectedTemplate.id === t.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex-1 h-8 rounded" style={{ background: t.bgGradient || t.bgColor }} />
-                    <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0">{t.aspectRatio}</Badge>
-                  </div>
-                  <span className="text-xs font-medium text-foreground">{t.name}</span>
-                  <p className="text-[10px] text-muted-foreground">{t.description}</p>
-                </button>
+                    }}
+                    className={`p-3 rounded-lg border-2 text-left transition-all ${selectedTemplate.id === t.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex-1 h-8 rounded" style={{ background: t.bgGradient || t.bgColor }} />
+                      <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0">{t.aspectRatio}</Badge>
+                    </div>
+                    <span className="text-xs font-medium text-foreground">{t.name}</span>
+                    <p className="text-[10px] text-muted-foreground">{t.description}</p>
+                  </button>
+                </TemplatePreviewTooltip>
               ))}
             </div>
           </div>
