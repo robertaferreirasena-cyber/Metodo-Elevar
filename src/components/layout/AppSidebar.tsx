@@ -30,7 +30,7 @@ const mainItems = [
   { title: "WhatsApp", url: "/whatsapp", icon: Smartphone },
   { title: "Mentora Gi", url: "/mentora-hub", icon: BotMessageSquare },
   { title: "Tráfego Pago", url: "/trafego-pago", icon: Megaphone },
-  { title: "Automação Insta", url: "/automacao-instagram", icon: Bot },
+  { title: "Central Instagram", url: "/instagram", icon: Bot },
   { title: "Persona", url: "/persona", icon: Brain },
   { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap },
   { title: "Conquistas", url: "/conquistas", icon: Trophy },
