@@ -229,6 +229,125 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           );
         })()}
 
+        {/* =========== TWEET-POST LAYOUT =========== */}
+        {layout === "tweet-post" && (() => {
+          const images = slide.imageUrls || [];
+          return (
+            <>
+              <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '44%', background: '#ffffff' }}>
+                <div className="flex items-center" style={{ padding: `${20 * fontScale}px ${24 * fontScale}px`, gap: 12 * fontScale }}>
+                  {slide.profileImageUrl ? (
+                    <img src={slide.profileImageUrl} alt="" className="rounded-full object-cover" style={{ width: 48 * fontScale, height: 48 * fontScale }} />
+                  ) : (
+                    <div className="rounded-full flex items-center justify-center" style={{ width: 48 * fontScale, height: 48 * fontScale, background: '#ddd' }}>
+                      <span className="font-bold" style={{ fontSize: 16 * fontScale, color: '#666' }}>{(slide.profileName || "U")[0].toUpperCase()}</span>
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-bold" style={{ color: '#000', fontSize: 16 * fontScale }}>{slide.profileName || "Seu Nome Aqui"}</div>
+                    <div style={{ color: '#666', fontSize: 13 * fontScale }}>{slide.profileHandle || "@seunomeaqui"}</div>
+                  </div>
+                </div>
+                <p className="whitespace-pre-wrap" style={{ padding: `0 ${24 * fontScale}px`, color: '#000', fontSize: 14 * fontScale, fontFamily: slide.fontFamily, lineHeight: 1.35, fontWeight: 500 }}>
+                  {slide.body || "Aquele momento em que você percebe que a consistência é o verdadeiro segredo do sucesso. 🚀✨"}
+                </p>
+              </div>
+              <div className="absolute flex" style={{ bottom: 10 * fontScale, left: 10 * fontScale, right: 10 * fontScale, height: '52%', gap: 8 * fontScale }}>
+                {images.length >= 3 ? (
+                  <>
+                    <div className="flex-1 overflow-hidden relative" style={{ borderRadius: 12 * fontScale }}>
+                      <img src={images[0]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    </div>
+                    <div className="flex flex-col flex-1" style={{ gap: 8 * fontScale }}>
+                      <div className="flex-1 overflow-hidden relative" style={{ borderRadius: 12 * fontScale }}>
+                        <img src={images[1]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 overflow-hidden relative" style={{ borderRadius: 12 * fontScale }}>
+                        <img src={images[2]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      </div>
+                    </div>
+                  </>
+                ) : images.length >= 2 ? (
+                  <>
+                    <div className="flex-1 overflow-hidden relative" style={{ borderRadius: 12 * fontScale }}>
+                      <img src={images[0]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 overflow-hidden relative" style={{ borderRadius: 12 * fontScale }}>
+                      <img src={images[1]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1 overflow-hidden flex items-center justify-center" style={{ borderRadius: 12 * fontScale, background: 'rgba(0,0,0,0.04)', border: '2px dashed rgba(0,0,0,0.15)' }}>
+                      <ImagePlus style={{ color: '#aaa', width: 40 * fontScale, height: 40 * fontScale }} />
+                    </div>
+                    <div className="flex-1 overflow-hidden flex items-center justify-center" style={{ borderRadius: 12 * fontScale, background: 'rgba(0,0,0,0.04)', border: '2px dashed rgba(0,0,0,0.15)' }}>
+                      <ImagePlus style={{ color: '#aaa', width: 40 * fontScale, height: 40 * fontScale }} />
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          );
+        })()}
+
+        {/* =========== PROMPT-CARD LAYOUT =========== */}
+        {layout === "prompt-card" && (
+          <>
+            <div className="absolute inset-0 flex flex-col" style={{ padding: padPx }}>
+              <div className="flex items-center mb-4" style={{ gap: 12 * fontScale }}>
+                {slide.profileImageUrl ? (
+                  <img src={slide.profileImageUrl} alt="" className="rounded-full object-cover" style={{ width: 50 * fontScale, height: 50 * fontScale }} />
+                ) : (
+                  <div className="rounded-full flex items-center justify-center" style={{ width: 50 * fontScale, height: 50 * fontScale, background: '#ddd' }}>
+                    <span className="font-bold" style={{ fontSize: 16 * fontScale, color: '#666' }}>{(slide.profileName || "U")[0].toUpperCase()}</span>
+                  </div>
+                )}
+                <div>
+                  <div className="font-bold" style={{ color: '#000', fontSize: 20 * fontScale }}>{slide.profileHandle || "@seunomeaqui"}</div>
+                  <div style={{ color: '#555', fontSize: 11 * fontScale }}>{slide.profileName || "Seu Nome"} - Especialista no seu Nicho</div>
+                </div>
+              </div>
+              <div className="font-bold mb-3" style={{ color: '#000', fontSize: 18 * fontScale }}>
+                <span style={{ color: slide.accentColor }}>📌</span> {slide.title || "PROMPT – Parte 1"}
+              </div>
+              <div className="flex-1 rounded-lg" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)', padding: `${16 * fontScale}px` }}>
+                <p className="whitespace-pre-wrap" style={{ ...bodyStyle, fontStyle: 'italic', color: '#000', opacity: 0.85 }}>
+                  {slide.body || '"Atue como uma consultora especialista..."'}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* =========== STICKER-CARD LAYOUT =========== */}
+        {layout === "sticker-card" && (() => {
+          const stickerBg = slide.highlightBgColor || "rgba(92,61,46,.94)";
+          return (
+            <>
+              <div className="absolute" style={{ top: 16 * fontScale, left: 20 * fontScale, right: 20 * fontScale }}>
+                <div className="font-normal" style={{ color: 'rgba(255,255,255,.8)', fontSize: 11 * fontScale, fontFamily: "'DM Sans', sans-serif" }}>
+                  {slide.profileHandle || "@SeuNomeAqui"} | {slide.profileName || "Seu nicho"}
+                </div>
+              </div>
+              <div className="absolute rounded" style={{
+                top: '18%', right: '6%', width: '56%', padding: `${18 * fontScale}px ${22 * fontScale}px`,
+                background: stickerBg, borderRadius: 4 * fontScale, border: `1.5px dashed rgba(255,255,255,.38)`,
+                transform: 'rotate(2.5deg)',
+              }}>
+                <h2 className="whitespace-pre-wrap" style={{ ...titleStyle, fontSize: slide.titleSize * fontScale * 0.85, lineHeight: 1.25 }}>{slide.title || "Dica importante\npara o seu\npúblico alvo"}</h2>
+              </div>
+              <div className="absolute rounded" style={{
+                bottom: '14%', left: '4%', width: '52%', padding: `${18 * fontScale}px ${22 * fontScale}px`,
+                background: stickerBg, borderRadius: 4 * fontScale, border: `1.5px dashed rgba(255,255,255,.38)`,
+                transform: 'rotate(-2deg)',
+              }}>
+                <p className="whitespace-pre-wrap" style={{ ...bodyStyle, opacity: 1, fontSize: slide.bodySize * fontScale * 0.95, lineHeight: 1.25 }}>{slide.body || "Outro ponto\nde atenção\naqui"}</p>
+              </div>
+            </>
+          );
+        })()}
+
         {/* =========== TEXT-ONLY (DEFAULT) LAYOUT =========== */}
         {layout === "text-only" && (
           <>
