@@ -1,17 +1,21 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Phone, Video, Info, Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import type { FlowNode, ParsedFlow } from "./flowParser";
+import { useRef, useEffect } from "react";
+import { ChevronLeft, Phone, Video, Info, Send } from "lucide-react";
+import type { ParsedFlow } from "./flowParser";
 
 interface DMPreviewProps {
   flow: ParsedFlow;
 }
 
 export default function DMPreview({ flow }: DMPreviewProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Filter only message and trigger nodes for DM preview
   const messageNodes = flow.nodes.filter(n => n.type === 'message' || n.type === 'trigger');
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messageNodes.length]);
 
   if (messageNodes.length === 0) {
     return (
@@ -20,10 +24,6 @@ export default function DMPreview({ flow }: DMPreviewProps) {
       </div>
     );
   }
-
-  // Build conversation up to currentStep
-  const visibleMessages = messageNodes.slice(0, currentStep + 1);
-  const isAtEnd = currentStep >= messageNodes.length - 1;
 
   return (
     <div className="flex flex-col items-center">
@@ -61,16 +61,15 @@ export default function DMPreview({ flow }: DMPreviewProps) {
             <Info className="h-4 w-4 text-foreground/70" />
           </div>
 
-          {/* Messages area */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-background">
+          {/* Messages area - all messages shown at once */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 bg-background">
             {/* Date divider */}
             <div className="flex items-center justify-center">
               <span className="text-[10px] text-muted-foreground bg-muted px-3 py-0.5 rounded-full">Hoje</span>
             </div>
 
-            {visibleMessages.map((node, i) => (
+            {messageNodes.map((node, i) => (
               <div key={node.id}>
-                {/* Trigger shows as user action */}
                 {node.type === 'trigger' ? (
                   <div className="flex flex-col items-center">
                     <div className="bg-muted/50 rounded-lg px-3 py-1.5 max-w-[85%]">
@@ -81,7 +80,7 @@ export default function DMPreview({ flow }: DMPreviewProps) {
                   </div>
                 ) : (
                   <>
-                    {/* Bot message - left aligned */}
+                    {/* Bot message */}
                     <div className="flex items-end gap-1.5">
                       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0 flex items-center justify-center">
                         <span className="text-[8px] text-white">🤖</span>
@@ -89,12 +88,9 @@ export default function DMPreview({ flow }: DMPreviewProps) {
                       <div className="max-w-[75%]">
                         <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2">
                           <p className="text-[11px] text-foreground leading-relaxed whitespace-pre-line">
-                            {node.content
-                              ? (node.content.length > 200 ? node.content.slice(0, 200) + '...' : node.content)
-                              : node.title}
+                            {node.content || node.title}
                           </p>
                         </div>
-                        {/* Delay indicator */}
                         {node.delay && (
                           <p className="text-[9px] text-muted-foreground mt-0.5 ml-1">
                             ⏱️ {node.delay}
@@ -117,8 +113,8 @@ export default function DMPreview({ flow }: DMPreviewProps) {
                       </div>
                     )}
 
-                    {/* Simulate user response for next step (if there are buttons) */}
-                    {node.buttons && node.buttons.length > 0 && i < visibleMessages.length - 1 && (
+                    {/* Simulated user response */}
+                    {node.buttons && node.buttons.length > 0 && i < messageNodes.length - 1 && (
                       <div className="flex justify-end mt-2">
                         <div className="bg-blue-500 rounded-2xl rounded-br-md px-3 py-2 max-w-[70%]">
                           <p className="text-[11px] text-white">{node.buttons[0]}</p>
@@ -130,28 +126,12 @@ export default function DMPreview({ flow }: DMPreviewProps) {
               </div>
             ))}
 
-            {/* Typing indicator - only show if there are more messages to show */}
-            {!isAtEnd && messageNodes.length > 1 && (
-              <div className="flex items-end gap-1.5">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0" />
-                <div className="bg-muted rounded-2xl px-4 py-2.5">
-                  <div className="flex gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: '200ms' }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: '400ms' }} />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* End of conversation indicator */}
-            {isAtEnd && messageNodes.length > 1 && (
-              <div className="flex items-center justify-center pt-2">
-                <span className="text-[10px] text-muted-foreground bg-muted/50 px-3 py-0.5 rounded-full">
-                  ✅ Fim do fluxo
-                </span>
-              </div>
-            )}
+            {/* End indicator */}
+            <div className="flex items-center justify-center pt-2">
+              <span className="text-[10px] text-muted-foreground bg-muted/50 px-3 py-0.5 rounded-full">
+                ✅ Fim do fluxo
+              </span>
+            </div>
           </div>
 
           {/* Input bar */}
@@ -163,33 +143,6 @@ export default function DMPreview({ flow }: DMPreviewProps) {
           </div>
         </div>
       </div>
-
-      {/* Step navigation */}
-      {messageNodes.length > 1 && (
-        <div className="flex items-center gap-3 mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-            disabled={currentStep === 0}
-            className="h-8 text-xs"
-          >
-            <ChevronLeft className="h-3 w-3 mr-1" /> Anterior
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            {currentStep + 1} / {messageNodes.length}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentStep(Math.min(messageNodes.length - 1, currentStep + 1))}
-            disabled={isAtEnd}
-            className="h-8 text-xs"
-          >
-            Próximo <ChevronRight className="h-3 w-3 ml-1" />
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
