@@ -23,6 +23,7 @@ export default function DMPreview({ flow }: DMPreviewProps) {
 
   // Build conversation up to currentStep
   const visibleMessages = messageNodes.slice(0, currentStep + 1);
+  const isAtEnd = currentStep >= messageNodes.length - 1;
 
   return (
     <div className="flex flex-col items-center">
@@ -129,8 +130,8 @@ export default function DMPreview({ flow }: DMPreviewProps) {
               </div>
             ))}
 
-            {/* Typing indicator if not at the end */}
-            {currentStep < messageNodes.length - 1 && (
+            {/* Typing indicator - only show if there are more messages to show */}
+            {!isAtEnd && messageNodes.length > 1 && (
               <div className="flex items-end gap-1.5">
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0" />
                 <div className="bg-muted rounded-2xl px-4 py-2.5">
@@ -140,6 +141,15 @@ export default function DMPreview({ flow }: DMPreviewProps) {
                     <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: '400ms' }} />
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* End of conversation indicator */}
+            {isAtEnd && messageNodes.length > 1 && (
+              <div className="flex items-center justify-center pt-2">
+                <span className="text-[10px] text-muted-foreground bg-muted/50 px-3 py-0.5 rounded-full">
+                  ✅ Fim do fluxo
+                </span>
               </div>
             )}
           </div>
@@ -155,29 +165,31 @@ export default function DMPreview({ flow }: DMPreviewProps) {
       </div>
 
       {/* Step navigation */}
-      <div className="flex items-center gap-3 mt-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-          disabled={currentStep === 0}
-          className="h-8 text-xs"
-        >
-          <ChevronLeft className="h-3 w-3 mr-1" /> Anterior
-        </Button>
-        <span className="text-xs text-muted-foreground">
-          {currentStep + 1} / {messageNodes.length}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentStep(Math.min(messageNodes.length - 1, currentStep + 1))}
-          disabled={currentStep === messageNodes.length - 1}
-          className="h-8 text-xs"
-        >
-          Próximo <ChevronRight className="h-3 w-3 ml-1" />
-        </Button>
-      </div>
+      {messageNodes.length > 1 && (
+        <div className="flex items-center gap-3 mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+            disabled={currentStep === 0}
+            className="h-8 text-xs"
+          >
+            <ChevronLeft className="h-3 w-3 mr-1" /> Anterior
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {currentStep + 1} / {messageNodes.length}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentStep(Math.min(messageNodes.length - 1, currentStep + 1))}
+            disabled={isAtEnd}
+            className="h-8 text-xs"
+          >
+            Próximo <ChevronRight className="h-3 w-3 ml-1" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
