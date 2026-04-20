@@ -6,6 +6,7 @@ import { useSessionPersistence } from "./useSessionPersistence";
 
 export interface PersonaFormData {
   // Step 1: About You
+  business_type: string;
   business_name: string;
   niche: string;
   sub_niche: string;
