@@ -75,6 +75,7 @@ export interface PersonaProfile extends PersonaFormData {
 }
 
 const INITIAL_FORM_DATA: PersonaFormData = {
+  business_type: "",
   business_name: "",
   niche: "",
   sub_niche: "",
