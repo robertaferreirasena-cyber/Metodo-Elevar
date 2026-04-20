@@ -147,6 +147,7 @@ export function usePersonaProfile() {
         const profileData = data as unknown as PersonaProfile;
         setProfile(profileData);
         setFormData({
+          business_type: (profileData as any).business_type || "",
           business_name: profileData.business_name || "",
           niche: profileData.niche || "",
           sub_niche: profileData.sub_niche || "",
