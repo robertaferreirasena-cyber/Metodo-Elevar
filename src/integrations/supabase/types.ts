@@ -755,6 +755,7 @@ export type Database = {
       persona_profiles: {
         Row: {
           business_name: string | null
+          business_type: string | null
           common_objections: string | null
           created_at: string
           generated_raio_x: Json | null
@@ -781,6 +782,7 @@ export type Database = {
         }
         Insert: {
           business_name?: string | null
+          business_type?: string | null
           common_objections?: string | null
           created_at?: string
           generated_raio_x?: Json | null
@@ -807,6 +809,7 @@ export type Database = {
         }
         Update: {
           business_name?: string | null
+          business_type?: string | null
           common_objections?: string | null
           created_at?: string
           generated_raio_x?: Json | null

@@ -6,6 +6,7 @@ import { useSessionPersistence } from "./useSessionPersistence";
 
 export interface PersonaFormData {
   // Step 1: About You
+  business_type: string;
   business_name: string;
   niche: string;
   sub_niche: string;
@@ -74,6 +75,7 @@ export interface PersonaProfile extends PersonaFormData {
 }
 
 const INITIAL_FORM_DATA: PersonaFormData = {
+  business_type: "",
   business_name: "",
   niche: "",
   sub_niche: "",
@@ -145,6 +147,7 @@ export function usePersonaProfile() {
         const profileData = data as unknown as PersonaProfile;
         setProfile(profileData);
         setFormData({
+          business_type: (profileData as any).business_type || "",
           business_name: profileData.business_name || "",
           niche: profileData.niche || "",
           sub_niche: profileData.sub_niche || "",

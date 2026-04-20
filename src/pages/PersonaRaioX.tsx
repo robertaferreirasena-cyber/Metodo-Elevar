@@ -244,7 +244,7 @@ export default function PersonaRaioX() {
             <>
               <div className="space-y-2">
                 <Label>Tipo de Negócio *</Label>
-                <Select value={(formData as any).business_type || ""} onValueChange={(v) => updateFormData({ business_type: v } as any)}>
+                <Select value={formData.business_type || ""} onValueChange={(v) => updateFormData({ business_type: v })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Você é lojista ou prestador de serviços?" />
                   </SelectTrigger>
