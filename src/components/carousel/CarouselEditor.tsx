@@ -421,8 +421,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       bgColor: palette.bgColor,
       textColor: palette.textColor,
       accentColor: palette.accentColor,
-      highlightBgColor: palette.highlightBgColor,
-      // Preserve titleColor / bodyColor / titleBold / etc.
+      // Preserve titleColor / bodyColor / titleBold / highlightBgColor / etc.
     } : s));
     toast.success(`Layout aplicado ao slide ${currentSlide + 1}`);
   }, [currentJournalPalette, currentSlide]);
