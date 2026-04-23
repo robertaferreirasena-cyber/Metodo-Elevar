@@ -2,6 +2,10 @@ import { forwardRef, useRef, useEffect, useState } from "react";
 import { ImagePlus } from "lucide-react";
 import type { SlideData } from "./CarouselTemplates";
 import { FORMAT_SPECS, type AspectRatio } from "./CarouselTemplates";
+import {
+  PAPER_TEXTURES, WashiTape, WaxSeal, GoldStamp, SpiralBinder,
+  TornPaperPath, EnvelopeShape, NotebookLines, HandDrawnArrow, PaperClip,
+} from "./journalDecorations";
 
 interface SlidePreviewProps {
   slide: SlideData;
