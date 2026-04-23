@@ -266,6 +266,24 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     setSlides(prev => prev.map(s => ({ ...s, titleSize: spec.titleSize, bodySize: spec.bodySize })));
   };
 
+  const snapshotBeforeTemplate = (template: CarouselTemplate) => {
+    lastSlidesSnapshot.current = slides.map(s => ({ ...s }));
+    lastTemplateSnapshot.current = selectedTemplate;
+    toast.success(`Template "${template.name}" aplicado`, {
+      description: "Textos e imagens preservados.",
+      duration: 8000,
+      action: {
+        label: "Desfazer",
+        onClick: () => {
+          if (lastSlidesSnapshot.current) setSlides(lastSlidesSnapshot.current);
+          if (lastTemplateSnapshot.current) setSelectedTemplate(lastTemplateSnapshot.current);
+          lastSlidesSnapshot.current = null;
+          lastTemplateSnapshot.current = null;
+        },
+      },
+    });
+  };
+
   const applyTemplateToAll = (template: CarouselTemplate) => {
     setSelectedTemplate(template);
     setSlides((prev) =>
@@ -303,12 +321,30 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
       textColor: s.titleColor ? s.textColor : template.textColor, // preserve if user customized
       accentColor: template.accentColor,
       highlightBgColor: template.highlightBgColor,
-      // Preserve: titleColor, bodyColor, titleBold, titleItalic, bodyBold, bodyItalic, bodyUnderline, textShadow, bgImageUrl, overlayOpacity, verticalAlign
+      // Preserve: titleColor, bodyColor, titleBold, titleItalic, bodyBold, bodyItalic, bodyUnderline, textShadow, bgImageUrl, overlayOpacity, verticalAlign, all image-* and bgImage-* adjustments
     });
     if (index !== undefined) {
       setSlides(prev => prev.map((s, i) => i === index ? applyToSlide(s) : s));
     } else {
       setSlides(prev => prev.map(applyToSlide));
+    }
+  };
+
+  // Save current carousel as a draft in localStorage so user can restore later
+  const saveCurrentAsDraft = () => {
+    try {
+      const drafts: any[] = JSON.parse(localStorage.getItem("carousel_drafts") || "[]");
+      drafts.unshift({
+        id: Date.now(),
+        topic, slides, selectedTemplateId: selectedTemplate.id,
+        slideCount, tone, formatFilter, currentSlide,
+        savedAt: new Date().toISOString(),
+      });
+      // Keep only last 10
+      localStorage.setItem("carousel_drafts", JSON.stringify(drafts.slice(0, 10)));
+      toast.success("Carrossel atual salvo como rascunho");
+    } catch (e) {
+      console.error("Failed to save draft:", e);
     }
   };
 
