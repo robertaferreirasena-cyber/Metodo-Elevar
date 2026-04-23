@@ -789,11 +789,15 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                           scale: cur.bgImageScale, blur: cur.bgImageBlur,
                           brightness: cur.bgImageBrightness, contrast: cur.bgImageContrast,
                         }}
-                        onChange={(v) => updateSlide(currentSlide, {
-                          bgImagePositionX: v.positionX, bgImagePositionY: v.positionY,
-                          bgImageScale: v.scale, bgImageBlur: v.blur,
-                          bgImageBrightness: v.brightness, bgImageContrast: v.contrast,
-                        })}
+                        onChange={(v) => {
+                          const isReset = v.positionX === undefined && v.positionY === undefined && v.scale === undefined && v.blur === undefined && v.brightness === undefined && v.contrast === undefined;
+                          if (isReset) snapshotSlideForUndo(currentSlide, "Ajustes do fundo resetados");
+                          updateSlide(currentSlide, {
+                            bgImagePositionX: v.positionX, bgImagePositionY: v.positionY,
+                            bgImageScale: v.scale, bgImageBlur: v.blur,
+                            bgImageBrightness: v.brightness, bgImageContrast: v.contrast,
+                          });
+                        }}
                       />
                     </div>
                   )}
@@ -823,11 +827,15 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                             scale: cur.imageScale, blur: cur.imageBlur,
                             brightness: cur.imageBrightness, contrast: cur.imageContrast,
                           }}
-                          onChange={(v) => updateSlide(currentSlide, {
-                            imagePositionX: v.positionX, imagePositionY: v.positionY,
-                            imageScale: v.scale, imageBlur: v.blur,
-                            imageBrightness: v.brightness, imageContrast: v.contrast,
-                          })}
+                          onChange={(v) => {
+                            const isReset = v.positionX === undefined && v.positionY === undefined && v.scale === undefined && v.blur === undefined && v.brightness === undefined && v.contrast === undefined;
+                            if (isReset) snapshotSlideForUndo(currentSlide, "Ajustes da imagem resetados");
+                            updateSlide(currentSlide, {
+                              imagePositionX: v.positionX, imagePositionY: v.positionY,
+                              imageScale: v.scale, imageBlur: v.blur,
+                              imageBrightness: v.brightness, imageContrast: v.contrast,
+                            });
+                          }}
                         />
                       </div>
                     )}
