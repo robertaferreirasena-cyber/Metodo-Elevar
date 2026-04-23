@@ -785,11 +785,86 @@ export const JOURNAL_SAMPLE_CONTENT: { title: string; body: string }[] = [
   { title: "Vamos juntas construir o seu próximo capítulo?", body: "Clique no link da bio e agende uma conversa gratuita comigo. Sua hora chegou." },
 ];
 
+/** Pre-made offline content themes for the Journaling Collection sample button. */
+export interface JournalSampleTheme {
+  id: string;
+  label: string;
+  emoji: string;
+  slides: { title: string; body: string }[];
+}
+
+export const JOURNAL_SAMPLE_THEMES: JournalSampleTheme[] = [
+  {
+    id: "generico",
+    label: "Genérico (mentoria)",
+    emoji: "📓",
+    slides: JOURNAL_SAMPLE_CONTENT,
+  },
+  {
+    id: "autoestima",
+    label: "Autoestima",
+    emoji: "💗",
+    slides: [
+      { title: "Você é mais do que o espelho diz hoje", body: "Sua autoestima não nasce da imagem — nasce do quanto você se escolhe todos os dias." },
+      { title: "O elogio que falta vem de dentro", body: "Pare de esperar validação externa. Comece pelo seu próprio olhar pelo seu nome." },
+      { title: "Pequenos rituais reconstroem grandes mulheres", body: "Café com calma, banho consciente, roupa que abraça. O cuidado é uma forma de amor." },
+      { title: "Compare-se só com a versão de ontem", body: "A jornada das outras não é régua. Cada passo seu já é coragem em movimento." },
+      { title: "Você cabe inteira no espaço que ocupa", body: "Não diminua sua voz, sua presença, seus sonhos. O mundo precisa de você inteira." },
+      { title: "Que tal começar hoje a se escolher?", body: "Salve este post. Releia amanhã. E me conta nos comentários: qual passo você dá hoje?" },
+    ],
+  },
+  {
+    id: "rotina",
+    label: "Rotina matinal",
+    emoji: "☀️",
+    slides: [
+      { title: "Sua manhã decide o tom do seu dia", body: "Não é mágica — é estrutura. As primeiras duas horas constroem ou destroem o resto." },
+      { title: "Acorde 30 min antes do celular", body: "O scroll matinal sequestra sua atenção antes de você existir. Comece por você." },
+      { title: "Hidrate, respire, alongue", body: "Três gestos simples que reativam corpo e mente sem custar nada e mudam tudo." },
+      { title: "Escreva 3 prioridades em papel", body: "Tudo que está na cabeça pesa. No papel, vira plano. Plano vira ação." },
+      { title: "Movimento antes da tela", body: "Caminhar 10 minutos no sol já reorganiza humor, foco e energia para o dia." },
+      { title: "Vamos montar sua rotina ideal?", body: "Comenta MANHÃ que te mando o checklist completo da rotina das mentoradas." },
+    ],
+  },
+  {
+    id: "produtividade",
+    label: "Produtividade leve",
+    emoji: "🌿",
+    slides: [
+      { title: "Produtividade não é fazer mais — é fazer o que importa", body: "Listas infinitas cansam. Foco em 3 prioridades reais transforma." },
+      { title: "Bloqueie tempo, não tarefas", body: "Agenda por blocos protege sua energia. Tarefa solta vira procrastinação criativa." },
+      { title: "Faça primeiro o que dá medo", body: "A tarefa que você empurra é exatamente a que vai destravar seu dia inteiro." },
+      { title: "Pausas são parte do método", body: "Cérebro descansado entrega 3x mais. Trabalhe em ciclos, não em maratona." },
+      { title: "Encerre o dia com revisão", body: "5 minutos para olhar o que andou e o que sobrou. Amanhã começa pronto." },
+      { title: "Quer minha planilha de blocos?", body: "Comenta FOCO e te envio o template que uso com minhas mentoradas toda semana." },
+    ],
+  },
+  {
+    id: "vendas",
+    label: "Vendas com leveza",
+    emoji: "💼",
+    slides: [
+      { title: "Vender é servir, não convencer", body: "Quando você entende a dor real da sua cliente, a venda vira conversa natural." },
+      { title: "Pare de pedir desculpa pelo seu preço", body: "Seu valor não é o seu custo. É a transformação que sua cliente recebe." },
+      { title: "Escute mais, fale menos", body: "Cada objeção é um pedido de segurança. Pergunte antes de apresentar solução." },
+      { title: "Mostre prova, não promessa", body: "Print de cliente, antes/depois, depoimento real. Resultado fala mais que adjetivo." },
+      { title: "Follow-up é onde mora a venda", body: "70% das vendas acontecem depois do 5º contato. Não desista no primeiro 'vou pensar'." },
+      { title: "Bora destravar suas vendas?", body: "Comenta VENDER e te chamo no direct com o roteiro que multiplicou meu fechamento." },
+    ],
+  },
+];
+
 /** Builds 6 sample SlideData (one per JOURNAL_LAYOUT_SEQUENCE entry) for the exporter. */
-export function buildJournalSampleSlides(palette: JournalPalette, profileHandle?: string): SlideData[] {
+export function buildJournalSampleSlides(
+  palette: JournalPalette,
+  profileHandle?: string,
+  themeId?: string,
+): SlideData[] {
+  const theme = JOURNAL_SAMPLE_THEMES.find(t => t.id === themeId) || JOURNAL_SAMPLE_THEMES[0];
+  const content = theme.slides;
   return JOURNAL_LAYOUT_SEQUENCE.map((layout, i) => ({
-    title: JOURNAL_SAMPLE_CONTENT[i]?.title || JOURNAL_SAMPLE_CONTENT[0].title,
-    body: JOURNAL_SAMPLE_CONTENT[i]?.body || JOURNAL_SAMPLE_CONTENT[0].body,
+    title: content[i]?.title || content[0].title,
+    body: content[i]?.body || content[0].body,
     bgColor: palette.bgColor,
     textColor: palette.textColor,
     accentColor: palette.accentColor,
