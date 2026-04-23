@@ -20,6 +20,10 @@ import {
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
@@ -59,11 +63,15 @@ interface CarouselSessionState {
   selectedTemplateId: string;
   slides: SlideData[];
   currentSlide: number;
+  giMessages: { role: "user" | "assistant"; content: string }[];
+  giOpen: boolean;
+  templateApplyMode: "all" | "current" | "preserve";
 }
 
 const EMPTY_CAROUSEL_STATE: CarouselSessionState = {
   topic: "", slideCount: 5, tone: "profissional", formatFilter: "all",
   selectedTemplateId: CAROUSEL_TEMPLATES[0].id, slides: [], currentSlide: 0,
+  giMessages: [], giOpen: false, templateApplyMode: "all",
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-mentor-chat`;
@@ -109,7 +117,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     "session_carousel_editor", EMPTY_CAROUSEL_STATE
   );
 
-  const [topic, setTopic] = useState(initialTopic || sessionState.topic);
+  // Restore session FIRST. Only fall back to initialTopic when there is no saved session.
+  const [topic, setTopic] = useState(sessionState.topic || initialTopic || "");
   const [slideCount, setSlideCount] = useState(sessionState.slideCount);
   const [tone, setTone] = useState(sessionState.tone);
   const [formatFilter, setFormatFilter] = useState<FormatFilter>(sessionState.formatFilter);
@@ -123,18 +132,39 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [fullscreen, setFullscreen] = useState(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Mentora Gi mini-chat state
-  const [giOpen, setGiOpen] = useState(false);
+  // Mentora Gi mini-chat state — persisted
+  const [giOpen, setGiOpen] = useState(sessionState.giOpen);
   const [giInput, setGiInput] = useState("");
-  const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
   const [giLoading, setGiLoading] = useState(false);
+
+  // Persisted template apply mode
+  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
+
+  // Pending topic confirmation (when a new initialTopic arrives but user already has work in progress)
+  const [pendingTopic, setPendingTopic] = useState<string | null>(null);
+  const lastAppliedInitialTopic = useRef<string>(sessionState.topic || initialTopic || "");
+
+  // React to changes in initialTopic (e.g., user clicks a new topic in MentorChat).
+  useEffect(() => {
+    if (!initialTopic) return;
+    if (initialTopic === lastAppliedInitialTopic.current) return;
+    if (slides.length > 0 && topic && initialTopic !== topic) {
+      // User has an existing carousel — ask before overwriting
+      setPendingTopic(initialTopic);
+    } else {
+      setTopic(initialTopic);
+      lastAppliedInitialTopic.current = initialTopic;
+    }
+  }, [initialTopic]);
 
   useEffect(() => {
     setSessionState({
       topic, slideCount, tone, formatFilter,
       selectedTemplateId: selectedTemplate.id, slides, currentSlide,
+      giMessages, giOpen, templateApplyMode,
     });
-  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, setSessionState]);
+  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, templateApplyMode, setSessionState]);
 
   const { hasProfile, formData, raioX } = usePersonaContext();
 
@@ -275,7 +305,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     }
   };
 
-  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">("all");
+  // templateApplyMode is declared earlier (with persisted initial value via state restore below)
 
   const handleImageUpload = async (index: number, file: File) => {
     try { updateSlide(index, { imageUrl: await fileToDataUrl(file) }); }
@@ -574,7 +604,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
         <>
           {/* Format toggle + Navigation */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Label className="text-xs text-muted-foreground shrink-0">Formato:</Label>
               {(["1:1", "9:16", "16:9"] as AspectRatio[]).map((r) => (
                 <Button key={r} size="sm" variant={selectedTemplate.aspectRatio === r ? "default" : "outline"} onClick={() => changeFormat(r)}>
@@ -586,7 +616,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
               ))}
             </div>
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button size="icon" variant="outline" disabled={currentSlide === 0} onClick={() => setCurrentSlide((p) => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
                 <Badge variant="secondary">Slide {currentSlide + 1} / {slides.length}</Badge>
                 <Button size="icon" variant="outline" disabled={currentSlide === slides.length - 1} onClick={() => setCurrentSlide((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
@@ -599,9 +629,9 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </Button>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button size="sm" variant="outline" onClick={toggleFullscreen} title="Modo apresentação">
-                  <Maximize className="h-4 w-4 mr-1" /> Apresentar
+                  <Maximize className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Apresentar</span>
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => exportSlide(currentSlide)}><Download className="h-4 w-4 mr-1" /> PNG</Button>
                 <Button size="sm" onClick={exportAll} disabled={exporting}><DownloadCloud className="h-4 w-4 mr-1" />{exporting ? "Exportando..." : "Baixar Todos"}</Button>
@@ -613,8 +643,10 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Preview */}
-            <div className="flex justify-center">
-              <SlidePreview ref={setSlideRef(currentSlide)} slide={cur} slideIndex={currentSlide} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} />
+            <div className="flex justify-center w-full overflow-hidden">
+              <div className="w-full max-w-full">
+                <SlidePreview ref={setSlideRef(currentSlide)} slide={cur} slideIndex={currentSlide} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} />
+              </div>
             </div>
 
             {/* ========== EDITOR CONTROLS ========== */}
@@ -622,7 +654,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2"><Paintbrush className="h-4 w-4" /> Editar Slide {currentSlide + 1}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 max-h-[600px] overflow-y-auto">
+              <CardContent className="space-y-4 max-h-[60vh] lg:max-h-[600px] overflow-y-auto">
                 {/* Title */}
                 <div>
                   <Label className="text-xs">Título</Label>
@@ -1007,6 +1039,35 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
           </div>
         </div>
       )}
+
+      {/* Confirm overwrite when a new initialTopic arrives */}
+      <AlertDialog open={!!pendingTopic} onOpenChange={(o) => { if (!o) setPendingTopic(null); }}>
+        <AlertDialogContent className="w-[95vw] max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Substituir carrossel atual?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você já tem um carrossel em andamento sobre <strong>"{topic}"</strong>.
+              Deseja descartá-lo e começar um novo sobre <strong>"{pendingTopic}"</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              if (pendingTopic) lastAppliedInitialTopic.current = pendingTopic;
+              setPendingTopic(null);
+            }}>Manter o atual</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (pendingTopic) {
+                setTopic(pendingTopic);
+                setSlides([]);
+                setCurrentSlide(0);
+                setGiMessages([]);
+                lastAppliedInitialTopic.current = pendingTopic;
+              }
+              setPendingTopic(null);
+            }}>Substituir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

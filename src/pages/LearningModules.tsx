@@ -69,7 +69,7 @@ export default function LearningModules() {
 
         <TabsContent value="encontros"><EncontrosTab /></TabsContent>
         <TabsContent value="carousel">
-          <CarouselEditor key={carouselTopic} initialTopic={carouselTopic} />
+          <CarouselEditor initialTopic={carouselTopic} />
         </TabsContent>
         <TabsContent value="instapro"><InstaProTab onCreateContent={handleCreateContent} /></TabsContent>
       </Tabs>
