@@ -772,6 +772,36 @@ export function applyPaletteToSlide(slide: SlideData, palette: JournalPalette): 
   };
 }
 
+/**
+ * Sample journaling content used by the off-screen Collection Exporter
+ * to render the 6 layouts with the same body of text and current palette.
+ */
+export const JOURNAL_SAMPLE_CONTENT: { title: string; body: string }[] = [
+  { title: "Como dobrar seu faturamento sem dobrar a jornada", body: "Três pilares que aplicamos com nossas mentoradas para escalar com leveza e estratégia." },
+  { title: "O segredo da consistência está nos pequenos rituais", body: "Não é talento. É repetição inteligente, todos os dias, no mesmo horário, com presença." },
+  { title: "Sua marca precisa de uma narrativa, não só de posts", body: "Histórias conectam. Conteúdo solto se perde. Comece pelo porquê e o resto se organiza." },
+  { title: "Pare de vender produto. Venda transformação", body: "Sua cliente não quer comprar — ela quer virar uma versão melhor de si mesma." },
+  { title: "Estratégia sem execução é só sonho bonito", body: "Plano de 90 dias, ações de 7, revisão semanal. Simples, mas exige disciplina." },
+  { title: "Vamos juntas construir o seu próximo capítulo?", body: "Clique no link da bio e agende uma conversa gratuita comigo. Sua hora chegou." },
+];
+
+/** Builds 6 sample SlideData (one per JOURNAL_LAYOUT_SEQUENCE entry) for the exporter. */
+export function buildJournalSampleSlides(palette: JournalPalette, profileHandle?: string): SlideData[] {
+  return JOURNAL_LAYOUT_SEQUENCE.map((layout, i) => ({
+    title: JOURNAL_SAMPLE_CONTENT[i]?.title || JOURNAL_SAMPLE_CONTENT[0].title,
+    body: JOURNAL_SAMPLE_CONTENT[i]?.body || JOURNAL_SAMPLE_CONTENT[0].body,
+    bgColor: palette.bgColor,
+    textColor: palette.textColor,
+    accentColor: palette.accentColor,
+    titleSize: 38,
+    bodySize: 18,
+    fontFamily: "'Cormorant Garamond', serif",
+    align: "center",
+    layout,
+    profileHandle: profileHandle || "@suamarca",
+  }));
+}
+
 export interface SlideData {
   title: string;
   body: string;
