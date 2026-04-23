@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { toPng } from "html-to-image";
 import {
   ChevronLeft, ChevronRight, Download, Wand2, Loader2, Paintbrush, Type,
@@ -157,12 +157,23 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [libraryTarget, setLibraryTarget] = useState<"image" | "bg">("bg");
   const [exportingCollection, setExportingCollection] = useState(false);
 
-  // Current journal palette (persisted)
+  // Current journal palette (persisted) — derived from id, source-of-truth is the id
   const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(
     sessionState.currentJournalPaletteId || "terracota"
   );
-  const currentJournalPalette =
-    JOURNAL_PALETTES.find(p => p.id === currentJournalPaletteId) || JOURNAL_PALETTES[0];
+  const currentJournalPalette = useMemo(
+    () => JOURNAL_PALETTES.find(p => p.id === currentJournalPaletteId) || JOURNAL_PALETTES[0],
+    [currentJournalPaletteId]
+  );
+  // Real mini-thumb slides for the 6 layouts using current palette (memoized for perf)
+  const journalThumbSlides = useMemo(
+    () => buildJournalSampleSlides(currentJournalPalette).map(s => ({
+      ...s,
+      title: s.title.length > 40 ? s.title.slice(0, 38) + "…" : s.title,
+      body: s.body.length > 60 ? s.body.slice(0, 58) + "…" : s.body,
+    })),
+    [currentJournalPalette]
+  );
 
   // Off-screen exporter (mounted only during export)
   const [exporterMounted, setExporterMounted] = useState(false);
@@ -181,10 +192,21 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     setExportingCollection(true);
     setExporterMounted(true);
     try {
-      // Wait for the off-screen exporter to mount, render and load fonts
+      // Wait for the off-screen exporter to mount and the browser to commit a frame
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+
+      // Pre-load all fonts the journaling templates rely on
+      try {
+        await Promise.all([
+          (document as any).fonts?.load?.('700 64px "Playfair Display"'),
+          (document as any).fonts?.load?.('600 48px "Cormorant Garamond"'),
+          (document as any).fonts?.load?.('400 48px "Caveat"'),
+          (document as any).fonts?.load?.('700 32px "Inter"'),
+          (document as any).fonts?.load?.('400 36px "Bebas Neue"'),
+        ]);
+      } catch { /* ignore */ }
       await document.fonts.ready;
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 500));
 
       const nodes = exporterRef.current?.getNodes() || [];
       if (!nodes.length || nodes.some((n) => !n)) {
@@ -194,16 +216,59 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       const { toPng } = await import("html-to-image");
       const zip = new JSZip();
 
+      // Wait for all <img> inside each node to finish loading
+      const waitForImages = async (root: HTMLElement) => {
+        const imgs = Array.from(root.querySelectorAll("img"));
+        await Promise.all(imgs.map(img =>
+          (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0
+            ? Promise.resolve()
+            : new Promise<void>((r) => {
+                const done = () => r();
+                img.addEventListener("load", done, { once: true });
+                img.addEventListener("error", done, { once: true });
+              })
+        ));
+      };
+
+      const captureOnce = (node: HTMLDivElement) => toPng(node, {
+        width: 1080,
+        height: 1080,
+        canvasWidth: 1080,
+        canvasHeight: 1080,
+        pixelRatio: 1,
+        cacheBust: true,
+        style: {
+          transform: "none",
+          position: "static",
+          margin: "0",
+          padding: "0",
+          width: "1080px",
+          height: "1080px",
+        },
+      });
+
+      // Warm-up capture (first render of html-to-image sometimes misses fonts)
+      try { await captureOnce(nodes[0] as HTMLDivElement); } catch { /* ignore */ }
+
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i] as HTMLDivElement;
         const layoutName = JOURNAL_LAYOUT_SEQUENCE[i];
-        const dataUrl = await toPng(node, {
-          width: 1080,
-          height: 1080,
-          pixelRatio: 1,
-          cacheBust: true,
-          style: { transform: "none", position: "static" },
+        await waitForImages(node);
+
+        let dataUrl = await captureOnce(node);
+
+        // Validate dimensions; retry once if off
+        const ok = await new Promise<boolean>((r) => {
+          const im = new Image();
+          im.onload = () => r(im.naturalWidth === 1080 && im.naturalHeight === 1080);
+          im.onerror = () => r(false);
+          im.src = dataUrl;
         });
+        if (!ok) {
+          await new Promise((r) => setTimeout(r, 200));
+          dataUrl = await captureOnce(node);
+        }
+
         const blob = await (await fetch(dataUrl)).blob();
         const fileName = `${String(i + 1).padStart(2, "0")}-${layoutName}.png`;
         zip.file(fileName, blob);
@@ -287,12 +352,30 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     });
   }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, templateApplyMode, currentJournalPaletteId, setSessionState]);
 
-  // Apply the entire Journaling Collection (6 slides, 6 layouts in order, current palette)
-  const applyJournalCollection = useCallback((template: CarouselTemplate) => {
+  // Apply the entire Journaling Collection (6 slides, 6 layouts in order, current palette).
+  // keepContent=true → preserves user's title/body/images/profile; only swaps layout + colors.
+  const applyJournalCollection = useCallback((template: CarouselTemplate, opts: { keepContent: boolean } = { keepContent: true }) => {
     const palette = currentJournalPalette;
     const sample = buildJournalSampleSlides(palette, slides[0]?.profileHandle);
     const newSlides: SlideData[] = sample.map((s, i) => {
       const existing = slides[i];
+      if (opts.keepContent && existing) {
+        // Preserve user content; swap only layout, colors, and font family from template/palette
+        return {
+          ...existing,
+          layout: s.layout,
+          bgColor: palette.bgColor,
+          textColor: palette.textColor,
+          accentColor: palette.accentColor,
+          titleColor: undefined,
+          bodyColor: undefined,
+          fontFamily: template.fontFamily,
+          // fill body if empty AND layout typically expects body
+          body: existing.body || s.body,
+          title: existing.title || s.title,
+        };
+      }
+      // Replace mode (texto modelo)
       return {
         ...s,
         title: existing?.title || s.title,
@@ -301,7 +384,6 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
         titleSize: template.titleSize,
         bodySize: template.bodySize,
         align: template.align,
-        // preserve uploaded images for photo-based layouts
         imageUrl: existing?.imageUrl,
         bgImageUrl: existing?.bgImageUrl,
         profileHandle: existing?.profileHandle || s.profileHandle,
@@ -313,8 +395,27 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     setSlides(newSlides);
     setCurrentSlide(0);
     slideRefs.current = new Array(newSlides.length).fill(null);
-    toast.success("Coleção Journaling aplicada (6 slides)");
+    toast.success(
+      opts.keepContent
+        ? "Coleção aplicada — seu conteúdo foi preservado"
+        : "Coleção aplicada com texto modelo (6 slides)"
+    );
   }, [currentJournalPalette, slides]);
+
+  // Apply only one journal layout to the current slide (used by thumbnails).
+  const applyJournalLayoutToCurrent = useCallback((layout: CarouselLayout) => {
+    const palette = currentJournalPalette;
+    setSlides(prev => prev.map((s, i) => i === currentSlide ? {
+      ...s,
+      layout,
+      bgColor: palette.bgColor,
+      textColor: palette.textColor,
+      accentColor: palette.accentColor,
+      titleColor: undefined,
+      bodyColor: undefined,
+    } : s));
+    toast.success(`Layout aplicado ao slide ${currentSlide + 1}`);
+  }, [currentJournalPalette, currentSlide]);
 
   // Library picker target → applies returned data URL to current slide
   const handleLibrarySelect = useCallback((dataUrl: string, attribution: string) => {
@@ -843,6 +944,43 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </div>
                 </div>
 
+                {/* Real mini-thumbnails of the 6 layouts (120x120) using current palette */}
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Layouts (clique para aplicar ao slide atual)</Label>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-1">
+                    {journalThumbSlides.map((thumbSlide, i) => (
+                      <button
+                        key={`${currentJournalPaletteId}-thumb-${i}`}
+                        onClick={() => applyJournalLayoutToCurrent(JOURNAL_LAYOUT_SEQUENCE[i])}
+                        title={JOURNAL_LAYOUT_SEQUENCE[i]}
+                        className="relative w-[120px] h-[120px] rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-all bg-muted shrink-0"
+                        style={{ width: 120, height: 120 }}
+                      >
+                        <div
+                          style={{
+                            width: 1080,
+                            height: 1080,
+                            transform: "scale(0.1111)",
+                            transformOrigin: "top left",
+                            pointerEvents: "none",
+                          }}
+                        >
+                          <SlidePreview
+                            slide={thumbSlide}
+                            slideIndex={i}
+                            totalSlides={6}
+                            aspectRatio="1:1"
+                            nativeSize
+                          />
+                        </div>
+                        <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] py-0.5 text-center font-medium">
+                          {i + 1}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Action buttons */}
                 <div className="flex gap-2 flex-wrap">
                   <Button
@@ -852,10 +990,24 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     onClick={() => {
                       const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
                         || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
-                      applyJournalCollection(tpl);
+                      applyJournalCollection(tpl, { keepContent: true });
                     }}
+                    title="Aplica os 6 layouts mantendo seus textos e imagens"
                   >
-                    <Sparkles className="h-3 w-3 mr-1" /> Aplicar Coleção (6 slides)
+                    <Sparkles className="h-3 w-3 mr-1" /> ✨ Aplicar coleção (manter meu texto)
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() => {
+                      const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
+                        || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
+                      applyJournalCollection(tpl, { keepContent: false });
+                    }}
+                    title="Substitui textos pelo conteúdo modelo da coleção"
+                  >
+                    🔄 Aplicar com texto modelo
                   </Button>
                   <Button
                     size="sm"
@@ -866,11 +1018,11 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   >
                     {exportingCollection
                       ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Gerando...</>
-                      : <><DownloadCloud className="h-3 w-3 mr-1" /> 📥 Exportar prévia da coleção</>}
+                      : <><DownloadCloud className="h-3 w-3 mr-1" /> 📥 Exportar prévia (.zip)</>}
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  A paleta troca cores em todos os slides Journaling. A exportação gera um ZIP com 6 PNGs reais (1080×1080) usando o conteúdo de exemplo.
+                  A paleta troca cores em todos os slides Journaling. A exportação gera um ZIP com 6 PNGs 1080×1080 fiéis ao preview.
                 </p>
               </div>
             )}

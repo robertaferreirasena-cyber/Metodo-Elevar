@@ -38,7 +38,18 @@ const JournalCollectionExporter = forwardRef<JournalExporterHandle, Props>(
         }}
       >
         {slides.map((s, i) => (
-          <div key={`${palette.id}-${JOURNAL_LAYOUT_SEQUENCE[i]}`} style={{ marginBottom: 4 }}>
+          <div
+            key={`${palette.id}-${JOURNAL_LAYOUT_SEQUENCE[i]}`}
+            style={{
+              width: 1080,
+              height: 1080,
+              margin: 0,
+              padding: 0,
+              border: 0,
+              boxSizing: "border-box",
+              overflow: "hidden",
+            }}
+          >
             <SlidePreview
               ref={(el) => { nodeRefs.current[i] = el; }}
               slide={s}
