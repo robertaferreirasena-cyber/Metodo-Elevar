@@ -148,6 +148,22 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const lastSlidesSnapshot = useRef<SlideData[] | null>(null);
   const lastTemplateSnapshot = useRef<CarouselTemplate | null>(null);
 
+  // Snapshot for undo of last single-slide image change/removal/reset
+  const snapshotSlideForUndo = useCallback((index: number, label: string) => {
+    const before = slides[index];
+    if (!before) return;
+    const snap = { ...before };
+    toast.success(label, {
+      duration: 6000,
+      action: {
+        label: "Desfazer",
+        onClick: () => {
+          setSlides(prev => prev.map((s, i) => (i === index ? snap : s)));
+        },
+      },
+    });
+  }, [slides]);
+
   // Pending topic confirmation (when a new initialTopic arrives but user already has work in progress)
   const [pendingTopic, setPendingTopic] = useState<string | null>(null);
   const lastAppliedInitialTopic = useRef<string>(sessionState.topic || initialTopic || "");
@@ -351,17 +367,22 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   // templateApplyMode is declared earlier (with persisted initial value via state restore below)
 
   const handleImageUpload = async (index: number, file: File) => {
-    try { updateSlide(index, { imageUrl: await fileToDataUrl(file) }); }
-    catch { toast.error("Erro ao carregar imagem"); }
+    try {
+      snapshotSlideForUndo(index, "Imagem do layout atualizada");
+      updateSlide(index, { imageUrl: await fileToDataUrl(file) });
+    } catch { toast.error("Erro ao carregar imagem"); }
   };
 
   const handleBgImageUpload = async (index: number, file: File) => {
-    try { updateSlide(index, { bgImageUrl: await fileToDataUrl(file) }); }
-    catch { toast.error("Erro ao carregar imagem de fundo"); }
+    try {
+      snapshotSlideForUndo(index, "Imagem de fundo atualizada");
+      updateSlide(index, { bgImageUrl: await fileToDataUrl(file) });
+    } catch { toast.error("Erro ao carregar imagem de fundo"); }
   };
 
   const handleMultiImageUpload = async (index: number, files: FileList) => {
     try {
+      snapshotSlideForUndo(index, "Fotos do grid atualizadas");
       const urls = await Promise.all(Array.from(files).map(fileToDataUrl));
       const current = slides[index]?.imageUrls || [];
       updateSlide(index, { imageUrls: [...current, ...urls].slice(0, 4) });
@@ -369,8 +390,10 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   };
 
   const handleProfileImageUpload = async (index: number, file: File) => {
-    try { updateSlide(index, { profileImageUrl: await fileToDataUrl(file) }); }
-    catch { toast.error("Erro ao carregar foto de perfil"); }
+    try {
+      snapshotSlideForUndo(index, "Avatar atualizado");
+      updateSlide(index, { profileImageUrl: await fileToDataUrl(file) });
+    } catch { toast.error("Erro ao carregar foto de perfil"); }
   };
 
   // Hidden export refs for native-size rendering
@@ -747,7 +770,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleBgImageUpload(currentSlide, f); }} />
                     </label>
                     {cur.bgImageUrl && (
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => updateSlide(currentSlide, { bgImageUrl: undefined })}>
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { snapshotSlideForUndo(currentSlide, "Imagem de fundo removida"); updateSlide(currentSlide, { bgImageUrl: undefined, bgImagePositionX: undefined, bgImagePositionY: undefined, bgImageScale: undefined, bgImageBlur: undefined, bgImageBrightness: undefined, bgImageContrast: undefined }); }}>
                         <X className="h-4 w-4" />
                       </Button>
                     )}
@@ -766,11 +789,15 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                           scale: cur.bgImageScale, blur: cur.bgImageBlur,
                           brightness: cur.bgImageBrightness, contrast: cur.bgImageContrast,
                         }}
-                        onChange={(v) => updateSlide(currentSlide, {
-                          bgImagePositionX: v.positionX, bgImagePositionY: v.positionY,
-                          bgImageScale: v.scale, bgImageBlur: v.blur,
-                          bgImageBrightness: v.brightness, bgImageContrast: v.contrast,
-                        })}
+                        onChange={(v) => {
+                          const isReset = v.positionX === undefined && v.positionY === undefined && v.scale === undefined && v.blur === undefined && v.brightness === undefined && v.contrast === undefined;
+                          if (isReset) snapshotSlideForUndo(currentSlide, "Ajustes do fundo resetados");
+                          updateSlide(currentSlide, {
+                            bgImagePositionX: v.positionX, bgImagePositionY: v.positionY,
+                            bgImageScale: v.scale, bgImageBlur: v.blur,
+                            bgImageBrightness: v.brightness, bgImageContrast: v.contrast,
+                          });
+                        }}
                       />
                     </div>
                   )}
@@ -787,7 +814,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(currentSlide, f); }} />
                       </label>
                       {cur.imageUrl && (
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })}><X className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { snapshotSlideForUndo(currentSlide, "Imagem do layout removida"); updateSlide(currentSlide, { imageUrl: undefined, imagePositionX: undefined, imagePositionY: undefined, imageScale: undefined, imageBlur: undefined, imageBrightness: undefined, imageContrast: undefined }); }}><X className="h-4 w-4" /></Button>
                       )}
                     </div>
                     {cur.imageUrl && (
@@ -800,11 +827,15 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                             scale: cur.imageScale, blur: cur.imageBlur,
                             brightness: cur.imageBrightness, contrast: cur.imageContrast,
                           }}
-                          onChange={(v) => updateSlide(currentSlide, {
-                            imagePositionX: v.positionX, imagePositionY: v.positionY,
-                            imageScale: v.scale, imageBlur: v.blur,
-                            imageBrightness: v.brightness, imageContrast: v.contrast,
-                          })}
+                          onChange={(v) => {
+                            const isReset = v.positionX === undefined && v.positionY === undefined && v.scale === undefined && v.blur === undefined && v.brightness === undefined && v.contrast === undefined;
+                            if (isReset) snapshotSlideForUndo(currentSlide, "Ajustes da imagem resetados");
+                            updateSlide(currentSlide, {
+                              imagePositionX: v.positionX, imagePositionY: v.positionY,
+                              imageScale: v.scale, imageBlur: v.blur,
+                              imageBrightness: v.brightness, imageContrast: v.contrast,
+                            });
+                          }}
                         />
                       </div>
                     )}
@@ -824,7 +855,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                         {cur.imageUrls!.map((url, i) => (
                           <div key={i} className="relative w-12 h-12 rounded overflow-hidden group">
                             <img src={url} alt="" className="w-full h-full object-cover" />
-                            <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity" onClick={() => { const u = [...(cur.imageUrls || [])]; u.splice(i, 1); updateSlide(currentSlide, { imageUrls: u }); }}>
+                            <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity" onClick={() => { snapshotSlideForUndo(currentSlide, "Foto removida do grid"); const u = [...(cur.imageUrls || [])]; u.splice(i, 1); updateSlide(currentSlide, { imageUrls: u }); }}>
                               <X className="h-3 w-3 text-white" />
                             </button>
                           </div>
@@ -1083,8 +1114,8 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
           </div>
 
           {/* Slide */}
-          <div className="flex items-center justify-center w-full h-full px-2 sm:p-8" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))", paddingBottom: "calc(56px + env(safe-area-inset-bottom))" }}>
-            <div style={{ maxWidth: "94vw", maxHeight: "78vh" }}>
+          <div className="flex items-center justify-center w-full h-full" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))", paddingBottom: "calc(56px + env(safe-area-inset-bottom))", paddingLeft: "max(0.5rem, env(safe-area-inset-left))", paddingRight: "max(0.5rem, env(safe-area-inset-right))" }}>
+            <div style={{ maxWidth: "min(94vw, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1rem))", maxHeight: "78vh" }}>
               <SlidePreview
                 slide={slides[currentSlide]}
                 slideIndex={currentSlide}
