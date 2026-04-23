@@ -654,7 +654,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2"><Paintbrush className="h-4 w-4" /> Editar Slide {currentSlide + 1}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 max-h-[600px] overflow-y-auto">
+              <CardContent className="space-y-4 max-h-[60vh] lg:max-h-[600px] overflow-y-auto">
                 {/* Title */}
                 <div>
                   <Label className="text-xs">Título</Label>
