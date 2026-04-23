@@ -652,7 +652,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: "#fefdf8" }}>{slide.title}</h2>
               </div>
               <div className="absolute" style={{
-                bottom: spec.height * 0.05,
+                bottom: Math.max(spec.height * 0.05, safePadY),
                 left: spec.width * 0.08, right: spec.width * 0.08,
                 background: slide.accentColor,
                 color: "#fefdf8",
