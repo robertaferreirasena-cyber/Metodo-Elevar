@@ -503,11 +503,18 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               {photoUrl ? (
                 <div className="absolute inset-0" style={buildImageStyle(photoUrl, { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} />
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center" style={{ background: "#444" }}>
-                  <ImagePlus style={{ color: "#fff", opacity: 0.4, width: 80 * fontScale, height: 80 * fontScale }} />
-                </div>
+                <>
+                  <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${slide.bgColor} 0%, rgba(0,0,0,0.55) 100%)` }} />
+                  <div className="absolute inset-0" style={{ backgroundImage: PAPER_TEXTURES.linen, opacity: 0.35 }} />
+                  <div className="absolute" style={{ left: 28 * fontScale, bottom: 28 * fontScale, opacity: 0.35 }}>
+                    <ImagePlus style={{ color: "#fefdf8", width: 44 * fontScale, height: 44 * fontScale }} />
+                  </div>
+                  <div className="absolute" style={{ right: 24 * fontScale, top: 80 * fontScale, transform: "rotate(-10deg)", opacity: 0.85 }}>
+                    <GoldStamp size={70 * fontScale} />
+                  </div>
+                </>
               )}
-              <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.18)" }} />
+              <div className="absolute inset-0" style={{ background: photoUrl ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.05)" }} />
               <div className="absolute top-0 left-0 right-0 flex justify-between" style={{ padding: `${22 * fontScale}px ${32 * fontScale}px`, fontSize: 11 * fontScale, color: "#fefdf8", opacity: 0.85, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.25em", textTransform: "uppercase", textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>
                 <span>{slide.profileHandle || "@suamarca"}</span>
                 <span>{slideIndex + 1} / {totalSlides}</span>
@@ -601,9 +608,15 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               {photoUrl ? (
                 <div className="absolute inset-0" style={buildImageStyle(photoUrl, { positionX: slide.bgImagePositionX ?? slide.imagePositionX, positionY: slide.bgImagePositionY ?? slide.imagePositionY, scale: slide.bgImageScale ?? slide.imageScale, blur: slide.bgImageBlur ?? slide.imageBlur, brightness: slide.bgImageBrightness ?? slide.imageBrightness, contrast: slide.bgImageContrast ?? slide.imageContrast })} />
               ) : (
-                <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${slide.bgColor} 0%, #1a2a14 100%)` }} />
+                <>
+                  <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${slide.bgColor} 0%, rgba(0,0,0,0.65) 100%)` }} />
+                  <div className="absolute inset-0" style={{ backgroundImage: PAPER_TEXTURES.kraft, opacity: 0.5 }} />
+                  <div className="absolute" style={{ right: 30 * fontScale, bottom: 30 * fontScale, opacity: 0.3 }}>
+                    <ImagePlus style={{ color: "#fefdf8", width: 56 * fontScale, height: 56 * fontScale }} />
+                  </div>
+                </>
               )}
-              <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.20)" }} />
+              <div className="absolute inset-0" style={{ background: photoUrl ? "rgba(0,0,0,0.20)" : "rgba(0,0,0,0.10)" }} />
               <div className="absolute top-0 left-0 right-0 flex justify-between" style={{ padding: `${22 * fontScale}px ${32 * fontScale}px`, fontSize: 11 * fontScale, color: "#fefdf8", opacity: 0.85, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.25em", textTransform: "uppercase", textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>
                 <span>{slide.profileHandle || "@suamarca"}</span>
                 <span>{slideIndex + 1} / {totalSlides}</span>
