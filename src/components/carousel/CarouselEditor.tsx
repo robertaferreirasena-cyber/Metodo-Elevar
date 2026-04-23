@@ -35,7 +35,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
   JOURNAL_TEMPLATE_IDS, JOURNAL_LAYOUT_SEQUENCE, isJournalTemplate,
-  JOURNAL_PALETTES, applyPaletteToSlide, buildJournalSampleSlides, type JournalPalette,
+  JOURNAL_PALETTES, applyPaletteToSlide, buildJournalSampleSlides,
+  JOURNAL_SAMPLE_THEMES, type JournalPalette,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
 } from "./CarouselTemplates";
 import ImageLibraryPicker from "./ImageLibraryPicker";
@@ -158,14 +159,19 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [libraryTarget, setLibraryTarget] = useState<"image" | "bg">("bg");
   const [exportingCollection, setExportingCollection] = useState(false);
 
-  // Current journal palette (persisted) — derived from id, source-of-truth is the id
-  const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(
-    sessionState.currentJournalPaletteId || "terracota"
-  );
+  // Current journal palette (persisted) — derived from id, source-of-truth is the id.
+  // Validates the persisted id against the current palette list so renames/removals fall back gracefully.
+  const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(() => {
+    const candidate = sessionState.currentJournalPaletteId || "terracota";
+    return JOURNAL_PALETTES.some(p => p.id === candidate) ? candidate : JOURNAL_PALETTES[0].id;
+  });
   const currentJournalPalette = useMemo(
     () => JOURNAL_PALETTES.find(p => p.id === currentJournalPaletteId) || JOURNAL_PALETTES[0],
     [currentJournalPaletteId]
   );
+
+  // Offline sample-text theme selector (for "📋 Texto exemplo" button)
+  const [sampleThemeId, setSampleThemeId] = useState<string>("generico");
   // Real mini-thumb slides for the 6 layouts using current palette (memoized for perf)
   const journalThumbSlides = useMemo(
     () => buildJournalSampleSlides(currentJournalPalette).map(s => ({
@@ -364,13 +370,15 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   // Apply the entire Journaling Collection (6 slides, 6 layouts in order, current palette).
   // keepContent=true → preserves user's title/body/images/profile; only swaps layout + colors.
-  const applyJournalCollection = useCallback((template: CarouselTemplate, opts: { keepContent: boolean } = { keepContent: true }) => {
+  const applyJournalCollection = useCallback((
+    template: CarouselTemplate,
+    opts: { keepContent: boolean; themeId?: string; forceSampleText?: boolean } = { keepContent: true },
+  ) => {
     const palette = currentJournalPalette;
-    const sample = buildJournalSampleSlides(palette, slides[0]?.profileHandle);
+    const sample = buildJournalSampleSlides(palette, slides[0]?.profileHandle, opts.themeId);
     const newSlides: SlideData[] = sample.map((s, i) => {
       const existing = slides[i];
       if (opts.keepContent && existing) {
-        // Preserve user content + custom colors; swap only layout, base palette, font family
         return {
           ...existing,
           layout: s.layout,
@@ -378,17 +386,15 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
           textColor: palette.textColor,
           accentColor: palette.accentColor,
           fontFamily: template.fontFamily,
-          // titleColor / bodyColor: preserved (user customizations stay)
-          // fill body if empty AND layout typically expects body
           body: existing.body || s.body,
           title: existing.title || s.title,
         };
       }
-      // Replace mode (texto modelo)
+      // Replace mode (texto modelo). When forceSampleText, the chosen theme overrides existing text.
       return {
         ...s,
-        title: existing?.title || s.title,
-        body: existing?.body || s.body,
+        title: opts.forceSampleText ? s.title : (existing?.title || s.title),
+        body: opts.forceSampleText ? s.body : (existing?.body || s.body),
         fontFamily: template.fontFamily,
         titleSize: template.titleSize,
         bodySize: template.bodySize,
@@ -1112,19 +1118,37 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   >
                     <Sparkles className="h-3 w-3 mr-1" /> ✨ Manter meu texto
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs"
-                    onClick={() => {
-                      const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
-                        || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
-                      applyJournalCollection(tpl, { keepContent: false });
-                    }}
-                    title="Substitui textos pelo conteúdo modelo da coleção (offline)"
-                  >
-                    📋 Texto exemplo
-                  </Button>
+                  <div className="flex items-center gap-1.5 border border-border rounded-md pl-1.5 pr-1 py-0.5">
+                    <Select value={sampleThemeId} onValueChange={setSampleThemeId}>
+                      <SelectTrigger className="h-7 text-[11px] border-0 px-1 gap-1 w-[150px] focus:ring-0">
+                        <SelectValue placeholder="Tema" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {JOURNAL_SAMPLE_THEMES.map(t => (
+                          <SelectItem key={t.id} value={t.id} className="text-xs">
+                            {t.emoji} {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-7 px-2"
+                      onClick={() => {
+                        const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
+                          || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
+                        applyJournalCollection(tpl, {
+                          keepContent: false,
+                          themeId: sampleThemeId,
+                          forceSampleText: true,
+                        });
+                      }}
+                      title="Substitui textos pelo conteúdo modelo do tema escolhido (offline)"
+                    >
+                      📋 Aplicar exemplo
+                    </Button>
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
