@@ -546,9 +546,18 @@ Retorne APENAS um JSON válido sem markdown:
     []
   );
 
-  const filteredTemplates = CAROUSEL_TEMPLATES.filter((t) =>
-    formatFilter === "all" ? true : t.aspectRatio === formatFilter
-  );
+  // Show dedicated "Coleção Journaling" section when the active format allows 1:1.
+  const showJournalSection = formatFilter === "all" || formatFilter === "1:1";
+  const journalTemplates = JOURNAL_TEMPLATE_IDS
+    .map(id => CAROUSEL_TEMPLATES.find(t => t.id === id))
+    .filter((t): t is CarouselTemplate => !!t);
+  const filteredTemplates = CAROUSEL_TEMPLATES.filter((t) => {
+    if (formatFilter !== "all" && t.aspectRatio !== formatFilter) return false;
+    // When the dedicated Journaling section is visible, hide journals from the main grid
+    // to avoid duplication on the same screen.
+    if (showJournalSection && isJournalTemplate(t.id)) return false;
+    return true;
+  });
 
   // ========== UNIFIED GENERATION VIA ai-mentor-chat ==========
   const generateContent = async () => {
