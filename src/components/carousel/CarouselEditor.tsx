@@ -298,7 +298,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     }
   };
 
-  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">("all");
+  // templateApplyMode is declared earlier (with persisted initial value via state restore below)
 
   const handleImageUpload = async (index: number, file: File) => {
     try { updateSlide(index, { imageUrl: await fileToDataUrl(file) }); }
