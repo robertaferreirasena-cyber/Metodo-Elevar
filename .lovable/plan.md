@@ -1,86 +1,169 @@
 
 
-# Plano: Carrossel — Persistência reforçada, controle total de imagem e mobile sólido
+# Plano: Família de templates "Journaling" (6 novos layouts) — render fiel aos modelos
 
-## 1. Diálogo "Manter o atual" — zero perda
+## Visão geral
+Os 6 modelos enviados pertencem à mesma família visual: **papelaria orgânica** — fundos texturizados (papel kraft, linho, juta, parede pintada), folhas de caderno presas com **fita adesiva / clipe metálico / selo dourado**, **cards de destaque** retangulares (vermelho, cobre, verde-oliva), tipografia **serif itálica** (Cormorant/Playfair) com sublinhados sutis e marca d'água `@suamarca` no rodapé.
 
-**Estado atual:** já está OK no que diz respeito a `templateApplyMode`, `slides`, `giMessages` (todos persistidos via `useSessionPersistence`). Mas há uma sutileza: ao chegar um novo `initialTopic`, o `useEffect` dispara independentemente; se o usuário clicar "Manter o atual", o `lastAppliedInitialTopic` é atualizado para evitar reabrir, mas se a mesma URL voltar com o mesmo tema depois, o diálogo não reabre — bom. Reforços:
+Vou criar **1 nova família de layouts** com **6 variantes** (uma por modelo), cada uma renderizando perfeitamente o conteúdo da IA (`title` + `body`) na estrutura visual exata. Cada slide do carrossel pode usar uma variante diferente, e quando o usuário escolhe a "Coleção Journaling", o sistema **distribui automaticamente as variantes em sequência** para manter ritmo visual.
 
-- **Garantir que "Manter o atual" não toque em nada** além de marcar `lastAppliedInitialTopic`. Confirmado no código atual — manter.
-- **Adicionar opção "Salvar atual e começar novo"** no diálogo: clona o carrossel atual em `localStorage` sob uma chave de "rascunhos" e abre o novo. Visualmente um terceiro botão.
-- **Persistir também `selectedTemplate` completo** (já é via `selectedTemplateId`) e o `topic` recém-digitado mas ainda não gerado.
+## 1. Novos `CarouselLayout`
 
-## 2. Trocar SÓ o template visual sem perder textos/imagens
-
-**Estado atual:** já existem 3 modos:
-- `Todos slides`: aplica template em todos (sobrescreve cores/fontes/layout, **mantém títulos/corpos/imagens**).
-- `Slide atual`: aplica só no slide ativo.
-- `Preservar formatação`: troca background/layout, mantém ajustes manuais de cor/tamanho.
-
-**Verificação no código:** nas funções `applyTemplateToAll` e `applyTemplatePreservingFormatting`, os campos `title`, `body`, `imageUrl`, `bgImageUrl`, `imageUrls`, `profileName`, `profileImageUrl` **nunca são tocados** — então textos e imagens já são preservados. ✅
-
-**Melhorias para deixar isso óbvio para o usuário:**
-- Renomear os 3 modos com tooltips claros: "Aplicar visual em todos (mantém textos)", "Aplicar só neste slide", "Trocar fundo (manter ajustes manuais)".
-- Adicionar uma faixa informativa ao escolher template: "✓ Seus textos e imagens serão mantidos."
-- Adicionar **undo** simples: salvar snapshot do `slides` antes de aplicar template; botão "Desfazer última troca de template" aparece por 10s via toast.
-
-## 3. Controle TOTAL de imagem (fundo + layout)
-
-**Adicionar ao `SlideData`:**
+Adicionar em `CarouselTemplates.ts`:
 
 ```ts
-// Ajustes por imagem
-bgImagePositionX?: number;  // 0–100 (%) – padrão 50
-bgImagePositionY?: number;  // 0–100 (%) – padrão 50
-bgImageScale?: number;      // 1–3 (zoom) – padrão 1
-bgImageBlur?: number;       // 0–20 (px) – padrão 0
-bgImageBrightness?: number; // 50–150 (%) – padrão 100
-bgImageContrast?: number;   // 50–150 (%) – padrão 100
-// Mesmos campos para imageUrl (image-bg / editorial)
-imagePositionX?, imagePositionY?, imageScale?, imageBlur?, imageBrightness?, imageContrast?
+export type CarouselLayout =
+  | ...existentes
+  | "journal-note"        // modelo_6 — folha de caderno + selo dourado, fundo texturizado
+  | "journal-tape"        // modelo_7 (sup) — folha presa com fita + card vermelho
+  | "journal-photo-card"  // modelo_7 (mid) / modelo1 — foto de fundo + card colorido sobreposto
+  | "journal-binder"      // modelo_2 (sup-esq) / modelo_5 (inf-esq) — espiral metálico no topo
+  | "journal-torn-paper"  // modelo_3 — papel rasgado sobre foto de natureza
+  | "journal-envelope";   // modelo_5 (sup-esq) — envelope aberto + selo de cera
 ```
 
-**Renderização (em `SlidePreview.tsx`):**
-- Trocar `background: url(...) center/cover` por estilo composto:
-  ```ts
-  backgroundImage: `url(${url})`,
-  backgroundSize: `${(scale ?? 1) * 100}%`,
-  backgroundPosition: `${posX ?? 50}% ${posY ?? 50}%`,
-  backgroundRepeat: "no-repeat",
-  filter: `blur(${blur ?? 0}px) brightness(${bright ?? 100}%) contrast(${contrast ?? 100}%)`,
-  ```
+## 2. Estrutura de cada layout (renderização fiel)
 
-**Editor — Painel "Ajustar imagem":**
-Aparece quando há `bgImageUrl` ou `imageUrl`. Contém:
-- **Mini-preview interativo** (~200px) com a imagem; usuário **arrasta com o dedo/mouse** para reposicionar (atualiza `positionX/Y` em tempo real).
-- **Slider de zoom** (1× → 3×).
-- **Sliders de brilho, contraste e desfoque (blur)**.
-- **Slider já existente de overlay (sombra)** — manter.
-- Botão **"Resetar ajustes"** que zera os 6 campos.
+### `journal-note` (modelo_6)
+```text
+┌─────────────────────────────┐  fundo: textura papel/linho (cor de fundo do template)
+│  · · · MICRO HEADER · · ·   │  topo: 1/N + tagline opcional
+│      ╭──────────────╮       │
+│      │ ●  selo ouro │       │  card branco quadriculado (grid lines sutis)
+│      │              │       │  rotação leve (-1.5deg)
+│      │  TÍTULO em   │       │  borda esquerda: faixa vermelha 8px
+│      │  serif italic│       │
+│      ╰──────────────╯       │
+│   ┌─ card destaque ─┐       │  card colorido (accent) com body
+│   │ corpo do texto  │       │  rotação +1deg, fita adesiva no canto
+│   └─────────────────┘       │
+│        @suamarca            │
+└─────────────────────────────┘
+```
+- `title` → dentro do card branco, serif itálica, sublinhado em "destaque"
+- `body` → dentro do card colorido (accent), sans-serif, branco
+- Decorações SVG inline: selo dourado circular, fita washi, linhas de caderno
 
-Funciona para os dois alvos: imagem de fundo (bgImageUrl) e imagem do layout (imageUrl em image-bg/editorial). Abas internas: "Fundo" / "Imagem do layout" quando ambas existem.
+### `journal-tape` (modelo_7 superior)
+- Fundo vermelho/cobre liso
+- Folha de caderno **rotacionada -3deg**, presa por **2 pedaços de fita washi** (SVG) nos cantos superiores
+- Título serif italic dentro da folha
+- Card menor **rotacionado +2deg** sobreposto no canto inferior direito com `body`
+- Seta desenhada à mão (SVG curvo) apontando do título para o card
 
-**Touch-friendly:** o mini-preview de arraste usa eventos `pointerdown/move/up` (funciona em desktop e mobile).
+### `journal-photo-card` (modelo_7 meio + modelo1)
+- **Foto de fundo full-bleed** (usa `imageUrl` do slide) com leve overlay
+- **Card retangular sólido** (cor accent: vermelho/oliva) sobreposto, centralizado ou alinhado à esquerda
+- Título serif italic dentro do card, branco
+- **Mini-card secundário** (papel branco quadriculado) abaixo com `body`, rotacionado
+- Selo dourado decorativo
 
-## 4. Mobile sólido
+### `journal-binder` (modelo_2 + modelo_5)
+- Fundo texturizado cor sólida
+- **Espiral metálico horizontal** no topo (SVG: anéis circulares + barra)
+- Folha de papel pendurada nele, ocupando 75% da altura
+- Título centralizado serif italic
+- Card accent abaixo com body
+- Numeração 1/N no topo
 
-- **Toolbar de ação (Apresentar / PNG / Baixar todos)**: virar barra `sticky bottom-0` no mobile com fundo `bg-background/95 backdrop-blur` e safe-area, visível mesmo com chat aberto.
-- **Preview**: já tem `max-w-full overflow-hidden`. Adicionar `max-h-[60vh]` no mobile para não empurrar a toolbar para fora.
-- **Botão Apresentar no mobile**: o modo fullscreen atual usa `maxWidth:90vw, maxHeight:85vh` no slide → ✅ já responsivo. Garantir que botões de "Sair" e setas tenham `min-w-11 min-h-11` (touch target) e ficam **sempre visíveis** (hoje a top bar tem `opacity-0 hover:opacity-100` — no mobile não há hover, então botão "Sair" some). **Fix:** sempre visível no mobile (`md:opacity-0 md:hover:opacity-100`).
-- **Exportar PNG**: já funciona; só garantir que o usuário consegue tocar o botão. Adicionar feedback visual (loading no próprio botão, não só "Baixar Todos").
-- **Chat da Mentora**: quando aberto no mobile, ficar em Sheet inferior em vez de `Collapsible` inline empurrando a toolbar.
+### `journal-torn-paper` (modelo_3)
+- **Foto de fundo** (paisagem/natureza) — usa `bgImageUrl`
+- **Forma de papel rasgado** (SVG path orgânico, bordas irregulares) sobreposta no centro
+- Título grande serif italic dentro do papel rasgado
+- Body em fonte menor abaixo
+- Caneta ou objeto decorativo opcional (SVG)
 
-## Arquivos modificados
+### `journal-envelope` (modelo_5)
+- Fundo cobre/marrom liso
+- **Envelope SVG aberto** desenhado, com aba superior dobrada
+- **Selo de cera vermelho** (círculo SVG com textura) no centro do envelope
+- Título serif italic emergindo do envelope
+- Faixa horizontal vermelha embaixo com `body` em branco
 
-- `src/components/carousel/CarouselTemplates.ts` — novos campos opcionais em `SlideData`.
-- `src/components/carousel/SlidePreview.tsx` — nova função `renderImage(url, opts)` que aplica position/scale/blur/brightness/contrast em todos os pontos onde imagens são usadas (bg, image-bg, editorial, photo-grid items).
-- `src/components/carousel/CarouselEditor.tsx`:
-  - Novo painel "Ajustar imagem" (drag, sliders).
-  - Diálogo de substituição com terceira opção "Salvar atual e começar novo".
-  - Snapshot/Undo de troca de template.
-  - Sticky bottom toolbar no mobile + chat em Sheet no mobile.
-  - Tooltips/labels mais claros nos modos de template + faixa "textos preservados".
-- `src/components/carousel/ImageAdjustPanel.tsx` (novo) — componente reutilizável de ajuste com pan + sliders.
+## 3. Renderização no `SlidePreview.tsx`
 
-Sem mudanças no banco de dados. Sem novas dependências (uso `pointerdown/move/up` nativo).
+Adicionar 6 novos blocos `{layout === "journal-XXX" && (...)}`. Cada um:
+1. Usa `padPx`, `fontScale`, `titleStyle`, `bodyStyle` já existentes (consistência).
+2. Decorações **100% SVG inline** (selo, fita, espiral, envelope, papel rasgado, linhas de caderno) — sem imagens externas, garantindo export PNG perfeito.
+3. Texturas de fundo: gradientes CSS sutis simulando papel/linho (`repeating-linear-gradient` para grid, `radial-gradient` para grão).
+4. Suporta as imagens do slide (`imageUrl`, `bgImageUrl`) com os mesmos controles de pan/zoom/filtro já implementados no `ImageAdjustPanel`.
+5. Respeita `aspectRatio` (todos funcionam em 1:1 e 9:16).
+6. Footer `@profileHandle` discreto no rodapé (já presente no `SlideData`).
+
+## 4. Os 6 novos `CarouselTemplate` (catálogo)
+
+Em `CAROUSEL_TEMPLATES`, adicionar bloco "Coleção Journaling":
+
+| id | Nome | Layout | bg | accent | Fonte título |
+|---|---|---|---|---|---|
+| `journal-cream` | 📓 Caderno Cream | `journal-note` | `#f5e9d5` (linho creme) | `#b94a3a` | Cormorant Garamond |
+| `journal-rust` | 📓 Caderno Rust | `journal-tape` | `#a23e2e` (vermelho terra) | `#f0e6d2` | Playfair Display |
+| `journal-olive` | 🌿 Caderno Olive | `journal-photo-card` | `#6b7a3a` (oliva) | `#fefdf8` | Cormorant Garamond |
+| `journal-copper` | ✉️ Caderno Copper | `journal-envelope` | `#b8693d` (cobre) | `#7a1f15` | Playfair Display |
+| `journal-forest` | 🌱 Caderno Forest | `journal-torn-paper` | foto fundo | `#fefdf8` | Cormorant Garamond |
+| `journal-binder` | 📎 Caderno Espiral | `journal-binder` | `#e85a2a` (laranja) | `#fefdf8` | Cormorant Garamond |
+
+Todos com `titleSize: 38`, `bodySize: 18`, `align: "center"`, `aspectRatio: "1:1"`.
+
+## 5. "Coleção" — distribuição automática em sequência
+
+No `CarouselEditor.tsx`, ao aplicar um template do grupo Journaling com modo **"Aplicar a todos"**, em vez de copiar o **mesmo** layout em todos os slides, **rotaciona** entre as 6 variantes na ordem:
+```
+slide 0 → journal-tape (capa impactante)
+slide 1 → journal-note
+slide 2 → journal-photo-card
+slide 3 → journal-binder
+slide 4 → journal-torn-paper
+slide 5+ → journal-envelope (CTA / encerramento)
+```
+Lógica: `JOURNAL_SEQUENCE[slideIndex % JOURNAL_SEQUENCE.length]`, sobrescrevendo apenas `layout`, mantendo paleta/fonte do template escolhido. Isso garante que uma carrossel de 6 slides **automaticamente** parece um conjunto coerente como nas referências.
+
+Modos `current` e `preserve` continuam aplicando uma única variante (a do template clicado).
+
+## 6. UI — Nova seção no painel de templates
+
+Em `CarouselEditor.tsx`, agrupar templates por categoria (já existem grupos implícitos). Adicionar header **"📓 Coleção Journaling — papelaria orgânica"** com badge "Novo" antes dos 6 cards. Tooltip explica: "Carrossel inteiro vira um caderno: cada slide ganha uma variação visual em sequência."
+
+## 7. Decorações SVG (componentes reutilizáveis)
+
+Criar `src/components/carousel/journalDecorations.tsx` exportando:
+- `<WashiTape angle x y color />` — fita adesiva
+- `<WaxSeal color />` — selo de cera vermelho com textura
+- `<GoldStamp />` — selo dourado circular
+- `<SpiralBinder />` — espiral metálico horizontal
+- `<TornPaperPath fill />` — `<path>` SVG de papel rasgado
+- `<EnvelopeShape color />` — envelope aberto
+- `<NotebookLines color />` — grid de linhas de caderno
+- `<HandDrawnArrow />` — seta desenhada à mão
+
+Tudo SVG puro → exporta perfeito em PNG via `html-to-image`.
+
+## 8. Texturas de fundo (CSS puro)
+
+```ts
+const PAPER_TEXTURES = {
+  linen: "repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 3px), repeating-linear-gradient(90deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 3px)",
+  kraft: "radial-gradient(circle at 30% 20%, rgba(0,0,0,0.04), transparent 60%), radial-gradient(circle at 70% 80%, rgba(255,255,255,0.03), transparent 50%)",
+  notebook: "repeating-linear-gradient(0deg, transparent 0px, transparent 28px, rgba(180,30,30,0.15) 28px, rgba(180,30,30,0.15) 29px)",
+};
+```
+Aplicadas como camada extra atrás do conteúdo.
+
+## 9. Persistência e mobile (sem regressão)
+
+- Os novos layouts entram no mesmo `SlideData` — **nenhum campo novo** necessário (reaproveita `imageUrl`, `bgImageUrl`, `profileHandle`, ajustes de imagem).
+- Persistência via `useSessionPersistence` continua funcionando.
+- Ajustes de imagem (zoom/pan/brilho) aplicáveis ao `journal-photo-card`, `journal-torn-paper` e `journal-binder`.
+- Safe-area mobile e export PNG/ZIP já cobrem qualquer layout novo automaticamente.
+
+## 10. Arquivos tocados
+
+- `src/components/carousel/CarouselTemplates.ts` — +6 layouts no type, +6 templates no catálogo, constante `JOURNAL_SEQUENCE`, helper `PAPER_TEXTURES`.
+- `src/components/carousel/SlidePreview.tsx` — +6 blocos de renderização.
+- `src/components/carousel/journalDecorations.tsx` (novo) — componentes SVG decorativos.
+- `src/components/carousel/CarouselEditor.tsx` — agrupamento visual "Coleção Journaling" + lógica de distribuição automática em sequência ao aplicar a todos.
+
+## Resultado esperado
+
+Ao clicar em qualquer template Journaling e escolher "Aplicar a todos", o carrossel inteiro vira um conjunto visualmente narrativo idêntico às referências enviadas — capa com fita, slides com folhas e selos, slides com foto e card sobreposto, e fechamento em envelope com selo de cera. Conteúdo da IA (`title` + `body`) entra automaticamente nos lugares certos de cada variante.
 
