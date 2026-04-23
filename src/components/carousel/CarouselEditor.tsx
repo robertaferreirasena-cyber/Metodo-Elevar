@@ -1091,6 +1091,18 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     size="sm"
                     variant="default"
                     className="text-xs"
+                    onClick={generateJournalCollection}
+                    disabled={generatingJournalColl}
+                    title="Gera 6 títulos e corpos consistentes para os 6 layouts da coleção, baseado no tema acima"
+                  >
+                    {generatingJournalColl
+                      ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Gerando...</>
+                      : <>🪄 Gerar coleção com Mentora Gi</>}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
                     onClick={() => {
                       const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
                         || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
@@ -1098,7 +1110,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     }}
                     title="Aplica os 6 layouts mantendo seus textos e imagens"
                   >
-                    <Sparkles className="h-3 w-3 mr-1" /> ✨ Aplicar coleção (manter meu texto)
+                    <Sparkles className="h-3 w-3 mr-1" /> ✨ Manter meu texto
                   </Button>
                   <Button
                     size="sm"
@@ -1109,9 +1121,9 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                         || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
                       applyJournalCollection(tpl, { keepContent: false });
                     }}
-                    title="Substitui textos pelo conteúdo modelo da coleção"
+                    title="Substitui textos pelo conteúdo modelo da coleção (offline)"
                   >
-                    🔄 Aplicar com texto modelo
+                    📋 Texto exemplo
                   </Button>
                   <Button
                     size="sm"
@@ -1122,11 +1134,11 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   >
                     {exportingCollection
                       ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Gerando...</>
-                      : <><DownloadCloud className="h-3 w-3 mr-1" /> 📥 Exportar prévia (.zip)</>}
+                      : <><DownloadCloud className="h-3 w-3 mr-1" /> 📥 Exportar (.zip)</>}
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  A paleta troca cores em todos os slides Journaling. A exportação gera um ZIP com 6 PNGs 1080×1080 fiéis ao preview.
+                  🪄 = gera 6 títulos/corpos com Mentora Gi e distribui nos 6 layouts. Cores, fontes, imagens e fundo continuam totalmente editáveis no painel direito.
                 </p>
               </div>
             )}
