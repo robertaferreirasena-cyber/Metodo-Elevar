@@ -790,6 +790,24 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })}><X className="h-4 w-4" /></Button>
                       )}
                     </div>
+                    {cur.imageUrl && (
+                      <div className="mt-2">
+                        <ImageAdjustPanel
+                          imageUrl={cur.imageUrl}
+                          aspectRatio={curLayout === "editorial" ? 0.9 : (FORMAT_SPECS[selectedTemplate.aspectRatio].width / FORMAT_SPECS[selectedTemplate.aspectRatio].height)}
+                          values={{
+                            positionX: cur.imagePositionX, positionY: cur.imagePositionY,
+                            scale: cur.imageScale, blur: cur.imageBlur,
+                            brightness: cur.imageBrightness, contrast: cur.imageContrast,
+                          }}
+                          onChange={(v) => updateSlide(currentSlide, {
+                            imagePositionX: v.positionX, imagePositionY: v.positionY,
+                            imageScale: v.scale, imageBlur: v.blur,
+                            imageBrightness: v.brightness, imageContrast: v.contrast,
+                          })}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
