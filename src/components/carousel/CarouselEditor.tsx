@@ -1429,6 +1429,24 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ===== Image Library Picker ===== */}
+      <ImageLibraryPicker
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        orientation={selectedTemplate.aspectRatio}
+        suggestedQuery={topic || formData?.niche || ""}
+        onSelect={handleLibrarySelect}
+      />
+
+      {/* ===== Off-screen Journal Collection Exporter (mounted only during export) ===== */}
+      {exporterMounted && (
+        <JournalCollectionExporter
+          ref={exporterRef}
+          palette={currentJournalPalette}
+          profileHandle={slides[0]?.profileHandle}
+        />
+      )}
     </div>
   );
 }
