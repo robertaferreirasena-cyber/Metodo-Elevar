@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { toPng } from "html-to-image";
 import {
   ChevronLeft, ChevronRight, Download, Wand2, Loader2, Paintbrush, Type,
@@ -157,12 +157,14 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [libraryTarget, setLibraryTarget] = useState<"image" | "bg">("bg");
   const [exportingCollection, setExportingCollection] = useState(false);
 
-  // Current journal palette (persisted)
+  // Current journal palette (persisted) — derived from id, source-of-truth is the id
   const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(
     sessionState.currentJournalPaletteId || "terracota"
   );
-  const currentJournalPalette =
-    JOURNAL_PALETTES.find(p => p.id === currentJournalPaletteId) || JOURNAL_PALETTES[0];
+  const currentJournalPalette = useMemo(
+    () => JOURNAL_PALETTES.find(p => p.id === currentJournalPaletteId) || JOURNAL_PALETTES[0],
+    [currentJournalPaletteId]
+  );
 
   // Off-screen exporter (mounted only during export)
   const [exporterMounted, setExporterMounted] = useState(false);
@@ -181,10 +183,21 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     setExportingCollection(true);
     setExporterMounted(true);
     try {
-      // Wait for the off-screen exporter to mount, render and load fonts
+      // Wait for the off-screen exporter to mount and the browser to commit a frame
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+
+      // Pre-load all fonts the journaling templates rely on
+      try {
+        await Promise.all([
+          (document as any).fonts?.load?.('700 64px "Playfair Display"'),
+          (document as any).fonts?.load?.('600 48px "Cormorant Garamond"'),
+          (document as any).fonts?.load?.('400 48px "Caveat"'),
+          (document as any).fonts?.load?.('700 32px "Inter"'),
+          (document as any).fonts?.load?.('400 36px "Bebas Neue"'),
+        ]);
+      } catch { /* ignore */ }
       await document.fonts.ready;
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 500));
 
       const nodes = exporterRef.current?.getNodes() || [];
       if (!nodes.length || nodes.some((n) => !n)) {
@@ -194,16 +207,59 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       const { toPng } = await import("html-to-image");
       const zip = new JSZip();
 
+      // Wait for all <img> inside each node to finish loading
+      const waitForImages = async (root: HTMLElement) => {
+        const imgs = Array.from(root.querySelectorAll("img"));
+        await Promise.all(imgs.map(img =>
+          (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0
+            ? Promise.resolve()
+            : new Promise<void>((r) => {
+                const done = () => r();
+                img.addEventListener("load", done, { once: true });
+                img.addEventListener("error", done, { once: true });
+              })
+        ));
+      };
+
+      const captureOnce = (node: HTMLDivElement) => toPng(node, {
+        width: 1080,
+        height: 1080,
+        canvasWidth: 1080,
+        canvasHeight: 1080,
+        pixelRatio: 1,
+        cacheBust: true,
+        style: {
+          transform: "none",
+          position: "static",
+          margin: "0",
+          padding: "0",
+          width: "1080px",
+          height: "1080px",
+        },
+      });
+
+      // Warm-up capture (first render of html-to-image sometimes misses fonts)
+      try { await captureOnce(nodes[0] as HTMLDivElement); } catch { /* ignore */ }
+
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i] as HTMLDivElement;
         const layoutName = JOURNAL_LAYOUT_SEQUENCE[i];
-        const dataUrl = await toPng(node, {
-          width: 1080,
-          height: 1080,
-          pixelRatio: 1,
-          cacheBust: true,
-          style: { transform: "none", position: "static" },
+        await waitForImages(node);
+
+        let dataUrl = await captureOnce(node);
+
+        // Validate dimensions; retry once if off
+        const ok = await new Promise<boolean>((r) => {
+          const im = new Image();
+          im.onload = () => r(im.naturalWidth === 1080 && im.naturalHeight === 1080);
+          im.onerror = () => r(false);
+          im.src = dataUrl;
         });
+        if (!ok) {
+          await new Promise((r) => setTimeout(r, 200));
+          dataUrl = await captureOnce(node);
+        }
+
         const blob = await (await fetch(dataUrl)).blob();
         const fileName = `${String(i + 1).padStart(2, "0")}-${layoutName}.png`;
         zip.file(fileName, blob);
