@@ -181,10 +181,19 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   const applyJournalPalette = useCallback((palette: JournalPalette) => {
     setCurrentJournalPaletteId(palette.id);
-    setSlides(prev => prev.map(s => isJournalTemplate(selectedTemplate.id) || (s.layout || "").startsWith("journal-")
-      ? applyPaletteToSlide(s, palette)
-      : s
-    ));
+    setSlides(prev => prev.map(s => {
+      const isJournalSlide = isJournalTemplate(selectedTemplate.id) || (s.layout || "").startsWith("journal-");
+      if (!isJournalSlide) return s;
+      // Preserve user color customizations: only swap base palette colors,
+      // keep titleColor/bodyColor if user has explicitly set them.
+      return {
+        ...s,
+        bgColor: palette.bgColor,
+        textColor: palette.textColor,
+        accentColor: palette.accentColor,
+        // titleColor / bodyColor / highlightBgColor: NOT touched
+      };
+    }));
     toast.success(`Paleta "${palette.name}" aplicada`);
   }, [selectedTemplate.id]);
 
