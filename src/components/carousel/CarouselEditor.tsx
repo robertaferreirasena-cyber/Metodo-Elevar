@@ -133,6 +133,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [exporting, setExporting] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const isMobile = useIsMobile();
 
   // Mentora Gi mini-chat state — persisted
   const [giOpen, setGiOpen] = useState(sessionState.giOpen);
@@ -142,6 +143,10 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   // Persisted template apply mode
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
+
+  // Snapshot for undo of last template change
+  const lastSlidesSnapshot = useRef<SlideData[] | null>(null);
+  const lastTemplateSnapshot = useRef<CarouselTemplate | null>(null);
 
   // Pending topic confirmation (when a new initialTopic arrives but user already has work in progress)
   const [pendingTopic, setPendingTopic] = useState<string | null>(null);
