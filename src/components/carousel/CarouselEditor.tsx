@@ -1070,21 +1070,21 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
       {/* ========== FULLSCREEN PRESENTATION MODE ========== */}
       {fullscreen && slides.length > 0 && (
         <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center" onClick={(e) => { if (e.target === e.currentTarget) setFullscreen(false); }}>
-          {/* Top bar */}
-          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-3 bg-gradient-to-b from-black/80 to-transparent z-10 opacity-0 hover:opacity-100 transition-opacity duration-300">
+          {/* Top bar — always visible on mobile, hover-reveal on desktop */}
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-b from-black/80 to-transparent z-10 md:opacity-0 md:hover:opacity-100 transition-opacity duration-300" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
             <Badge variant="secondary" className="text-sm">
               Slide {currentSlide + 1} / {slides.length}
             </Badge>
             <div className="flex gap-2">
-              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10" onClick={() => setFullscreen(false)}>
-                <Minimize className="h-4 w-4 mr-1" /> Sair (Esc)
+              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 min-h-11 min-w-11" onClick={() => setFullscreen(false)}>
+                <Minimize className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Sair (Esc)</span><span className="sm:hidden">Sair</span>
               </Button>
             </div>
           </div>
 
           {/* Slide */}
-          <div className="flex items-center justify-center w-full h-full p-8">
-            <div style={{ maxWidth: "90vw", maxHeight: "85vh" }}>
+          <div className="flex items-center justify-center w-full h-full px-2 sm:p-8" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))", paddingBottom: "calc(56px + env(safe-area-inset-bottom))" }}>
+            <div style={{ maxWidth: "94vw", maxHeight: "78vh" }}>
               <SlidePreview
                 slide={slides[currentSlide]}
                 slideIndex={currentSlide}
@@ -1094,29 +1094,32 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
             </div>
           </div>
 
-          {/* Navigation arrows */}
+          {/* Navigation arrows — bigger touch target, always visible */}
           <button
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors disabled:opacity-20"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 active:bg-white/40 hover:bg-white/30 flex items-center justify-center transition-colors disabled:opacity-20"
             onClick={() => setCurrentSlide(p => Math.max(p - 1, 0))}
             disabled={currentSlide === 0}
+            aria-label="Slide anterior"
           >
-            <ChevronLeft className="h-6 w-6 text-white" />
+            <ChevronLeft className="h-7 w-7 text-white" />
           </button>
           <button
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors disabled:opacity-20"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 active:bg-white/40 hover:bg-white/30 flex items-center justify-center transition-colors disabled:opacity-20"
             onClick={() => setCurrentSlide(p => Math.min(p + 1, slides.length - 1))}
             disabled={currentSlide === slides.length - 1}
+            aria-label="Próximo slide"
           >
-            <ChevronRight className="h-6 w-6 text-white" />
+            <ChevronRight className="h-7 w-7 text-white" />
           </button>
 
           {/* Bottom dots */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          <div className="absolute left-1/2 -translate-x-1/2 flex gap-2" style={{ bottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
             {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentSlide(i)}
                 className={`w-3 h-3 rounded-full transition-all ${i === currentSlide ? "bg-white scale-125" : "bg-white/30 hover:bg-white/60"}`}
+                aria-label={`Ir para slide ${i + 1}`}
               />
             ))}
           </div>
@@ -1129,15 +1132,30 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
           <AlertDialogHeader>
             <AlertDialogTitle>Substituir carrossel atual?</AlertDialogTitle>
             <AlertDialogDescription>
-              Você já tem um carrossel em andamento sobre <strong>"{topic}"</strong>.
-              Deseja descartá-lo e começar um novo sobre <strong>"{pendingTopic}"</strong>?
+              Você já tem um carrossel em andamento sobre <strong>"{topic}"</strong> com{" "}
+              <strong>{slides.length} slide(s)</strong>. O que deseja fazer com o novo tema{" "}
+              <strong>"{pendingTopic}"</strong>?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="mt-0" onClick={() => {
+              // KEEP CURRENT — preserve everything (slides, template, mode, chat, images, adjustments)
               if (pendingTopic) lastAppliedInitialTopic.current = pendingTopic;
               setPendingTopic(null);
+              toast.success("Carrossel atual mantido", { description: "Nada foi alterado." });
             }}>Manter o atual</AlertDialogCancel>
+            <Button variant="secondary" onClick={() => {
+              // Save current as draft, then start new
+              if (pendingTopic) {
+                saveCurrentAsDraft();
+                setTopic(pendingTopic);
+                setSlides([]);
+                setCurrentSlide(0);
+                setGiMessages([]);
+                lastAppliedInitialTopic.current = pendingTopic;
+              }
+              setPendingTopic(null);
+            }}>Salvar atual e começar novo</Button>
             <AlertDialogAction onClick={() => {
               if (pendingTopic) {
                 setTopic(pendingTopic);
