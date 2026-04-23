@@ -160,7 +160,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       selectedTemplateId: selectedTemplate.id, slides, currentSlide,
       giMessages, giOpen, templateApplyMode,
     });
-  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, setSessionState]);
+  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, templateApplyMode, setSessionState]);
 
   const { hasProfile, formData, raioX } = usePersonaContext();
 
