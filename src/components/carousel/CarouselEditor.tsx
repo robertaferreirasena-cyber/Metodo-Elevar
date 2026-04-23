@@ -134,6 +134,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
   const [giLoading, setGiLoading] = useState(false);
 
+  // Persisted template apply mode
+  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
+
   // Pending topic confirmation (when a new initialTopic arrives but user already has work in progress)
   const [pendingTopic, setPendingTopic] = useState<string | null>(null);
   const lastAppliedInitialTopic = useRef<string>(sessionState.topic || initialTopic || "");
