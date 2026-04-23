@@ -1,83 +1,53 @@
 
-# Plano: Cache de imagens, temas offline para "Texto exemplo" e persistência da paleta Journaling
+# Plano: Cache em localStorage + seção dedicada "Coleção Journaling" no painel de templates
 
-Três ajustes pontuais e independentes nas peças já existentes da Coleção Journaling.
+Dois ajustes pontuais e independentes.
 
-## 1. Cache de resultados no "Banco de imagens"
+## 1. Cache do "Banco de imagens" também em localStorage
 
 **Arquivo:** `src/components/carousel/ImageLibraryPicker.tsx`
 
-Adicionar cache client-side em `sessionStorage` (complementa o cache de 5min que já existe no edge worker, mas elimina até a chamada de rede quando o usuário alterna entre layouts):
+Hoje o cache vive só em `sessionStorage` (some quando o navegador fecha). Vou espelhar tudo em `localStorage` mantendo o mesmo TTL (10 min) e o mesmo limite (30 entradas).
 
-- Chave: `img_lib_cache_v1::${query}::${orientation}::${page}`
-- TTL: 10 minutos
-- Estrutura: `{ ts: number, images: ImageItem[] }`
-- Tamanho máximo: 30 entradas (LRU simples por timestamp)
+Mudanças nas funções `getCached`, `setCached`, `pruneCache`:
+- **`getCached`**: tenta `sessionStorage` primeiro (mais rápido). Se miss, lê de `localStorage`. Se hit em `localStorage` ainda válido, re-popula `sessionStorage` (warm) e retorna.
+- **`setCached`**: grava nos DOIS storages em paralelo, com o mesmo `{ ts, images }`.
+- **`pruneCache`**: roda em ambos os storages (mesma lógica de TTL e LRU por timestamp). 30 entradas em cada.
+- Se `localStorage` lançar `QuotaExceededError` (cota cheia), faz `pruneCache` agressivo e retenta uma vez; se ainda falhar, ignora silenciosamente sem quebrar a busca.
+- Versão da chave continua `img_lib_cache_v1::` para invalidar caches antigos quando precisar.
 
-Fluxo na função `search()`:
-1. Normaliza `term` (lowercase + trim).
-2. Lê `sessionStorage` — se houver hit válido, `setResults(cached.images)` e retorna sem chamar fetch.
-3. Em miss, chama o edge function como hoje, e ao receber resposta `ok` grava no cache.
-4. Em erro, NÃO grava no cache.
+Resultado: usuária fecha o navegador, abre amanhã, busca "café" de novo → retorno instantâneo do cache local (se < 10 min) ou nova busca (se TTL expirou).
 
-Também: ao abrir o dialog com `suggestedQuery`, dispara `search(suggestedQuery)` automaticamente uma vez (hoje exige clique). Isso aproveita o cache imediatamente quando o usuário troca de layout no mesmo tema.
-
-Helpers internos (`getCached`, `setCached`, `pruneCache`) ficam no próprio arquivo — sem nova lib.
-
-## 2. Seletor de tema para "📋 Texto exemplo"
-
-**Arquivos:**
-- `src/components/carousel/CarouselTemplates.ts` — exportar `JOURNAL_SAMPLE_THEMES`
-- `src/components/carousel/CarouselEditor.tsx` — UI do seletor
-
-**Em `CarouselTemplates.ts`:** criar e exportar 4 temas pré-prontos compatíveis com `buildJournalSampleSlides(palette, themeId)`:
-
-```ts
-export const JOURNAL_SAMPLE_THEMES = [
-  { id: "autoestima",   label: "Autoestima",          slides: [...6 títulos+corpos...] },
-  { id: "rotina",       label: "Rotina matinal",      slides: [...] },
-  { id: "produtividade",label: "Produtividade leve",  slides: [...] },
-  { id: "vendas",       label: "Vendas com leveza",   slides: [...] },
-];
-```
-
-`buildJournalSampleSlides(palette, themeId?)` aceita `themeId` opcional; quando ausente, mantém o conteúdo genérico atual (compat).
-
-**No painel da Coleção em `CarouselEditor.tsx`:** o botão "📋 Texto exemplo" vira um pequeno cluster:
-
-```text
-[Tema: ▼ Autoestima ] [📋 Aplicar texto exemplo]
-```
-
-- `Select` shadcn com as 4 opções + "Genérico" (default).
-- Estado local `sampleThemeId` (não precisa persistir).
-- Ao clicar "Aplicar", chama `buildJournalSampleSlides(currentJournalPalette, sampleThemeId)` + distribui `JOURNAL_LAYOUT_SEQUENCE` + `setSlides(...)` + Undo + toast.
-
-## 3. Persistência robusta de `currentJournalPaletteId`
+## 2. Seção destacada "Coleção Journaling" no topo do painel de templates
 
 **Arquivo:** `src/components/carousel/CarouselEditor.tsx`
 
-Hoje a paleta já é persistida em `localStorage` (chave `journal_palette_id`), mas existem dois pontos onde ela pode "voltar diferente":
+**Problema real:** os 6 templates Journaling existem no código (`journal-cream`, `journal-rust`, `journal-olive`, `journal-copper`, `journal-forest`, `journal-binder`) e renderizam corretamente, mas estão **enterrados no fim de uma lista de ~32 templates**, sem agrupamento visual. Quem abre o painel não os encontra com facilidade.
 
-**3.1.** Ao trocar de template Journaling, hoje algumas branches resetam o id para o default da paleta da template. Vou:
-- Centralizar a leitura inicial num `useState(() => localStorage.getItem("journal_palette_id") || JOURNAL_PALETTES[0].id)`.
-- No `useEffect` que reage a mudança de template, NÃO sobrescrever `currentJournalPaletteId` se já houver um valor válido salvo (verificar se o id ainda existe em `JOURNAL_PALETTES`); só fazer fallback para o default quando o id salvo for inválido.
+**Solução:** adicionar uma faixa dedicada **logo acima** do grid `filteredTemplates`, sempre visível quando `formatFilter === "all"` ou `"1:1"`:
 
-**3.2.** Garantir gravação imediata em todo `setCurrentJournalPaletteId`:
-- Trocar chamadas diretas por um wrapper `updateJournalPaletteId(id)` que faz `setCurrentJournalPaletteId(id)` + `localStorage.setItem("journal_palette_id", id)` na mesma linha.
-- Aplicar o wrapper em: `applyJournalPalette`, clique nos swatches, `applyJournalCollection` (todas as variantes), `generateJournalCollection`, `applyJournalLayoutToCurrent`.
+```text
+┌─ ✨ Coleção Journaling (6 layouts narrativos) ────┐
+│ [Rust] [Cream] [Olive] [Espiral] [Forest] [Copper]│
+│   Mini-previews 110×110 reais (SlidePreview)      │
+└───────────────────────────────────────────────────┘
+```
 
-**3.3.** No mount inicial do editor, após hidratar `currentJournalPaletteId` do storage, disparar uma vez `applyJournalPalette(palette, { onlyMissing: true })` para reaplicar as cores da paleta nos slides Journaling existentes que ainda não tenham `bgColor`/`textColor` customizados — sem sobrescrever o que o usuário editou.
+Detalhes:
+- Renderizar os 6 cards em grid `grid-cols-3 md:grid-cols-6`, cada um com mini-preview real (mesmo padrão usado em `TemplatePreviewTooltip`: `SlidePreview` em 1080×1080 escalado para ~110px).
+- Hover no card mostra o tooltip atual (`TemplatePreviewTooltip`); clique aplica o template usando o `templateApplyMode` ativo (mesma lógica de `applyTemplateToAll` / `applyTemplatePreservingFormatting` / `applyTemplateToSlide` que já roda no grid principal).
+- Card selecionado ganha `ring-2 ring-primary/30` igual aos outros.
+- Container com fundo âmbar suave (`bg-amber-50/30`) e borda âmbar para diferenciar visualmente da grade geral.
+- A seção continua aparecendo no grid grande `filteredTemplates` (não duplica esforço — só adiciona um atalho). Para evitar duplicação visual, **filtra os journals fora do grid principal** quando a seção dedicada está visível: `filteredTemplates.filter(t => !isJournalTemplate(t.id))`.
+- Quando `formatFilter === "9:16"` ou `"16:9"`, a seção dedicada não aparece (journals são todos 1:1) e o filtro do grid principal volta ao normal.
 
 ## Critérios de aceitação
 
-- Trocar entre layouts Journaling com o "Banco de imagens" aberto e a mesma busca: segundo open mostra resultados instantaneamente, sem chamada de rede (verificável no DevTools).
-- Painel da Coleção mostra "Tema: [Select] [📋 Aplicar texto exemplo]"; cada um dos 4 temas gera 6 slides coerentes naquele tom, com layouts distribuídos.
-- Escolher paleta "Pôr do sol", recarregar a página → paleta volta como "Pôr do sol" e os slides Journaling renderizam com as cores certas.
-- Trocar de template Journaling A → B → A: a paleta escolhida persiste em todas as transições.
-- Cores customizadas pelo usuário (via color pickers) não são sobrescritas pela reaplicação automática da paleta no mount.
+- Fechar o navegador, reabrir, buscar a mesma palavra antes de 10 min → resultados instantâneos sem chamada de rede (verificável no DevTools/Network).
+- Ao abrir o Gerador de Carrossel com filtro "Todos" ou "1:1", a seção "✨ Coleção Journaling" aparece no topo do painel de templates com 6 mini-previews visíveis e clicáveis.
+- Clicar em qualquer card da Coleção aplica o template seguindo o modo selecionado (Aplicar a todos / Slide atual / Preservar ajustes), idêntico ao grid principal.
+- Os 6 templates Journaling somem do grid principal apenas quando aparecem na seção dedicada (sem duplicação na mesma tela).
 
 ## Arquivos editados
 - `src/components/carousel/ImageLibraryPicker.tsx`
-- `src/components/carousel/CarouselTemplates.ts`
 - `src/components/carousel/CarouselEditor.tsx`
