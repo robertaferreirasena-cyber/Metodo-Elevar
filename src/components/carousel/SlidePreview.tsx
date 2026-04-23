@@ -440,6 +440,10 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
 
         {/* =========== JOURNAL-TAPE LAYOUT (modelo_7 sup) =========== */}
         {layout === "journal-tape" && (() => {
+          const j = getJournalScale(aspectRatio, slide.title.length, slide.body.length);
+          const safePadY = spec.height * j.safeAreaFrac;
+          const titleSizePx = slide.titleSize * fontScale * j.titleMul;
+          const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
           const noteW = spec.width * 0.62;
           const noteH = spec.height * 0.55;
           const noteX = spec.width * 0.08;
@@ -487,6 +491,10 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
 
         {/* =========== JOURNAL-PHOTO-CARD LAYOUT (modelo_7 mid + modelo1) =========== */}
         {layout === "journal-photo-card" && (() => {
+          const j = getJournalScale(aspectRatio, slide.title.length, slide.body.length);
+          const safePadY = spec.height * j.safeAreaFrac;
+          const titleSizePx = slide.titleSize * fontScale * j.titleMul;
+          const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
           const cardW = spec.width * 0.58;
           const miniW = spec.width * 0.42;
           const photoUrl = slide.imageUrl || slide.bgImageUrl;
@@ -534,6 +542,10 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
 
         {/* =========== JOURNAL-BINDER LAYOUT (modelo_2 + modelo_5) =========== */}
         {layout === "journal-binder" && (() => {
+          const j = getJournalScale(aspectRatio, slide.title.length, slide.body.length);
+          const safePadY = spec.height * j.safeAreaFrac;
+          const titleSizePx = slide.titleSize * fontScale * j.titleMul;
+          const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
           const noteW = spec.width * 0.78;
           const noteH = spec.height * 0.72;
           const noteX = (spec.width - noteW) / 2;
@@ -577,6 +589,10 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
 
         {/* =========== JOURNAL-TORN-PAPER LAYOUT (modelo_3) =========== */}
         {layout === "journal-torn-paper" && (() => {
+          const j = getJournalScale(aspectRatio, slide.title.length, slide.body.length);
+          const safePadY = spec.height * j.safeAreaFrac;
+          const titleSizePx = slide.titleSize * fontScale * j.titleMul;
+          const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
           const paperW = spec.width * 0.78;
           const paperH = spec.height * 0.62;
           const photoUrl = slide.bgImageUrl || slide.imageUrl;
@@ -611,6 +627,10 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
 
         {/* =========== JOURNAL-ENVELOPE LAYOUT (modelo_5) =========== */}
         {layout === "journal-envelope" && (() => {
+          const j = getJournalScale(aspectRatio, slide.title.length, slide.body.length);
+          const safePadY = spec.height * j.safeAreaFrac;
+          const titleSizePx = slide.titleSize * fontScale * j.titleMul;
+          const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
           const envW = spec.width * 0.66;
           const envH = envW * 0.7;
           const envX = (spec.width - envW) / 2;
