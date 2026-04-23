@@ -28,7 +28,9 @@ interface Props {
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-library-search`;
 
-// ---------- Client-side cache (sessionStorage) ----------
+// ---------- Client-side cache (sessionStorage + localStorage) ----------
+// sessionStorage = fast in-tab; localStorage = survives browser restarts.
+// Both share the same TTL (10 min) and 30-entry LRU cap.
 const CACHE_PREFIX = "img_lib_cache_v1::";
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min
 const CACHE_MAX_ENTRIES = 30;
@@ -36,55 +38,92 @@ const CACHE_MAX_ENTRIES = 30;
 function cacheKey(query: string, orientation: string, page: number) {
   return `${CACHE_PREFIX}${query.trim().toLowerCase()}::${orientation}::${page}`;
 }
-function getCached(query: string, orientation: string, page: number): ImageItem[] | null {
+
+function readEntry(storage: Storage, key: string): { ts: number; images: ImageItem[] } | null {
   try {
-    const raw = sessionStorage.getItem(cacheKey(query, orientation, page));
+    const raw = storage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { ts: number; images: ImageItem[] };
+    if (!parsed || typeof parsed.ts !== "number") return null;
     if (Date.now() - parsed.ts > CACHE_TTL_MS) {
-      sessionStorage.removeItem(cacheKey(query, orientation, page));
+      storage.removeItem(key);
       return null;
     }
-    return parsed.images;
+    return parsed;
   } catch {
     return null;
   }
 }
-function setCached(query: string, orientation: string, page: number, images: ImageItem[]) {
+
+function getCached(query: string, orientation: string, page: number): ImageItem[] | null {
+  const key = cacheKey(query, orientation, page);
+  // Try sessionStorage first (fastest)
   try {
-    pruneCache();
-    sessionStorage.setItem(
-      cacheKey(query, orientation, page),
-      JSON.stringify({ ts: Date.now(), images }),
-    );
+    const sess = readEntry(sessionStorage, key);
+    if (sess) return sess.images;
+  } catch { /* ignore */ }
+  // Fallback to localStorage; if hit, warm sessionStorage
+  try {
+    const local = readEntry(localStorage, key);
+    if (local) {
+      try { sessionStorage.setItem(key, JSON.stringify(local)); } catch { /* ignore */ }
+      return local.images;
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+function writeWithRetry(storage: Storage, key: string, value: string) {
+  try {
+    storage.setItem(key, value);
   } catch {
-    // storage full — ignore
+    // Quota likely exceeded — prune aggressively and retry once
+    try {
+      pruneStorage(storage, Math.floor(CACHE_MAX_ENTRIES / 2));
+      storage.setItem(key, value);
+    } catch {
+      /* give up silently */
+    }
   }
 }
-function pruneCache() {
+
+function setCached(query: string, orientation: string, page: number, images: ImageItem[]) {
+  const key = cacheKey(query, orientation, page);
+  const payload = JSON.stringify({ ts: Date.now(), images });
+  pruneCache();
+  try { writeWithRetry(sessionStorage, key, payload); } catch { /* ignore */ }
+  try { writeWithRetry(localStorage, key, payload); } catch { /* ignore */ }
+}
+
+function pruneStorage(storage: Storage, maxEntries: number = CACHE_MAX_ENTRIES) {
   try {
     const keys: { k: string; ts: number }[] = [];
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const k = sessionStorage.key(i);
+    for (let i = 0; i < storage.length; i++) {
+      const k = storage.key(i);
       if (!k || !k.startsWith(CACHE_PREFIX)) continue;
       try {
-        const ts = JSON.parse(sessionStorage.getItem(k)!).ts ?? 0;
+        const ts = JSON.parse(storage.getItem(k)!).ts ?? 0;
         if (Date.now() - ts > CACHE_TTL_MS) {
-          sessionStorage.removeItem(k);
+          storage.removeItem(k);
           continue;
         }
         keys.push({ k, ts });
       } catch {
-        sessionStorage.removeItem(k);
+        storage.removeItem(k);
       }
     }
-    if (keys.length > CACHE_MAX_ENTRIES) {
+    if (keys.length > maxEntries) {
       keys.sort((a, b) => a.ts - b.ts);
-      keys.slice(0, keys.length - CACHE_MAX_ENTRIES).forEach(({ k }) => sessionStorage.removeItem(k));
+      keys.slice(0, keys.length - maxEntries).forEach(({ k }) => storage.removeItem(k));
     }
   } catch {
     /* ignore */
   }
+}
+
+function pruneCache() {
+  pruneStorage(sessionStorage);
+  pruneStorage(localStorage);
 }
 
 export default function ImageLibraryPicker({
