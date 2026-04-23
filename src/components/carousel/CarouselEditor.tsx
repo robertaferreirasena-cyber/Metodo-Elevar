@@ -369,13 +369,15 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   // Apply the entire Journaling Collection (6 slides, 6 layouts in order, current palette).
   // keepContent=true → preserves user's title/body/images/profile; only swaps layout + colors.
-  const applyJournalCollection = useCallback((template: CarouselTemplate, opts: { keepContent: boolean } = { keepContent: true }) => {
+  const applyJournalCollection = useCallback((
+    template: CarouselTemplate,
+    opts: { keepContent: boolean; themeId?: string; forceSampleText?: boolean } = { keepContent: true },
+  ) => {
     const palette = currentJournalPalette;
-    const sample = buildJournalSampleSlides(palette, slides[0]?.profileHandle);
+    const sample = buildJournalSampleSlides(palette, slides[0]?.profileHandle, opts.themeId);
     const newSlides: SlideData[] = sample.map((s, i) => {
       const existing = slides[i];
       if (opts.keepContent && existing) {
-        // Preserve user content + custom colors; swap only layout, base palette, font family
         return {
           ...existing,
           layout: s.layout,
@@ -383,17 +385,15 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
           textColor: palette.textColor,
           accentColor: palette.accentColor,
           fontFamily: template.fontFamily,
-          // titleColor / bodyColor: preserved (user customizations stay)
-          // fill body if empty AND layout typically expects body
           body: existing.body || s.body,
           title: existing.title || s.title,
         };
       }
-      // Replace mode (texto modelo)
+      // Replace mode (texto modelo). When forceSampleText, the chosen theme overrides existing text.
       return {
         ...s,
-        title: existing?.title || s.title,
-        body: existing?.body || s.body,
+        title: opts.forceSampleText ? s.title : (existing?.title || s.title),
+        body: opts.forceSampleText ? s.body : (existing?.body || s.body),
         fontFamily: template.fontFamily,
         titleSize: template.titleSize,
         bodySize: template.bodySize,
