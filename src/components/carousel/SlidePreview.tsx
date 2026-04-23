@@ -6,6 +6,7 @@ import {
   PAPER_TEXTURES, WashiTape, WaxSeal, GoldStamp, SpiralBinder,
   TornPaperPath, EnvelopeShape, NotebookLines, HandDrawnArrow, PaperClip,
 } from "./journalDecorations";
+import { getJournalScale } from "./journalScaleHelpers";
 
 interface SlidePreviewProps {
   slide: SlideData;
