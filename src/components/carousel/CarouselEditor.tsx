@@ -113,7 +113,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     "session_carousel_editor", EMPTY_CAROUSEL_STATE
   );
 
-  const [topic, setTopic] = useState(initialTopic || sessionState.topic);
+  // Restore session FIRST. Only fall back to initialTopic when there is no saved session.
+  const [topic, setTopic] = useState(sessionState.topic || initialTopic || "");
   const [slideCount, setSlideCount] = useState(sessionState.slideCount);
   const [tone, setTone] = useState(sessionState.tone);
   const [formatFilter, setFormatFilter] = useState<FormatFilter>(sessionState.formatFilter);
@@ -127,18 +128,36 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [fullscreen, setFullscreen] = useState(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Mentora Gi mini-chat state
-  const [giOpen, setGiOpen] = useState(false);
+  // Mentora Gi mini-chat state — persisted
+  const [giOpen, setGiOpen] = useState(sessionState.giOpen);
   const [giInput, setGiInput] = useState("");
-  const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
   const [giLoading, setGiLoading] = useState(false);
+
+  // Pending topic confirmation (when a new initialTopic arrives but user already has work in progress)
+  const [pendingTopic, setPendingTopic] = useState<string | null>(null);
+  const lastAppliedInitialTopic = useRef<string>(sessionState.topic || initialTopic || "");
+
+  // React to changes in initialTopic (e.g., user clicks a new topic in MentorChat).
+  useEffect(() => {
+    if (!initialTopic) return;
+    if (initialTopic === lastAppliedInitialTopic.current) return;
+    if (slides.length > 0 && topic && initialTopic !== topic) {
+      // User has an existing carousel — ask before overwriting
+      setPendingTopic(initialTopic);
+    } else {
+      setTopic(initialTopic);
+      lastAppliedInitialTopic.current = initialTopic;
+    }
+  }, [initialTopic]);
 
   useEffect(() => {
     setSessionState({
       topic, slideCount, tone, formatFilter,
       selectedTemplateId: selectedTemplate.id, slides, currentSlide,
+      giMessages, giOpen, templateApplyMode,
     });
-  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, setSessionState]);
+  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, setSessionState]);
 
   const { hasProfile, formData, raioX } = usePersonaContext();
 
