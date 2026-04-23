@@ -380,6 +380,264 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           );
         })()}
 
+        {/* =========== JOURNAL-NOTE LAYOUT (modelo_6) =========== */}
+        {layout === "journal-note" && (() => {
+          const noteW = spec.width * 0.72;
+          const noteH = spec.height * 0.50;
+          const cardW = spec.width * 0.62;
+          return (
+            <>
+              <div className="absolute inset-0" style={{ backgroundImage: PAPER_TEXTURES.linen, backgroundColor: slide.bgColor }} />
+              <div className="absolute top-0 left-0 right-0 flex justify-between" style={{ padding: `${24 * fontScale}px ${36 * fontScale}px`, fontSize: 12 * fontScale, color: slide.textColor, opacity: 0.55, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.2em", textTransform: "uppercase" }}>
+                <span>· · · {slideIndex + 1} / {totalSlides} · · ·</span>
+                <span>· · · {slide.profileHandle || "@suamarca"} · · ·</span>
+              </div>
+              <div className="absolute" style={{
+                left: `${(spec.width - noteW) / 2}px`, top: `${spec.height * 0.18}px`,
+                width: noteW, height: noteH,
+                background: "#fefdf8",
+                backgroundImage: PAPER_TEXTURES.grid,
+                borderLeft: `${10 * fontScale}px solid ${slide.accentColor}`,
+                boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
+                transform: "rotate(-1.2deg)",
+                padding: `${30 * fontScale}px`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <h2 style={{ ...titleStyle, fontStyle: "italic", textAlign: "center", color: slide.accentColor }}>{slide.title}</h2>
+              </div>
+              <div className="absolute" style={{ left: `${spec.width * 0.5 - 35 * fontScale}px`, top: `${spec.height * 0.15}px`, transform: "rotate(-8deg)" }}>
+                <GoldStamp size={70 * fontScale} />
+              </div>
+              <div className="absolute" style={{
+                left: `${(spec.width - cardW) / 2}px`, top: `${spec.height * 0.72}px`,
+                width: cardW,
+                background: slide.accentColor,
+                color: "#fefdf8",
+                padding: `${20 * fontScale}px ${28 * fontScale}px`,
+                transform: "rotate(1.5deg)",
+                boxShadow: "0 6px 14px rgba(0,0,0,0.20)",
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: slide.bodySize * fontScale,
+                lineHeight: 1.45,
+                textAlign: "center",
+              }}>
+                {slide.body}
+              </div>
+            </>
+          );
+        })()}
+
+        {/* =========== JOURNAL-TAPE LAYOUT (modelo_7 sup) =========== */}
+        {layout === "journal-tape" && (() => {
+          const noteW = spec.width * 0.62;
+          const noteH = spec.height * 0.55;
+          const noteX = spec.width * 0.08;
+          const noteY = spec.height * 0.12;
+          const cardW = spec.width * 0.42;
+          return (
+            <>
+              <div className="absolute inset-0" style={{ background: slide.bgColor, backgroundImage: PAPER_TEXTURES.kraft }} />
+              <div className="absolute top-0 left-0 right-0 flex justify-between" style={{ padding: `${22 * fontScale}px ${32 * fontScale}px`, fontSize: 11 * fontScale, color: slide.accentColor, opacity: 0.7, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.25em", textTransform: "uppercase" }}>
+                <span>{slide.profileHandle || "@suamarca"}</span>
+                <span>{slideIndex + 1} / {totalSlides}</span>
+              </div>
+              <div className="absolute" style={{
+                left: noteX, top: noteY, width: noteW, height: noteH,
+                background: "#fefdf8",
+                backgroundImage: PAPER_TEXTURES.grid,
+                transform: "rotate(-3deg)",
+                boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
+                padding: `${36 * fontScale}px ${30 * fontScale}px`,
+                display: "flex", alignItems: "center",
+              }}>
+                <h2 style={{ ...titleStyle, fontStyle: "italic", color: slide.bgColor, textAlign: "left" }}>{slide.title}</h2>
+              </div>
+              <WashiTape width={120 * fontScale} height={28 * fontScale} color="#e8d9b8" rotate={-15} style={{ left: noteX - 20 * fontScale, top: noteY - 8 * fontScale }} />
+              <WashiTape width={100 * fontScale} height={26 * fontScale} color="#e8d9b8" rotate={20} style={{ left: noteX + noteW - 60 * fontScale, top: noteY - 6 * fontScale }} />
+              <div className="absolute" style={{
+                right: spec.width * 0.06, bottom: spec.height * 0.10,
+                width: cardW,
+                background: "#fefdf8",
+                backgroundImage: PAPER_TEXTURES.grid,
+                color: slide.bgColor,
+                padding: `${18 * fontScale}px ${22 * fontScale}px`,
+                transform: "rotate(2.5deg)",
+                boxShadow: "0 6px 14px rgba(0,0,0,0.20)",
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: slide.bodySize * fontScale * 0.85,
+                lineHeight: 1.4,
+              }}>
+                {slide.body}
+              </div>
+              <HandDrawnArrow width={90 * fontScale} color={slide.accentColor} rotate={25} style={{ right: spec.width * 0.32, top: spec.height * 0.50 }} />
+            </>
+          );
+        })()}
+
+        {/* =========== JOURNAL-PHOTO-CARD LAYOUT (modelo_7 mid + modelo1) =========== */}
+        {layout === "journal-photo-card" && (() => {
+          const cardW = spec.width * 0.58;
+          const miniW = spec.width * 0.42;
+          const photoUrl = slide.imageUrl || slide.bgImageUrl;
+          return (
+            <>
+              {photoUrl ? (
+                <div className="absolute inset-0" style={buildImageStyle(photoUrl, { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: "#444" }}>
+                  <ImagePlus style={{ color: "#fff", opacity: 0.4, width: 80 * fontScale, height: 80 * fontScale }} />
+                </div>
+              )}
+              <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.18)" }} />
+              <div className="absolute top-0 left-0 right-0 flex justify-between" style={{ padding: `${22 * fontScale}px ${32 * fontScale}px`, fontSize: 11 * fontScale, color: "#fefdf8", opacity: 0.85, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.25em", textTransform: "uppercase", textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>
+                <span>{slide.profileHandle || "@suamarca"}</span>
+                <span>{slideIndex + 1} / {totalSlides}</span>
+              </div>
+              <div className="absolute" style={{
+                left: `${(spec.width - cardW) / 2}px`, top: `${spec.height * 0.30}px`,
+                width: cardW,
+                background: slide.accentColor,
+                padding: `${28 * fontScale}px ${32 * fontScale}px`,
+                boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
+              }}>
+                <h2 style={{ ...titleStyle, fontStyle: "italic", color: "#fefdf8", textAlign: "center" }}>{slide.title}</h2>
+              </div>
+              <div className="absolute" style={{
+                right: spec.width * 0.06, bottom: spec.height * 0.08,
+                width: miniW,
+                background: "#fefdf8",
+                backgroundImage: PAPER_TEXTURES.grid,
+                color: "#3a1a12",
+                padding: `${18 * fontScale}px ${22 * fontScale}px`,
+                transform: "rotate(-2deg)",
+                boxShadow: "0 6px 14px rgba(0,0,0,0.30)",
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: slide.bodySize * fontScale * 0.85,
+                lineHeight: 1.4,
+              }}>
+                {slide.body}
+              </div>
+            </>
+          );
+        })()}
+
+        {/* =========== JOURNAL-BINDER LAYOUT (modelo_2 + modelo_5) =========== */}
+        {layout === "journal-binder" && (() => {
+          const noteW = spec.width * 0.78;
+          const noteH = spec.height * 0.72;
+          const noteX = (spec.width - noteW) / 2;
+          const noteY = spec.height * 0.16;
+          const cardW = noteW * 0.78;
+          return (
+            <>
+              <div className="absolute inset-0" style={{ background: slide.bgColor, backgroundImage: PAPER_TEXTURES.kraft }} />
+              <div className="absolute top-0 left-0 right-0 flex justify-between" style={{ padding: `${20 * fontScale}px ${32 * fontScale}px`, fontSize: 11 * fontScale, color: "#fefdf8", opacity: 0.7, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.25em", textTransform: "uppercase" }}>
+                <span>{slide.profileHandle || "@suamarca"}</span>
+                <span>{slideIndex + 1} / {totalSlides}</span>
+              </div>
+              <div className="absolute" style={{
+                left: noteX, top: noteY, width: noteW, height: noteH,
+                background: "#fefdf8",
+                backgroundImage: PAPER_TEXTURES.notebook,
+                boxShadow: "0 12px 28px rgba(0,0,0,0.30)",
+                padding: `${60 * fontScale}px ${40 * fontScale}px ${30 * fontScale}px`,
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <h2 style={{ ...titleStyle, fontStyle: "italic", color: slide.accentColor, textAlign: "center", marginTop: 20 * fontScale }}>{slide.title}</h2>
+                <div style={{
+                  width: cardW,
+                  background: slide.accentColor,
+                  color: "#fefdf8",
+                  padding: `${18 * fontScale}px ${24 * fontScale}px`,
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: slide.bodySize * fontScale,
+                  lineHeight: 1.45,
+                  textAlign: "center",
+                }}>
+                  {slide.body}
+                </div>
+              </div>
+              <div className="absolute" style={{ left: noteX, top: noteY - 22 * fontScale, width: noteW }}>
+                <SpiralBinder width={noteW} rings={Math.max(7, Math.floor(noteW / (90 * fontScale)))} />
+              </div>
+            </>
+          );
+        })()}
+
+        {/* =========== JOURNAL-TORN-PAPER LAYOUT (modelo_3) =========== */}
+        {layout === "journal-torn-paper" && (() => {
+          const paperW = spec.width * 0.78;
+          const paperH = spec.height * 0.62;
+          const photoUrl = slide.bgImageUrl || slide.imageUrl;
+          return (
+            <>
+              {photoUrl ? (
+                <div className="absolute inset-0" style={buildImageStyle(photoUrl, { positionX: slide.bgImagePositionX ?? slide.imagePositionX, positionY: slide.bgImagePositionY ?? slide.imagePositionY, scale: slide.bgImageScale ?? slide.imageScale, blur: slide.bgImageBlur ?? slide.imageBlur, brightness: slide.bgImageBrightness ?? slide.imageBrightness, contrast: slide.bgImageContrast ?? slide.imageContrast })} />
+              ) : (
+                <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${slide.bgColor} 0%, #1a2a14 100%)` }} />
+              )}
+              <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.20)" }} />
+              <div className="absolute top-0 left-0 right-0 flex justify-between" style={{ padding: `${22 * fontScale}px ${32 * fontScale}px`, fontSize: 11 * fontScale, color: "#fefdf8", opacity: 0.85, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.25em", textTransform: "uppercase", textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>
+                <span>{slide.profileHandle || "@suamarca"}</span>
+                <span>{slideIndex + 1} / {totalSlides}</span>
+              </div>
+              <div className="absolute" style={{ left: (spec.width - paperW) / 2, top: (spec.height - paperH) / 2 + 20 * fontScale }}>
+                <TornPaperPath width={paperW} height={paperH} fill="#fefdf8" rotate={-1.5}>
+                  <h2 style={{ ...titleStyle, fontStyle: "italic", color: slide.textColor, textAlign: "center", marginBottom: 16 * fontScale }}>{slide.title}</h2>
+                  <p style={{
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: slide.bodySize * fontScale * 0.95,
+                    color: slide.textColor,
+                    opacity: 0.8,
+                    textAlign: "center",
+                    lineHeight: 1.5,
+                  }}>{slide.body}</p>
+                </TornPaperPath>
+              </div>
+            </>
+          );
+        })()}
+
+        {/* =========== JOURNAL-ENVELOPE LAYOUT (modelo_5) =========== */}
+        {layout === "journal-envelope" && (() => {
+          const envW = spec.width * 0.66;
+          const envH = envW * 0.7;
+          const envX = (spec.width - envW) / 2;
+          const envY = spec.height * 0.18;
+          return (
+            <>
+              <div className="absolute inset-0" style={{ background: slide.bgColor, backgroundImage: PAPER_TEXTURES.kraft }} />
+              <div className="absolute top-0 left-0 right-0 flex justify-between" style={{ padding: `${22 * fontScale}px ${32 * fontScale}px`, fontSize: 11 * fontScale, color: "#fefdf8", opacity: 0.7, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.25em", textTransform: "uppercase" }}>
+                <span>{slide.profileHandle || "@suamarca"}</span>
+                <span>{slideIndex + 1} / {totalSlides}</span>
+              </div>
+              <div className="absolute" style={{ left: envX, top: envY, width: envW, height: envH }}>
+                <EnvelopeShape width={envW} height={envH} color="#f0e0c8" flapColor="#d8c3a0" />
+              </div>
+              <div className="absolute" style={{ left: envX + envW / 2 - 45 * fontScale, top: envY + envH * 0.42 }}>
+                <WaxSeal size={90 * fontScale} color={slide.accentColor} />
+              </div>
+              <div className="absolute" style={{ left: spec.width * 0.10, top: envY + envH + 20 * fontScale, right: spec.width * 0.10, textAlign: "center" }}>
+                <h2 style={{ ...titleStyle, fontStyle: "italic", color: "#fefdf8" }}>{slide.title}</h2>
+              </div>
+              <div className="absolute" style={{
+                bottom: spec.height * 0.05,
+                left: spec.width * 0.08, right: spec.width * 0.08,
+                background: slide.accentColor,
+                color: "#fefdf8",
+                padding: `${16 * fontScale}px ${36 * fontScale}px`,
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: slide.bodySize * fontScale * 0.9,
+                lineHeight: 1.4,
+                textAlign: "center",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
+              }}>
+                {slide.body}
+              </div>
+            </>
+          );
+        })()}
+
         {/* =========== TEXT-ONLY (DEFAULT) LAYOUT =========== */}
         {layout === "text-only" && (
           <>
