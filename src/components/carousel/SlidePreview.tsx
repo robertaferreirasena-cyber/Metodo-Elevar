@@ -381,8 +381,17 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           );
         })()}
 
+        {/* ===== JOURNAL SCALE / SAFE-AREA (Stories 9:16) ===== */}
+        {/* Computed once per render and reused inside every journal-* block via the variables below */}
+        {/* (no JSX output) */}
+        {(() => { return null; })()}
+
         {/* =========== JOURNAL-NOTE LAYOUT (modelo_6) =========== */}
         {layout === "journal-note" && (() => {
+          const j = getJournalScale(aspectRatio, slide.title.length, slide.body.length);
+          const safePadY = spec.height * j.safeAreaFrac;
+          const titleSizePx = slide.titleSize * fontScale * j.titleMul;
+          const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
           const noteW = spec.width * 0.72;
           const noteH = spec.height * 0.50;
           const cardW = spec.width * 0.62;
