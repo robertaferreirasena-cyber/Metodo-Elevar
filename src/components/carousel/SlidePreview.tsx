@@ -403,7 +403,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 <span>· · · {slide.profileHandle || "@suamarca"} · · ·</span>
               </div>
               <div className="absolute" style={{
-                left: `${(spec.width - noteW) / 2}px`, top: `${spec.height * 0.18}px`,
+                left: `${(spec.width - noteW) / 2}px`, top: `${Math.max(spec.height * 0.18, safePadY + 30 * fontScale)}px`,
                 width: noteW, height: noteH,
                 background: "#fefdf8",
                 backgroundImage: PAPER_TEXTURES.grid,
@@ -413,13 +413,14 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 padding: `${30 * fontScale}px`,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <h2 style={{ ...titleStyle, fontStyle: "italic", textAlign: "center", color: slide.accentColor }}>{slide.title}</h2>
+                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", textAlign: "center", color: slide.accentColor }}>{slide.title}</h2>
               </div>
-              <div className="absolute" style={{ left: `${spec.width * 0.5 - 35 * fontScale}px`, top: `${spec.height * 0.15}px`, transform: "rotate(-8deg)" }}>
+              <div className="absolute" style={{ left: `${spec.width * 0.5 - 35 * fontScale}px`, top: `${Math.max(spec.height * 0.15, safePadY)}px`, transform: "rotate(-8deg)" }}>
                 <GoldStamp size={70 * fontScale} />
               </div>
               <div className="absolute" style={{
-                left: `${(spec.width - cardW) / 2}px`, top: `${spec.height * 0.72}px`,
+                left: `${(spec.width - cardW) / 2}px`,
+                bottom: `${Math.max(spec.height * 0.10, safePadY)}px`,
                 width: cardW,
                 background: slide.accentColor,
                 color: "#fefdf8",
@@ -427,7 +428,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 transform: "rotate(1.5deg)",
                 boxShadow: "0 6px 14px rgba(0,0,0,0.20)",
                 fontFamily: "'DM Sans', sans-serif",
-                fontSize: slide.bodySize * fontScale,
+                fontSize: bodySizePx,
                 lineHeight: 1.45,
                 textAlign: "center",
               }}>
