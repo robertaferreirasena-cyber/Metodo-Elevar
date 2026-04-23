@@ -155,7 +155,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               </div>
               <div className="w-[45%] relative">
                 {slide.imageUrl ? (
-                  <div className="absolute inset-0" style={{ background: `url(${slide.imageUrl}) center/cover no-repeat` }} />
+                  <div className="absolute inset-0" style={buildImageStyle(slide.imageUrl, { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
                     <ImagePlus style={{ color: slide.accentColor, opacity: 0.4, width: 60 * fontScale, height: 60 * fontScale }} />
