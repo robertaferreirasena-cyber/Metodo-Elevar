@@ -465,7 +465,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 padding: `${36 * fontScale}px ${30 * fontScale}px`,
                 display: "flex", alignItems: "center",
               }}>
-                <h2 style={{ ...titleStyle, fontStyle: "italic", color: slide.bgColor, textAlign: "left" }}>{slide.title}</h2>
+                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: slide.bgColor, textAlign: "left" }}>{slide.title}</h2>
               </div>
               <WashiTape width={120 * fontScale} height={28 * fontScale} color="#e8d9b8" rotate={-15} style={{ left: noteX - 20 * fontScale, top: noteY - 8 * fontScale }} />
               <WashiTape width={100 * fontScale} height={26 * fontScale} color="#e8d9b8" rotate={20} style={{ left: noteX + noteW - 60 * fontScale, top: noteY - 6 * fontScale }} />
@@ -479,7 +479,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 transform: "rotate(2.5deg)",
                 boxShadow: "0 6px 14px rgba(0,0,0,0.20)",
                 fontFamily: "'DM Sans', sans-serif",
-                fontSize: slide.bodySize * fontScale * 0.85,
+                fontSize: bodySizePx * 0.85,
                 lineHeight: 1.4,
               }}>
                 {slide.body}
@@ -519,7 +519,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 padding: `${28 * fontScale}px ${32 * fontScale}px`,
                 boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
               }}>
-                <h2 style={{ ...titleStyle, fontStyle: "italic", color: "#fefdf8", textAlign: "center" }}>{slide.title}</h2>
+                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: "#fefdf8", textAlign: "center" }}>{slide.title}</h2>
               </div>
               <div className="absolute" style={{
                 right: spec.width * 0.06, bottom: spec.height * 0.08,
@@ -531,7 +531,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 transform: "rotate(-2deg)",
                 boxShadow: "0 6px 14px rgba(0,0,0,0.30)",
                 fontFamily: "'DM Sans', sans-serif",
-                fontSize: slide.bodySize * fontScale * 0.85,
+                fontSize: bodySizePx * 0.85,
                 lineHeight: 1.4,
               }}>
                 {slide.body}
@@ -566,14 +566,14 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 padding: `${60 * fontScale}px ${40 * fontScale}px ${30 * fontScale}px`,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between",
               }}>
-                <h2 style={{ ...titleStyle, fontStyle: "italic", color: slide.accentColor, textAlign: "center", marginTop: 20 * fontScale }}>{slide.title}</h2>
+                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: slide.accentColor, textAlign: "center", marginTop: 20 * fontScale }}>{slide.title}</h2>
                 <div style={{
                   width: cardW,
                   background: slide.accentColor,
                   color: "#fefdf8",
                   padding: `${18 * fontScale}px ${24 * fontScale}px`,
                   fontFamily: "'DM Sans', sans-serif",
-                  fontSize: slide.bodySize * fontScale,
+                  fontSize: bodySizePx,
                   lineHeight: 1.45,
                   textAlign: "center",
                 }}>
@@ -610,10 +610,10 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               </div>
               <div className="absolute" style={{ left: (spec.width - paperW) / 2, top: (spec.height - paperH) / 2 + 20 * fontScale }}>
                 <TornPaperPath width={paperW} height={paperH} fill="#fefdf8" rotate={-1.5}>
-                  <h2 style={{ ...titleStyle, fontStyle: "italic", color: slide.textColor, textAlign: "center", marginBottom: 16 * fontScale }}>{slide.title}</h2>
+                  <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: slide.textColor, textAlign: "center", marginBottom: 16 * fontScale }}>{slide.title}</h2>
                   <p style={{
                     fontFamily: "'DM Sans', sans-serif",
-                    fontSize: slide.bodySize * fontScale * 0.95,
+                    fontSize: bodySizePx * 0.95,
                     color: slide.textColor,
                     opacity: 0.8,
                     textAlign: "center",
@@ -649,7 +649,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 <WaxSeal size={90 * fontScale} color={slide.accentColor} />
               </div>
               <div className="absolute" style={{ left: spec.width * 0.10, top: envY + envH + 20 * fontScale, right: spec.width * 0.10, textAlign: "center" }}>
-                <h2 style={{ ...titleStyle, fontStyle: "italic", color: "#fefdf8" }}>{slide.title}</h2>
+                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: "#fefdf8" }}>{slide.title}</h2>
               </div>
               <div className="absolute" style={{
                 bottom: spec.height * 0.05,
@@ -658,7 +658,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 color: "#fefdf8",
                 padding: `${16 * fontScale}px ${36 * fontScale}px`,
                 fontFamily: "'DM Sans', sans-serif",
-                fontSize: slide.bodySize * fontScale * 0.9,
+                fontSize: bodySizePx * 0.9,
                 lineHeight: 1.4,
                 textAlign: "center",
                 boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
