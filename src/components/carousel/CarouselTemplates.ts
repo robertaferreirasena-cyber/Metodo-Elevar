@@ -736,6 +736,42 @@ export function isJournalTemplate(templateId: string): boolean {
   return (JOURNAL_TEMPLATE_IDS as readonly string[]).includes(templateId);
 }
 
+// ============================================================
+// Variações de paleta para a Coleção Journaling
+// (mantém textura/layout, troca apenas cores)
+// ============================================================
+export interface JournalPalette {
+  id: string;
+  name: string;
+  emoji: string;
+  bgColor: string;
+  textColor: string;
+  accentColor: string;
+  /** swatch shown in the UI selector */
+  swatch: string;
+}
+
+export const JOURNAL_PALETTES: JournalPalette[] = [
+  { id: "terracota", name: "Terracota",   emoji: "🟫", bgColor: "#a23e2e", textColor: "#3a1a12", accentColor: "#f0e6d2", swatch: "#a23e2e" },
+  { id: "salvia",    name: "Sálvia",      emoji: "🌿", bgColor: "#7a8b6a", textColor: "#2a2a1a", accentColor: "#f5ede0", swatch: "#7a8b6a" },
+  { id: "borgonha",  name: "Borgonha",    emoji: "🍷", bgColor: "#5a1f1f", textColor: "#f5e9d5", accentColor: "#e8d4b0", swatch: "#5a1f1f" },
+  { id: "marinho",   name: "Marinho",     emoji: "🌊", bgColor: "#1f3a5a", textColor: "#f0ebe0", accentColor: "#c9965a", swatch: "#1f3a5a" },
+  { id: "pessego",   name: "Pêssego Nude",emoji: "🍑", bgColor: "#e8a87c", textColor: "#3a1a12", accentColor: "#7a1f15", swatch: "#e8a87c" },
+  { id: "creme",     name: "Linho Creme", emoji: "🤎", bgColor: "#f0e4cf", textColor: "#3a1a12", accentColor: "#a23e2e", swatch: "#f0e4cf" },
+];
+
+export function applyPaletteToSlide(slide: SlideData, palette: JournalPalette): SlideData {
+  return {
+    ...slide,
+    bgColor: palette.bgColor,
+    textColor: palette.textColor,
+    accentColor: palette.accentColor,
+    // clear per-slide overrides for color fields so the palette wins
+    titleColor: undefined,
+    bodyColor: undefined,
+  };
+}
+
 export interface SlideData {
   title: string;
   body: string;

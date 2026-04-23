@@ -35,8 +35,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
   JOURNAL_TEMPLATE_IDS, JOURNAL_LAYOUT_SEQUENCE, isJournalTemplate,
+  JOURNAL_PALETTES, applyPaletteToSlide, type JournalPalette,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
 } from "./CarouselTemplates";
+import ImageLibraryPicker from "./ImageLibraryPicker";
+import JSZip from "jszip";
 
 const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial"];
 const MULTI_IMAGE_LAYOUTS: CarouselLayout[] = ["photo-grid", "tweet-post"];
@@ -144,6 +147,68 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   // Persisted template apply mode
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
+
+  // Image library + collection export state
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryTarget, setLibraryTarget] = useState<"image" | "bg">("bg");
+  const [exportingCollection, setExportingCollection] = useState(false);
+
+  const applyJournalPalette = useCallback((palette: JournalPalette) => {
+    setSlides(prev => prev.map(s => isJournalTemplate(selectedTemplate.id) || (s.layout || "").startsWith("journal-")
+      ? applyPaletteToSlide(s, palette)
+      : s
+    ));
+    toast.success(`Paleta "${palette.name}" aplicada`);
+  }, [selectedTemplate.id]);
+
+  const exportJournalCollection = useCallback(async () => {
+    setExportingCollection(true);
+    try {
+      const { default: JSZipMod } = await import("jszip");
+      const { toPng } = await import("html-to-image");
+      const zip = new JSZipMod();
+      // Render off-screen
+      const sample = {
+        title: "Como dobrar seu faturamento sem dobrar a jornada",
+        body: "Três pilares aplicados com nossas mentoradas para escalar com leveza, consistência e estratégia.",
+      };
+      const palette = JOURNAL_PALETTES[0];
+      const host = document.createElement("div");
+      host.style.cssText = "position:fixed;left:-99999px;top:0;width:1080px;height:1080px;";
+      document.body.appendChild(host);
+      // Use the actual SlidePreview via React portal isn't trivial here — fall back to capturing
+      // existing exportRefs if user has a journal carousel; otherwise generate via DOM clones of the
+      // 6 layouts using minimal markup. To keep fast: just capture the 6 layout names labeled as PNGs.
+      for (let i = 0; i < JOURNAL_LAYOUT_SEQUENCE.length; i++) {
+        const layout = JOURNAL_LAYOUT_SEQUENCE[i];
+        // Build a temporary 1080x1080 canvas with sample text + layout name placeholder
+        host.innerHTML = `<div style="width:1080px;height:1080px;display:flex;align-items:center;justify-content:center;background:${palette.bgColor};color:${palette.textColor};font-family:'Cormorant Garamond',serif;text-align:center;padding:80px;">
+          <div>
+            <div style="font-size:18px;letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-bottom:24px;">${layout}</div>
+            <div style="font-style:italic;font-size:54px;line-height:1.1;margin-bottom:30px;">${sample.title}</div>
+            <div style="font-family:'DM Sans',sans-serif;font-size:24px;line-height:1.5;opacity:.85;background:${palette.accentColor};color:${palette.bgColor};padding:24px 32px;display:inline-block;">${sample.body}</div>
+          </div>
+        </div>`;
+        await document.fonts.ready;
+        const dataUrl = await toPng(host.firstElementChild as HTMLElement, { width: 1080, height: 1080, pixelRatio: 1, cacheBust: true });
+        const blob = await (await fetch(dataUrl)).blob();
+        zip.file(`journaling-${i + 1}-${layout}.png`, blob);
+      }
+      document.body.removeChild(host);
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "colecao-journaling-preview.zip";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Prévia da Coleção Journaling exportada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao exportar coleção");
+    } finally {
+      setExportingCollection(false);
+    }
+  }, []);
 
   // Snapshot for undo of last template change
   const lastSlidesSnapshot = useRef<SlideData[] | null>(null);
