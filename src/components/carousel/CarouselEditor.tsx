@@ -35,7 +35,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
   JOURNAL_TEMPLATE_IDS, JOURNAL_LAYOUT_SEQUENCE, isJournalTemplate,
-  JOURNAL_PALETTES, applyPaletteToSlide, buildJournalSampleSlides, type JournalPalette,
+  JOURNAL_PALETTES, applyPaletteToSlide, buildJournalSampleSlides,
+  JOURNAL_SAMPLE_THEMES, type JournalPalette,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
 } from "./CarouselTemplates";
 import ImageLibraryPicker from "./ImageLibraryPicker";
