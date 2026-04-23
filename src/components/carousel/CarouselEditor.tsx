@@ -534,7 +534,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   const showHighlight = HIGHLIGHT_LAYOUTS.includes(curLayout);
 
   return (
-    <div className="space-y-4 mt-4">
+    <div className="space-y-4 mt-4" style={{ paddingBottom: isMobile && slides.length > 0 ? "calc(72px + env(safe-area-inset-bottom))" : undefined }}>
       <SessionIndicator show={hasRestoredSession && slides.length > 0} onClear={clearSession} />
 
       {/* ========== GENERATION FORM ========== */}
