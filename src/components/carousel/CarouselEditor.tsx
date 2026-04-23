@@ -935,6 +935,43 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </div>
                 </div>
 
+                {/* Real mini-thumbnails of the 6 layouts (120x120) using current palette */}
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Layouts (clique para aplicar ao slide atual)</Label>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-1">
+                    {journalThumbSlides.map((thumbSlide, i) => (
+                      <button
+                        key={`${currentJournalPaletteId}-thumb-${i}`}
+                        onClick={() => applyJournalLayoutToCurrent(JOURNAL_LAYOUT_SEQUENCE[i])}
+                        title={JOURNAL_LAYOUT_SEQUENCE[i]}
+                        className="relative w-[120px] h-[120px] rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-all bg-muted shrink-0"
+                        style={{ width: 120, height: 120 }}
+                      >
+                        <div
+                          style={{
+                            width: 1080,
+                            height: 1080,
+                            transform: "scale(0.1111)",
+                            transformOrigin: "top left",
+                            pointerEvents: "none",
+                          }}
+                        >
+                          <SlidePreview
+                            slide={thumbSlide}
+                            slideIndex={i}
+                            totalSlides={6}
+                            aspectRatio="1:1"
+                            nativeSize
+                          />
+                        </div>
+                        <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] py-0.5 text-center font-medium">
+                          {i + 1}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Action buttons */}
                 <div className="flex gap-2 flex-wrap">
                   <Button
@@ -944,10 +981,24 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     onClick={() => {
                       const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
                         || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
-                      applyJournalCollection(tpl);
+                      applyJournalCollection(tpl, { keepContent: true });
                     }}
+                    title="Aplica os 6 layouts mantendo seus textos e imagens"
                   >
-                    <Sparkles className="h-3 w-3 mr-1" /> Aplicar Coleção (6 slides)
+                    <Sparkles className="h-3 w-3 mr-1" /> ✨ Aplicar coleção (manter meu texto)
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() => {
+                      const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
+                        || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
+                      applyJournalCollection(tpl, { keepContent: false });
+                    }}
+                    title="Substitui textos pelo conteúdo modelo da coleção"
+                  >
+                    🔄 Aplicar com texto modelo
                   </Button>
                   <Button
                     size="sm"
@@ -958,11 +1009,11 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   >
                     {exportingCollection
                       ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Gerando...</>
-                      : <><DownloadCloud className="h-3 w-3 mr-1" /> 📥 Exportar prévia da coleção</>}
+                      : <><DownloadCloud className="h-3 w-3 mr-1" /> 📥 Exportar prévia (.zip)</>}
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  A paleta troca cores em todos os slides Journaling. A exportação gera um ZIP com 6 PNGs reais (1080×1080) usando o conteúdo de exemplo.
+                  A paleta troca cores em todos os slides Journaling. A exportação gera um ZIP com 6 PNGs 1080×1080 fiéis ao preview.
                 </p>
               </div>
             )}
