@@ -604,7 +604,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
         <>
           {/* Format toggle + Navigation */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Label className="text-xs text-muted-foreground shrink-0">Formato:</Label>
               {(["1:1", "9:16", "16:9"] as AspectRatio[]).map((r) => (
                 <Button key={r} size="sm" variant={selectedTemplate.aspectRatio === r ? "default" : "outline"} onClick={() => changeFormat(r)}>
@@ -616,7 +616,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
               ))}
             </div>
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button size="icon" variant="outline" disabled={currentSlide === 0} onClick={() => setCurrentSlide((p) => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
                 <Badge variant="secondary">Slide {currentSlide + 1} / {slides.length}</Badge>
                 <Button size="icon" variant="outline" disabled={currentSlide === slides.length - 1} onClick={() => setCurrentSlide((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
@@ -629,9 +629,9 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </Button>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button size="sm" variant="outline" onClick={toggleFullscreen} title="Modo apresentação">
-                  <Maximize className="h-4 w-4 mr-1" /> Apresentar
+                  <Maximize className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Apresentar</span>
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => exportSlide(currentSlide)}><Download className="h-4 w-4 mr-1" /> PNG</Button>
                 <Button size="sm" onClick={exportAll} disabled={exporting}><DownloadCloud className="h-4 w-4 mr-1" />{exporting ? "Exportando..." : "Baixar Todos"}</Button>
@@ -643,8 +643,10 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Preview */}
-            <div className="flex justify-center">
-              <SlidePreview ref={setSlideRef(currentSlide)} slide={cur} slideIndex={currentSlide} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} />
+            <div className="flex justify-center w-full overflow-hidden">
+              <div className="w-full max-w-full">
+                <SlidePreview ref={setSlideRef(currentSlide)} slide={cur} slideIndex={currentSlide} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} />
+              </div>
             </div>
 
             {/* ========== EDITOR CONTROLS ========== */}
