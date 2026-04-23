@@ -30,6 +30,8 @@ import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
 import TemplatePreviewTooltip from "./TemplatePreviewTooltip";
+import ImageAdjustPanel, { type ImageAdjustValues } from "./ImageAdjustPanel";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
