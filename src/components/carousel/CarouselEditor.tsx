@@ -997,6 +997,96 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                 </div>
               </>
             )}
+
+            {/* ========== SEÇÃO DESTACADA: COLEÇÃO JOURNALING ========== */}
+            {showJournalSection && journalTemplates.length > 0 && (
+              <div className="mt-3 p-3 rounded-lg border-2 border-amber-300/60 bg-gradient-to-br from-amber-50/60 to-orange-50/40 dark:from-amber-950/20 dark:to-orange-950/10">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                      ✨ Coleção Journaling
+                    </span>
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-amber-400/60 text-amber-800 dark:text-amber-300">
+                      6 layouts narrativos
+                    </Badge>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground hidden md:inline">
+                    Papelaria orgânica · 1:1
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                  {journalTemplates.map((t) => (
+                    <TemplatePreviewTooltip key={t.id} template={t}>
+                      <button
+                        onClick={() => {
+                          if (slides.length > 0) {
+                            snapshotBeforeTemplate(t);
+                            if (templateApplyMode === "current") {
+                              applyTemplateToSlide(t, currentSlide);
+                            } else if (templateApplyMode === "preserve") {
+                              applyTemplatePreservingFormatting(t);
+                            } else {
+                              applyTemplateToAll(t);
+                            }
+                          } else {
+                            setSelectedTemplate(t);
+                          }
+                        }}
+                        className={`group relative rounded-md border-2 overflow-hidden transition-all ${
+                          selectedTemplate.id === t.id
+                            ? "border-primary ring-2 ring-primary/40"
+                            : "border-amber-200/50 hover:border-amber-400 dark:border-amber-800/40"
+                        }`}
+                        title={t.name}
+                      >
+                        <div className="relative w-full aspect-square overflow-hidden bg-background">
+                          <div
+                            style={{
+                              transform: "scale(0.10185)",
+                              transformOrigin: "top left",
+                              width: 1080,
+                              height: 1080,
+                              pointerEvents: "none",
+                            }}
+                          >
+                            <SlidePreview
+                              slide={{
+                                title: "Título exemplo",
+                                body: "Texto de visualização do layout journaling.",
+                                bgColor: t.bgColor,
+                                textColor: t.textColor,
+                                accentColor: t.accentColor,
+                                titleSize: t.titleSize,
+                                bodySize: t.bodySize,
+                                fontFamily: t.fontFamily,
+                                align: t.align,
+                                bgGradient: t.bgGradient,
+                                layout: t.layout,
+                                highlightBgColor: t.highlightBgColor,
+                                profileName: "Mentora Gi",
+                                profileHandle: "@mentoragi",
+                              }}
+                              aspectRatio={t.aspectRatio}
+                              slideIndex={0}
+                              totalSlides={1}
+                            />
+                          </div>
+                        </div>
+                        <div className="px-1.5 py-1 bg-background/95 border-t border-border/50">
+                          <span className="block text-[10px] font-medium text-foreground truncate leading-tight">
+                            {t.name}
+                          </span>
+                        </div>
+                      </button>
+                    </TemplatePreviewTooltip>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2 leading-snug">
+                  Clique em qualquer template para aplicar com o modo selecionado acima. Use o painel de paletas abaixo para variar as cores.
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
               {filteredTemplates.map((t) => (
                 <TemplatePreviewTooltip key={t.id} template={t}>
