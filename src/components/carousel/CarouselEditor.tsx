@@ -283,8 +283,50 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       topic, slideCount, tone, formatFilter,
       selectedTemplateId: selectedTemplate.id, slides, currentSlide,
       giMessages, giOpen, templateApplyMode,
+      currentJournalPaletteId,
     });
-  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, templateApplyMode, setSessionState]);
+  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, templateApplyMode, currentJournalPaletteId, setSessionState]);
+
+  // Apply the entire Journaling Collection (6 slides, 6 layouts in order, current palette)
+  const applyJournalCollection = useCallback((template: CarouselTemplate) => {
+    const palette = currentJournalPalette;
+    const sample = buildJournalSampleSlides(palette, slides[0]?.profileHandle);
+    const newSlides: SlideData[] = sample.map((s, i) => {
+      const existing = slides[i];
+      return {
+        ...s,
+        title: existing?.title || s.title,
+        body: existing?.body || s.body,
+        fontFamily: template.fontFamily,
+        titleSize: template.titleSize,
+        bodySize: template.bodySize,
+        align: template.align,
+        // preserve uploaded images for photo-based layouts
+        imageUrl: existing?.imageUrl,
+        bgImageUrl: existing?.bgImageUrl,
+        profileHandle: existing?.profileHandle || s.profileHandle,
+        profileName: existing?.profileName,
+        profileImageUrl: existing?.profileImageUrl,
+      };
+    });
+    setSelectedTemplate(template);
+    setSlides(newSlides);
+    setCurrentSlide(0);
+    slideRefs.current = new Array(newSlides.length).fill(null);
+    toast.success("Coleção Journaling aplicada (6 slides)");
+  }, [currentJournalPalette, slides]);
+
+  // Library picker target → applies returned data URL to current slide
+  const handleLibrarySelect = useCallback((dataUrl: string, attribution: string) => {
+    if (libraryTarget === "bg") {
+      snapshotSlideForUndo(currentSlide, "Imagem de fundo aplicada do banco");
+      updateSlide(currentSlide, { bgImageUrl: dataUrl });
+    } else {
+      snapshotSlideForUndo(currentSlide, "Imagem aplicada do banco");
+      updateSlide(currentSlide, { imageUrl: dataUrl });
+    }
+    toast.message(attribution, { duration: 5000 });
+  }, [libraryTarget, currentSlide]);
 
   const { hasProfile, formData, raioX } = usePersonaContext();
 
