@@ -403,6 +403,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   }, [currentJournalPalette, slides]);
 
   // Apply only one journal layout to the current slide (used by thumbnails).
+  // Preserves the user's title/body/imageUrl/bgImageUrl AND custom titleColor/bodyColor.
   const applyJournalLayoutToCurrent = useCallback((layout: CarouselLayout) => {
     const palette = currentJournalPalette;
     setSlides(prev => prev.map((s, i) => i === currentSlide ? {
@@ -411,8 +412,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       bgColor: palette.bgColor,
       textColor: palette.textColor,
       accentColor: palette.accentColor,
-      titleColor: undefined,
-      bodyColor: undefined,
+      highlightBgColor: palette.highlightBgColor,
+      // Preserve titleColor / bodyColor / titleBold / etc.
     } : s));
     toast.success(`Layout aplicado ao slide ${currentSlide + 1}`);
   }, [currentJournalPalette, currentSlide]);
