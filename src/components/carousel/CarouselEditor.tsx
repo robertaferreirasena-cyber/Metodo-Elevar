@@ -1037,6 +1037,35 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
           </div>
         </div>
       )}
+
+      {/* Confirm overwrite when a new initialTopic arrives */}
+      <AlertDialog open={!!pendingTopic} onOpenChange={(o) => { if (!o) setPendingTopic(null); }}>
+        <AlertDialogContent className="w-[95vw] max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Substituir carrossel atual?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você já tem um carrossel em andamento sobre <strong>"{topic}"</strong>.
+              Deseja descartá-lo e começar um novo sobre <strong>"{pendingTopic}"</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              if (pendingTopic) lastAppliedInitialTopic.current = pendingTopic;
+              setPendingTopic(null);
+            }}>Manter o atual</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (pendingTopic) {
+                setTopic(pendingTopic);
+                setSlides([]);
+                setCurrentSlide(0);
+                setGiMessages([]);
+                lastAppliedInitialTopic.current = pendingTopic;
+              }
+              setPendingTopic(null);
+            }}>Substituir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
