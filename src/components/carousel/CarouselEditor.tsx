@@ -142,6 +142,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [fullscreen, setFullscreen] = useState(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isMobile = useIsMobile();
+  const { hasProfile, formData, raioX } = usePersonaContext();
 
   // Mentora Gi mini-chat state — persisted
   const [giOpen, setGiOpen] = useState(sessionState.giOpen);
@@ -532,7 +533,7 @@ Retorne APENAS um JSON válido sem markdown:
     toast.message(attribution, { duration: 5000 });
   }, [libraryTarget, currentSlide]);
 
-  const { hasProfile, formData, raioX } = usePersonaContext();
+  
 
   const setSlideRef = useCallback(
     (index: number) => (el: HTMLDivElement | null) => { slideRefs.current[index] = el; },
