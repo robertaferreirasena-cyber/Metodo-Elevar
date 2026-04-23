@@ -35,16 +35,18 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
   JOURNAL_TEMPLATE_IDS, JOURNAL_LAYOUT_SEQUENCE, isJournalTemplate,
-  JOURNAL_PALETTES, applyPaletteToSlide, type JournalPalette,
+  JOURNAL_PALETTES, applyPaletteToSlide, buildJournalSampleSlides, type JournalPalette,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
 } from "./CarouselTemplates";
 import ImageLibraryPicker from "./ImageLibraryPicker";
+import JournalCollectionExporter, { type JournalExporterHandle } from "./JournalCollectionExporter";
 import JSZip from "jszip";
 
-const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial"];
+const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial", "journal-photo-card", "journal-torn-paper"];
 const MULTI_IMAGE_LAYOUTS: CarouselLayout[] = ["photo-grid", "tweet-post"];
 const PROFILE_LAYOUTS: CarouselLayout[] = ["profile-post", "photo-grid", "tweet-post", "prompt-card", "sticker-card"];
 const HIGHLIGHT_LAYOUTS: CarouselLayout[] = ["sales-highlight"];
+const BG_IMAGE_LAYOUTS: CarouselLayout[] = ["journal-photo-card", "journal-torn-paper", "image-bg"];
 
 type FormatFilter = "all" | "1:1" | "16:9" | "9:16";
 
@@ -72,12 +74,14 @@ interface CarouselSessionState {
   giMessages: { role: "user" | "assistant"; content: string }[];
   giOpen: boolean;
   templateApplyMode: "all" | "current" | "preserve";
+  currentJournalPaletteId: string;
 }
 
 const EMPTY_CAROUSEL_STATE: CarouselSessionState = {
   topic: "", slideCount: 5, tone: "profissional", formatFilter: "all",
   selectedTemplateId: CAROUSEL_TEMPLATES[0].id, slides: [], currentSlide: 0,
   giMessages: [], giOpen: false, templateApplyMode: "all",
+  currentJournalPaletteId: "terracota",
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-mentor-chat`;
@@ -153,7 +157,19 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [libraryTarget, setLibraryTarget] = useState<"image" | "bg">("bg");
   const [exportingCollection, setExportingCollection] = useState(false);
 
+  // Current journal palette (persisted)
+  const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(
+    sessionState.currentJournalPaletteId || "terracota"
+  );
+  const currentJournalPalette =
+    JOURNAL_PALETTES.find(p => p.id === currentJournalPaletteId) || JOURNAL_PALETTES[0];
+
+  // Off-screen exporter (mounted only during export)
+  const [exporterMounted, setExporterMounted] = useState(false);
+  const exporterRef = useRef<JournalExporterHandle>(null);
+
   const applyJournalPalette = useCallback((palette: JournalPalette) => {
+    setCurrentJournalPaletteId(palette.id);
     setSlides(prev => prev.map(s => isJournalTemplate(selectedTemplate.id) || (s.layout || "").startsWith("journal-")
       ? applyPaletteToSlide(s, palette)
       : s
@@ -163,52 +179,67 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   const exportJournalCollection = useCallback(async () => {
     setExportingCollection(true);
+    setExporterMounted(true);
     try {
-      const { default: JSZipMod } = await import("jszip");
-      const { toPng } = await import("html-to-image");
-      const zip = new JSZipMod();
-      // Render off-screen
-      const sample = {
-        title: "Como dobrar seu faturamento sem dobrar a jornada",
-        body: "Três pilares aplicados com nossas mentoradas para escalar com leveza, consistência e estratégia.",
-      };
-      const palette = JOURNAL_PALETTES[0];
-      const host = document.createElement("div");
-      host.style.cssText = "position:fixed;left:-99999px;top:0;width:1080px;height:1080px;";
-      document.body.appendChild(host);
-      // Use the actual SlidePreview via React portal isn't trivial here — fall back to capturing
-      // existing exportRefs if user has a journal carousel; otherwise generate via DOM clones of the
-      // 6 layouts using minimal markup. To keep fast: just capture the 6 layout names labeled as PNGs.
-      for (let i = 0; i < JOURNAL_LAYOUT_SEQUENCE.length; i++) {
-        const layout = JOURNAL_LAYOUT_SEQUENCE[i];
-        // Build a temporary 1080x1080 canvas with sample text + layout name placeholder
-        host.innerHTML = `<div style="width:1080px;height:1080px;display:flex;align-items:center;justify-content:center;background:${palette.bgColor};color:${palette.textColor};font-family:'Cormorant Garamond',serif;text-align:center;padding:80px;">
-          <div>
-            <div style="font-size:18px;letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-bottom:24px;">${layout}</div>
-            <div style="font-style:italic;font-size:54px;line-height:1.1;margin-bottom:30px;">${sample.title}</div>
-            <div style="font-family:'DM Sans',sans-serif;font-size:24px;line-height:1.5;opacity:.85;background:${palette.accentColor};color:${palette.bgColor};padding:24px 32px;display:inline-block;">${sample.body}</div>
-          </div>
-        </div>`;
-        await document.fonts.ready;
-        const dataUrl = await toPng(host.firstElementChild as HTMLElement, { width: 1080, height: 1080, pixelRatio: 1, cacheBust: true });
-        const blob = await (await fetch(dataUrl)).blob();
-        zip.file(`journaling-${i + 1}-${layout}.png`, blob);
+      // Wait for the off-screen exporter to mount, render and load fonts
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+      await document.fonts.ready;
+      await new Promise((r) => setTimeout(r, 400));
+
+      const nodes = exporterRef.current?.getNodes() || [];
+      if (!nodes.length || nodes.some((n) => !n)) {
+        throw new Error("Falha ao montar prévia da coleção");
       }
-      document.body.removeChild(host);
-      const blob = await zip.generateAsync({ type: "blob" });
-      const url = URL.createObjectURL(blob);
+
+      const { toPng } = await import("html-to-image");
+      const zip = new JSZip();
+
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i] as HTMLDivElement;
+        const layoutName = JOURNAL_LAYOUT_SEQUENCE[i];
+        const dataUrl = await toPng(node, {
+          width: 1080,
+          height: 1080,
+          pixelRatio: 1,
+          cacheBust: true,
+          style: { transform: "none", position: "static" },
+        });
+        const blob = await (await fetch(dataUrl)).blob();
+        const fileName = `${String(i + 1).padStart(2, "0")}-${layoutName}.png`;
+        zip.file(fileName, blob);
+      }
+
+      const palette = currentJournalPalette;
+      const readme = [
+        "Coleção Journaling — Mentora Gi",
+        "",
+        `Paleta: ${palette.emoji} ${palette.name}`,
+        `  - Fundo:    ${palette.bgColor}`,
+        `  - Texto:    ${palette.textColor}`,
+        `  - Destaque: ${palette.accentColor}`,
+        "",
+        "Layouts (na ordem narrativa):",
+        ...JOURNAL_LAYOUT_SEQUENCE.map((l, i) => `  ${i + 1}. ${l}`),
+        "",
+        "Conteúdo de exemplo gerado automaticamente.",
+      ].join("\n");
+      zip.file("README.txt", readme);
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "colecao-journaling-preview.zip";
+      a.download = `colecao-journaling-${palette.id}.zip`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Prévia da Coleção Journaling exportada");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao exportar coleção");
     } finally {
+      setExporterMounted(false);
       setExportingCollection(false);
     }
-  }, []);
+  }, [currentJournalPalette]);
 
   // Snapshot for undo of last template change
   const lastSlidesSnapshot = useRef<SlideData[] | null>(null);
@@ -252,8 +283,50 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       topic, slideCount, tone, formatFilter,
       selectedTemplateId: selectedTemplate.id, slides, currentSlide,
       giMessages, giOpen, templateApplyMode,
+      currentJournalPaletteId,
     });
-  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, templateApplyMode, setSessionState]);
+  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, templateApplyMode, currentJournalPaletteId, setSessionState]);
+
+  // Apply the entire Journaling Collection (6 slides, 6 layouts in order, current palette)
+  const applyJournalCollection = useCallback((template: CarouselTemplate) => {
+    const palette = currentJournalPalette;
+    const sample = buildJournalSampleSlides(palette, slides[0]?.profileHandle);
+    const newSlides: SlideData[] = sample.map((s, i) => {
+      const existing = slides[i];
+      return {
+        ...s,
+        title: existing?.title || s.title,
+        body: existing?.body || s.body,
+        fontFamily: template.fontFamily,
+        titleSize: template.titleSize,
+        bodySize: template.bodySize,
+        align: template.align,
+        // preserve uploaded images for photo-based layouts
+        imageUrl: existing?.imageUrl,
+        bgImageUrl: existing?.bgImageUrl,
+        profileHandle: existing?.profileHandle || s.profileHandle,
+        profileName: existing?.profileName,
+        profileImageUrl: existing?.profileImageUrl,
+      };
+    });
+    setSelectedTemplate(template);
+    setSlides(newSlides);
+    setCurrentSlide(0);
+    slideRefs.current = new Array(newSlides.length).fill(null);
+    toast.success("Coleção Journaling aplicada (6 slides)");
+  }, [currentJournalPalette, slides]);
+
+  // Library picker target → applies returned data URL to current slide
+  const handleLibrarySelect = useCallback((dataUrl: string, attribution: string) => {
+    if (libraryTarget === "bg") {
+      snapshotSlideForUndo(currentSlide, "Imagem de fundo aplicada do banco");
+      updateSlide(currentSlide, { bgImageUrl: dataUrl });
+    } else {
+      snapshotSlideForUndo(currentSlide, "Imagem aplicada do banco");
+      updateSlide(currentSlide, { imageUrl: dataUrl });
+    }
+    toast.message(attribution, { duration: 5000 });
+  }, [libraryTarget, currentSlide]);
 
   const { hasProfile, formData, raioX } = usePersonaContext();
 
@@ -734,6 +807,73 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                 </TemplatePreviewTooltip>
               ))}
             </div>
+
+            {/* ========== COLEÇÃO JOURNALING — paletas + ações ========== */}
+            {(isJournalTemplate(selectedTemplate.id) || slides.some(s => (s.layout || "").startsWith("journal-"))) && (
+              <div className="mt-3 p-3 rounded-lg border border-amber-200/60 bg-amber-50/30 dark:bg-amber-950/10 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-xs font-semibold text-foreground flex items-center gap-1">
+                    📓 Coleção Journaling
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">6 layouts narrativos</Badge>
+                </div>
+
+                {/* Palette swatches */}
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Paleta</Label>
+                  <div className="flex gap-1.5 mt-1 flex-wrap items-center">
+                    {JOURNAL_PALETTES.map((p) => (
+                      <button
+                        key={p.id}
+                        title={`${p.emoji} ${p.name}`}
+                        onClick={() => applyJournalPalette(p)}
+                        className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${currentJournalPaletteId === p.id ? "border-primary ring-2 ring-primary/40" : "border-border"}`}
+                        style={{ background: p.swatch }}
+                        aria-label={p.name}
+                      />
+                    ))}
+                    <button
+                      title="Paleta aleatória"
+                      onClick={() => {
+                        const rest = JOURNAL_PALETTES.filter(p => p.id !== currentJournalPaletteId);
+                        applyJournalPalette(rest[Math.floor(Math.random() * rest.length)]);
+                      }}
+                      className="w-8 h-8 rounded-full border-2 border-dashed border-border hover:border-primary/60 text-sm"
+                    >🎲</button>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="text-xs"
+                    onClick={() => {
+                      const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
+                        || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
+                      applyJournalCollection(tpl);
+                    }}
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" /> Aplicar Coleção (6 slides)
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={exportJournalCollection}
+                    disabled={exportingCollection}
+                  >
+                    {exportingCollection
+                      ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Gerando...</>
+                      : <><DownloadCloud className="h-3 w-3 mr-1" /> 📥 Exportar prévia da coleção</>}
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  A paleta troca cores em todos os slides Journaling. A exportação gera um ZIP com 6 PNGs reais (1080×1080) usando o conteúdo de exemplo.
+                </p>
+              </div>
+            )}
           </div>
 
           <Button onClick={generateContent} disabled={generating} className="w-full">
@@ -840,6 +980,15 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                       {cur.bgImageUrl ? "Trocar fundo" : "Adicionar fundo"}
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleBgImageUpload(currentSlide, f); }} />
                     </label>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-9 shrink-0"
+                      onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}
+                      title="Buscar no banco de imagens grátis"
+                    >
+                      🖼 Banco
+                    </Button>
                     {cur.bgImageUrl && (
                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { snapshotSlideForUndo(currentSlide, "Imagem de fundo removida"); updateSlide(currentSlide, { bgImageUrl: undefined, bgImagePositionX: undefined, bgImagePositionY: undefined, bgImageScale: undefined, bgImageBlur: undefined, bgImageBrightness: undefined, bgImageContrast: undefined }); }}>
                         <X className="h-4 w-4" />
@@ -884,6 +1033,15 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                         {cur.imageUrl ? "Trocar imagem" : "Enviar imagem"}
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(currentSlide, f); }} />
                       </label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-9 shrink-0"
+                        onClick={() => { setLibraryTarget("image"); setLibraryOpen(true); }}
+                        title="Buscar no banco de imagens grátis"
+                      >
+                        🖼 Banco
+                      </Button>
                       {cur.imageUrl && (
                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { snapshotSlideForUndo(currentSlide, "Imagem do layout removida"); updateSlide(currentSlide, { imageUrl: undefined, imagePositionX: undefined, imagePositionY: undefined, imageScale: undefined, imageBlur: undefined, imageBrightness: undefined, imageContrast: undefined }); }}><X className="h-4 w-4" /></Button>
                       )}
@@ -1271,6 +1429,24 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ===== Image Library Picker ===== */}
+      <ImageLibraryPicker
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        orientation={selectedTemplate.aspectRatio}
+        suggestedQuery={topic || formData?.niche || ""}
+        onSelect={handleLibrarySelect}
+      />
+
+      {/* ===== Off-screen Journal Collection Exporter (mounted only during export) ===== */}
+      {exporterMounted && (
+        <JournalCollectionExporter
+          ref={exporterRef}
+          palette={currentJournalPalette}
+          profileHandle={slides[0]?.profileHandle}
+        />
+      )}
     </div>
   );
 }
