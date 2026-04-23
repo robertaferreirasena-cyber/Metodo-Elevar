@@ -142,6 +142,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [fullscreen, setFullscreen] = useState(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isMobile = useIsMobile();
+  const { hasProfile, formData, raioX } = usePersonaContext();
 
   // Mentora Gi mini-chat state — persisted
   const [giOpen, setGiOpen] = useState(sessionState.giOpen);
@@ -181,10 +182,19 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   const applyJournalPalette = useCallback((palette: JournalPalette) => {
     setCurrentJournalPaletteId(palette.id);
-    setSlides(prev => prev.map(s => isJournalTemplate(selectedTemplate.id) || (s.layout || "").startsWith("journal-")
-      ? applyPaletteToSlide(s, palette)
-      : s
-    ));
+    setSlides(prev => prev.map(s => {
+      const isJournalSlide = isJournalTemplate(selectedTemplate.id) || (s.layout || "").startsWith("journal-");
+      if (!isJournalSlide) return s;
+      // Preserve user color customizations: only swap base palette colors,
+      // keep titleColor/bodyColor if user has explicitly set them.
+      return {
+        ...s,
+        bgColor: palette.bgColor,
+        textColor: palette.textColor,
+        accentColor: palette.accentColor,
+        // titleColor / bodyColor / highlightBgColor: NOT touched
+      };
+    }));
     toast.success(`Paleta "${palette.name}" aplicada`);
   }, [selectedTemplate.id]);
 
@@ -360,16 +370,15 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     const newSlides: SlideData[] = sample.map((s, i) => {
       const existing = slides[i];
       if (opts.keepContent && existing) {
-        // Preserve user content; swap only layout, colors, and font family from template/palette
+        // Preserve user content + custom colors; swap only layout, base palette, font family
         return {
           ...existing,
           layout: s.layout,
           bgColor: palette.bgColor,
           textColor: palette.textColor,
           accentColor: palette.accentColor,
-          titleColor: undefined,
-          bodyColor: undefined,
           fontFamily: template.fontFamily,
+          // titleColor / bodyColor: preserved (user customizations stay)
           // fill body if empty AND layout typically expects body
           body: existing.body || s.body,
           title: existing.title || s.title,
@@ -402,7 +411,103 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     );
   }, [currentJournalPalette, slides]);
 
+  // Generate the full Journaling Collection using Mentora Gi:
+  // forces 6 slides, distributes the 6 narrative layouts, applies current palette.
+  const [generatingJournalColl, setGeneratingJournalColl] = useState(false);
+  const generateJournalCollection = useCallback(async () => {
+    if (!topic.trim()) {
+      toast.error("Informe o tema do carrossel acima primeiro");
+      return;
+    }
+    const journalTemplate =
+      CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
+      || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id));
+    if (!journalTemplate) {
+      toast.error("Template Journaling não encontrado");
+      return;
+    }
+    setGeneratingJournalColl(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      let personaCtx = "";
+      if (hasProfile) {
+        const parts: string[] = [];
+        if (formData.niche) parts.push(`Nicho: ${formData.niche}`);
+        if (formData.product_description) parts.push(`Produto: ${formData.product_description}`);
+        if (formData.main_pain) parts.push(`Dor principal: ${formData.main_pain}`);
+        if (formData.main_differentiator) parts.push(`Diferencial: ${formData.main_differentiator}`);
+        if (raioX?.estrategia_recomendada?.tom_comunicacao) parts.push(`Tom: ${raioX.estrategia_recomendada.tom_comunicacao}`);
+        if (parts.length) personaCtx = `\n\nDADOS DA PERSONA DO USUÁRIO:\n${parts.join("\n")}`;
+      }
+      const prompt = `Crie um carrossel de EXATAMENTE 6 slides sobre: "${topic}"
+
+Tom: ${tone}${personaCtx}
+
+CONTEXTO VISUAL: Os 6 slides serão renderizados em layouts visuais distintos de uma coleção "Journaling" estilo caderno artesanal:
+1. Capa com fita adesiva (gancho forte e curto)
+2. Página de caderno com selo dourado (amplificação da dor)
+3. Foto + card sobreposto (revelação de valor)
+4. Espiral metálico (dica prática / framework)
+5. Papel rasgado sobre foto (prova/transformação)
+6. Envelope de cera (CTA final, fecha o arco)
+
+REGRAS OBRIGATÓRIAS:
+1. ARCO NARRATIVO consistente entre os 6 slides
+2. Títulos curtos e impactantes (6-12 palavras), perfeitos para leitura rápida em página de caderno
+3. Corpo enxuto (3-5 linhas), íntimo e conversacional, como uma anotação pessoal
+4. Conexão clara entre slides
+5. Slide 6 com CTA irresistível
+
+Retorne APENAS um JSON válido sem markdown:
+{"slides":[{"title":"...","body":"..."}]}`;
+
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: prompt }],
+          persona: "copywriter",
+        }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || `Erro ${resp.status}`);
+      }
+      const fullText = await readStream(resp, () => {});
+      const jsonMatch = fullText.match(/\{[\s\S]*"slides"[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("IA não retornou JSON válido");
+      const data = JSON.parse(jsonMatch[0]) as { slides: { title: string; body: string }[] };
+      if (!data.slides?.length) throw new Error("Resposta sem slides");
+
+      // Force exactly 6 slides; pad/truncate if needed
+      const six = data.slides.slice(0, 6);
+      while (six.length < 6) six.push({ title: "", body: "" });
+
+      const palette = currentJournalPalette;
+      const built = createSlidesFromTemplate(journalTemplate, six).map(s => ({
+        ...s,
+        bgColor: palette.bgColor,
+        textColor: palette.textColor,
+        accentColor: palette.accentColor,
+      }));
+      setSelectedTemplate(journalTemplate);
+      setSlides(built);
+      setCurrentSlide(0);
+      slideRefs.current = new Array(built.length).fill(null);
+      toast.success("Coleção Journaling gerada com Mentora Gi");
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar coleção");
+    } finally {
+      setGeneratingJournalColl(false);
+    }
+  }, [topic, tone, selectedTemplate, currentJournalPalette, hasProfile, formData, raioX]);
+
   // Apply only one journal layout to the current slide (used by thumbnails).
+  // Preserves the user's title/body/imageUrl/bgImageUrl AND custom titleColor/bodyColor.
   const applyJournalLayoutToCurrent = useCallback((layout: CarouselLayout) => {
     const palette = currentJournalPalette;
     setSlides(prev => prev.map((s, i) => i === currentSlide ? {
@@ -411,8 +516,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       bgColor: palette.bgColor,
       textColor: palette.textColor,
       accentColor: palette.accentColor,
-      titleColor: undefined,
-      bodyColor: undefined,
+      // Preserve titleColor / bodyColor / titleBold / highlightBgColor / etc.
     } : s));
     toast.success(`Layout aplicado ao slide ${currentSlide + 1}`);
   }, [currentJournalPalette, currentSlide]);
@@ -429,7 +533,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     toast.message(attribution, { duration: 5000 });
   }, [libraryTarget, currentSlide]);
 
-  const { hasProfile, formData, raioX } = usePersonaContext();
+  
 
   const setSlideRef = useCallback(
     (index: number) => (el: HTMLDivElement | null) => { slideRefs.current[index] = el; },
@@ -987,6 +1091,18 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     size="sm"
                     variant="default"
                     className="text-xs"
+                    onClick={generateJournalCollection}
+                    disabled={generatingJournalColl}
+                    title="Gera 6 títulos e corpos consistentes para os 6 layouts da coleção, baseado no tema acima"
+                  >
+                    {generatingJournalColl
+                      ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Gerando...</>
+                      : <>🪄 Gerar coleção com Mentora Gi</>}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
                     onClick={() => {
                       const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
                         || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
@@ -994,7 +1110,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     }}
                     title="Aplica os 6 layouts mantendo seus textos e imagens"
                   >
-                    <Sparkles className="h-3 w-3 mr-1" /> ✨ Aplicar coleção (manter meu texto)
+                    <Sparkles className="h-3 w-3 mr-1" /> ✨ Manter meu texto
                   </Button>
                   <Button
                     size="sm"
@@ -1005,9 +1121,9 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                         || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
                       applyJournalCollection(tpl, { keepContent: false });
                     }}
-                    title="Substitui textos pelo conteúdo modelo da coleção"
+                    title="Substitui textos pelo conteúdo modelo da coleção (offline)"
                   >
-                    🔄 Aplicar com texto modelo
+                    📋 Texto exemplo
                   </Button>
                   <Button
                     size="sm"
@@ -1018,11 +1134,11 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   >
                     {exportingCollection
                       ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Gerando...</>
-                      : <><DownloadCloud className="h-3 w-3 mr-1" /> 📥 Exportar prévia (.zip)</>}
+                      : <><DownloadCloud className="h-3 w-3 mr-1" /> 📥 Exportar (.zip)</>}
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  A paleta troca cores em todos os slides Journaling. A exportação gera um ZIP com 6 PNGs 1080×1080 fiéis ao preview.
+                  🪄 = gera 6 títulos/corpos com Mentora Gi e distribui nos 6 layouts. Cores, fontes, imagens e fundo continuam totalmente editáveis no painel direito.
                 </p>
               </div>
             )}

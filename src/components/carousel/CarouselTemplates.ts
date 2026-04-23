@@ -852,7 +852,8 @@ export function createSlidesFromTemplate(
   template: CarouselTemplate,
   content: { title: string; body: string }[]
 ): SlideData[] {
-  return content.map((c) => ({
+  const isJournal = isJournalTemplate(template.id);
+  return content.map((c, i) => ({
     title: c.title,
     body: c.body,
     bgColor: template.bgColor,
@@ -863,7 +864,11 @@ export function createSlidesFromTemplate(
     fontFamily: template.fontFamily,
     align: template.align,
     bgGradient: template.bgGradient,
-    layout: template.layout,
+    // Journaling templates: distribute the 6 narrative layouts across slides
+    // so the user's AI-generated text renders inside the full collection look.
+    layout: isJournal
+      ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length]
+      : template.layout,
     highlightBgColor: template.highlightBgColor,
   }));
 }

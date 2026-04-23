@@ -57,3 +57,6 @@ verify_jwt = false
 
 [functions.carousel-generator]
 verify_jwt = false
+
+[functions.image-library-search]
+verify_jwt = false
