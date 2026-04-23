@@ -753,9 +753,25 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     )}
                   </div>
                   {cur.bgImageUrl && (
-                    <div className="mt-2">
-                      <Label className="text-xs">Opacidade do overlay: {Math.round((cur.overlayOpacity ?? 0.55) * 100)}%</Label>
-                      <Slider value={[cur.overlayOpacity ?? 0.55]} onValueChange={([v]) => updateSlide(currentSlide, { overlayOpacity: v })} min={0} max={1} step={0.05} className="mt-1" />
+                    <div className="mt-2 space-y-3">
+                      <div>
+                        <Label className="text-xs">Opacidade do overlay (sombra): {Math.round((cur.overlayOpacity ?? 0.55) * 100)}%</Label>
+                        <Slider value={[cur.overlayOpacity ?? 0.55]} onValueChange={([v]) => updateSlide(currentSlide, { overlayOpacity: v })} min={0} max={1} step={0.05} className="mt-1" />
+                      </div>
+                      <ImageAdjustPanel
+                        imageUrl={cur.bgImageUrl}
+                        aspectRatio={FORMAT_SPECS[selectedTemplate.aspectRatio].width / FORMAT_SPECS[selectedTemplate.aspectRatio].height}
+                        values={{
+                          positionX: cur.bgImagePositionX, positionY: cur.bgImagePositionY,
+                          scale: cur.bgImageScale, blur: cur.bgImageBlur,
+                          brightness: cur.bgImageBrightness, contrast: cur.bgImageContrast,
+                        }}
+                        onChange={(v) => updateSlide(currentSlide, {
+                          bgImagePositionX: v.positionX, bgImagePositionY: v.positionY,
+                          bgImageScale: v.scale, bgImageBlur: v.blur,
+                          bgImageBrightness: v.brightness, bgImageContrast: v.contrast,
+                        })}
+                      />
                     </div>
                   )}
                 </div>
