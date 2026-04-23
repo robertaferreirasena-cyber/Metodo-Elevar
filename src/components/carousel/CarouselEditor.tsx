@@ -165,6 +165,15 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     () => JOURNAL_PALETTES.find(p => p.id === currentJournalPaletteId) || JOURNAL_PALETTES[0],
     [currentJournalPaletteId]
   );
+  // Real mini-thumb slides for the 6 layouts using current palette (memoized for perf)
+  const journalThumbSlides = useMemo(
+    () => buildJournalSampleSlides(currentJournalPalette).map(s => ({
+      ...s,
+      title: s.title.length > 40 ? s.title.slice(0, 38) + "…" : s.title,
+      body: s.body.length > 60 ? s.body.slice(0, 58) + "…" : s.body,
+    })),
+    [currentJournalPalette]
+  );
 
   // Off-screen exporter (mounted only during export)
   const [exporterMounted, setExporterMounted] = useState(false);
