@@ -22,12 +22,16 @@ export function getJournalScale(
   const titleMul =
     isStories && titleLen > 90 ? 0.78 :
     isStories && titleLen > 60 ? 0.88 :
-    titleLen > 140 ? 0.85 : 1;
+    titleLen > 160 ? 0.78 :
+    titleLen > 110 ? 0.86 :
+    titleLen > 70 ? 0.94 : 1;
 
   const bodyMul =
     isStories && bodyLen > 220 ? 0.78 :
     isStories && bodyLen > 140 ? 0.88 :
-    bodyLen > 320 ? 0.85 : 1;
+    bodyLen > 320 ? 0.78 :
+    bodyLen > 220 ? 0.85 :
+    bodyLen > 140 ? 0.92 : 1;
 
   return { padMul, safeAreaFrac, titleMul, bodyMul, isStories };
 }

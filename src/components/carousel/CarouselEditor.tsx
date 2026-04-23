@@ -1508,6 +1508,39 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </div>
                 )}
 
+                {/* ===== JOURNAL CARD CONTROLS (only for journal-* layouts) ===== */}
+                {(cur.layout || "").startsWith("journal-") && (
+                  <>
+                    <div>
+                      <Label className="text-xs">Cor da caixa de destaque</Label>
+                      <input
+                        type="color"
+                        value={cur.highlightBgColor || cur.accentColor || "#a23e2e"}
+                        onChange={(e) => updateSlide(currentSlide, { highlightBgColor: e.target.value })}
+                        className="w-full h-9 rounded border border-input cursor-pointer mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Tamanho da caixa: {((cur.highlightScale ?? 1) * 100).toFixed(0)}%</Label>
+                      <Slider
+                        value={[cur.highlightScale ?? 1]}
+                        onValueChange={([v]) => updateSlide(currentSlide, { highlightScale: v })}
+                        min={0.7} max={1.3} step={0.05}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Posição vertical da caixa: {(cur.highlightOffsetY ?? 0) > 0 ? "+" : ""}{(cur.highlightOffsetY ?? 0).toFixed(0)}%</Label>
+                      <Slider
+                        value={[cur.highlightOffsetY ?? 0]}
+                        onValueChange={([v]) => updateSlide(currentSlide, { highlightOffsetY: v })}
+                        min={-15} max={15} step={1}
+                        className="mt-2"
+                      />
+                    </div>
+                  </>
+                )}
+
                 {/* ===== TEXT SHADOW ===== */}
                 <div>
                   <Label className="text-xs">Sombra no texto</Label>
