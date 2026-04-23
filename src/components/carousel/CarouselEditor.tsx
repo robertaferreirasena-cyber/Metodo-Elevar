@@ -59,11 +59,15 @@ interface CarouselSessionState {
   selectedTemplateId: string;
   slides: SlideData[];
   currentSlide: number;
+  giMessages: { role: "user" | "assistant"; content: string }[];
+  giOpen: boolean;
+  templateApplyMode: "all" | "current" | "preserve";
 }
 
 const EMPTY_CAROUSEL_STATE: CarouselSessionState = {
   topic: "", slideCount: 5, tone: "profissional", formatFilter: "all",
   selectedTemplateId: CAROUSEL_TEMPLATES[0].id, slides: [], currentSlide: 0,
+  giMessages: [], giOpen: false, templateApplyMode: "all",
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-mentor-chat`;
