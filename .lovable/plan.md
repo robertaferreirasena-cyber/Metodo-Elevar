@@ -1,132 +1,127 @@
 
 
-# Plano: Validação, exportação, variações de paleta, mobile-safe + Banco de Imagens (Unsplash/Pexels)
+# Plano: Captura real da coleção, fallbacks robustos, Banco de Imagens no slide e painel Journaling completo
 
-Vou implementar **6 melhorias** no Gerador de Carrossel + adicionar uma **biblioteca de imagens grátis** (estilo Canva) integrada ao editor.
+Vou refatorar a parte que ainda estava parcial (export por placeholder, ausência de UI para palettes/library/coleção e fallbacks fracos) e deixar tudo cabeado de ponta a ponta.
 
-> ⚠️ **Nota sobre os "novos modelos que eu acabei de enviar"**: nesta mensagem não chegaram imagens novas. Vou tratar isso como pendência — assim que você enviar as referências em uma próxima mensagem, eu rendero como novos templates. Confirme isso ou anexe as imagens.
+## 1. Captura REAL dos 6 layouts da Coleção Journaling (substituir export atual)
 
----
+**Arquivo:** `src/components/carousel/CarouselEditor.tsx` + novo `src/components/carousel/JournalCollectionExporter.tsx`
 
-## 1. Validação de imagem nos layouts que dependem de foto
+Hoje `exportJournalCollection()` gera um HTML genérico — não representa o design real. Vou substituir por:
+
+- Novo componente `<JournalCollectionExporter>` que renderiza, fora da tela (`position:fixed; left:-99999px; top:0`), 6 instâncias reais de `<SlidePreview nativeSize aspectRatio="1:1">`, uma por layout em `JOURNAL_LAYOUT_SEQUENCE`, recebendo:
+  - `slide` montado com a paleta atual (state `currentJournalPalette`),
+  - título/corpo de exemplo (mesmos textos para comparação justa),
+  - `profileHandle` da persona (se houver),
+  - índice `i` e `total = 6`.
+- O exporter expõe um `ref` por layout (`exportRefs`).
+- `exportJournalCollection()` passa a:
+  1. Montar o exporter (state `mountExporter=true`) e aguardar `requestAnimationFrame` + `document.fonts.ready` + 300ms.
+  2. Capturar cada ref com `html-to-image / toPng` em 1080×1080, `pixelRatio: 1`.
+  3. Adicionar cada PNG ao `JSZip` com nome `01-journal-tape.png` … `06-journal-envelope.png`.
+  4. Incluir um `README.txt` no zip (paleta usada + créditos).
+  5. Baixar `colecao-journaling-{paletaId}.zip`.
+  6. Desmontar o exporter.
+
+Resultado: ZIP com PNGs idênticos ao que aparece no preview, fiéis ao design.
+
+## 2. Fallbacks robustos para `journal-photo-card` e `journal-torn-paper`
 
 **Arquivo:** `src/components/carousel/SlidePreview.tsx`
 
-Nos layouts `journal-photo-card` e `journal-torn-paper`, quando `imageUrl`/`bgImageUrl` estiverem vazios:
-- Renderizar **placeholder visual elegante** (gradiente em tons da paleta + ícone `ImagePlus` + texto "Adicione uma foto neste slide").
-- Sem foto, o layout ainda fica visualmente coeso (não quebra).
+Hoje já existem fallbacks, mas são fracos (fundo cinza `#444` com ícone). Vou trocar por placeholders coerentes com a paleta:
 
-Adicionar também badge sutil no editor ("Foto recomendada") quando esses layouts forem selecionados sem imagem.
+- Quando `!photoUrl`:
+  - **journal-photo-card**: fundo com gradiente `linear-gradient(135deg, slide.bgColor, mix-darker(slide.bgColor))` + textura `PAPER_TEXTURES.linen` por cima a 30% opacidade + ícone `ImagePlus` discreto canto inferior esquerdo + selo `<GoldStamp>` decorativo. O card de título e o mini-card de body continuam renderizando normalmente.
+  - **journal-torn-paper**: já tem gradiente; vou adicionar textura `PAPER_TEXTURES.kraft` e ícone `ImagePlus` semi-transparente atrás do papel rasgado para sinalizar "adicione foto" sem quebrar.
+- Adicionar badge no editor (controle de imagem desses layouts): `📸 Foto recomendada — sem foto, este layout usa fundo decorativo`.
 
-## 2. Exportar prévia ZIP/PNG da Coleção Journaling
+Validação no export: como o fallback é puramente CSS/SVG, garante que o PNG nunca sai quebrado.
 
-**Arquivo:** `src/components/carousel/CarouselEditor.tsx` (+ helper)
+## 3. Renderização correta dos 6 templates Journaling ao selecionar a coleção
 
-Botão novo no painel de templates Journaling: **"📥 Exportar prévia da coleção"**.
+**Arquivo:** `src/components/carousel/CarouselEditor.tsx`
 
-Fluxo:
-1. Renderiza off-screen 6 slides (1 por variante) usando título e corpo de exemplo:
-   - Título: *"Como dobrar seu faturamento sem dobrar a jornada"*
-   - Corpo: *"Três pilares que aplicamos com nossas mentoradas para escalar com leveza."*
-2. Captura cada um via `html-to-image` em 1080×1080.
-3. Empacota com `jszip` em `colecao-journaling-{variacao}.zip` contendo 6 PNGs.
-4. Opção secundária: "Baixar mosaico único" (3×2 grid em 1 PNG 3240×2160).
+Hoje `applyTemplateToAll` já distribui `JOURNAL_LAYOUT_SEQUENCE` em sequência quando o template é da família. Vou complementar:
 
-## 3. Variação de paleta (1 clique gera estilos)
+- **Botão único "Aplicar Coleção Journaling"** no painel da coleção (ver §5) que, em 1 clique:
+  1. Define `slideCount = 6` se atualmente for diferente.
+  2. Se já houver slides, redistribui os 6 layouts em ordem (`JOURNAL_LAYOUT_SEQUENCE`).
+  3. Aplica paleta atual (default: Terracota).
+  4. Para slides sem `body`, preenche com texto-modelo.
+- Garantir que `createSlidesFromTemplate` para qualquer ID journal-* receba também o layout em sequência (não apenas o `template.layout` único).
+- Adicionar mini-thumbnails reais dos 6 layouts no seletor (mini-render de `SlidePreview` em 120×120) para o usuário ver antes de aplicar.
 
-**Arquivos:** `CarouselTemplates.ts` + `CarouselEditor.tsx`
+## 4. Botão "Banco de Imagens" dentro de cada slide
 
-Adicionar constante `JOURNAL_PALETTES` com 5 variações harmônicas (mantém layout/textura, troca apenas `bgColor`, `accentColor`, `textColor` e cor de fita/selo):
+**Arquivo:** `src/components/carousel/CarouselEditor.tsx`
 
-| Paleta | Fundo | Accent | Selo |
-|---|---|---|---|
-| Terracota (atual) | `#a23e2e` | `#f0e6d2` | `#d4a574` |
-| Sálvia | `#7a8b6a` | `#f5ede0` | `#c9a35a` |
-| Borgonha | `#5a1f1f` | `#e8d4b0` | `#d4a574` |
-| Marinho | `#1f3a5a` | `#f0ebe0` | `#c9965a` |
-| Pêssego Nude | `#e8a87c` | `#3a1a12` | `#7a1f15` |
+Adicionar botões `🖼 Banco de imagens` ao lado de cada upload existente:
 
-UI: novo painel com 5 chips coloridos circulares + botão "🎲 Aleatório". Clicar aplica a paleta a todos os slides Journaling preservando layout, textos, fotos e ajustes.
+- Ao lado de **"Imagem de fundo"** → abre `<ImageLibraryPicker>` com `libraryTarget="bg"`.
+- Ao lado de **"Imagem do layout"** (visível em `image-bg`, `editorial`, `journal-photo-card`, `journal-torn-paper`) → abre com `libraryTarget="image"`.
+- `onSelect(dataUrl, attribution)`:
+  - Se `libraryTarget === "bg"`: `updateSlide(currentSlide, { bgImageUrl: dataUrl })`.
+  - Se `"image"`: `updateSlide(currentSlide, { imageUrl: dataUrl })`.
+  - Em ambos: snapshot para Undo + toast com a atribuição.
+- Sugestão automática de query: usar `topic` + nicho da persona como `suggestedQuery`.
+- `orientation` enviado para o picker = `selectedTemplate.aspectRatio`.
+- Ampliar `IMAGE_LAYOUTS` para incluir `journal-photo-card` e `journal-torn-paper` para que `showImageUpload` ative o botão neles.
 
-Persiste a paleta atual no `useSessionPersistence`.
+## 5. Painel "Coleção Journaling" no seletor de templates
 
-## 4. Safe-area + escalonamento automático em 9:16
+**Arquivo:** `src/components/carousel/CarouselEditor.tsx` (dentro do bloco Template selector)
 
-**Arquivos:** `SlidePreview.tsx` + helper novo `journalScaleHelpers.ts`
+Quando `isJournalTemplate(selectedTemplate.id)` (ou usuário expandir um accordion "📓 Coleção Journaling"), mostrar um sub-painel sticky com:
 
-Quando `aspectRatio === "9:16"`:
-- Multiplicar `padPx` por 1.4 (mais respiração nas bordas).
-- Reservar 8% do topo e 8% da base como **safe-area** (zonas onde o Instagram sobrepõe UI no Stories).
-- Auto-escalar `titleSize` e `bodySize` quando o texto exceder altura útil:
-  ```ts
-  const measureAndScale = (textLength, baseSize, maxHeight) => 
-    textLength > 120 ? baseSize * 0.85 : baseSize;
-  ```
-- Decorações SVG (fita, espiral, envelope) reposicionadas para ficarem dentro da safe-area.
-- Aplicar regra a **todos os 6 layouts journaling** + adicionar testes visuais via export PNG.
+```
+┌─────────────────────────────────────────────────┐
+│ 📓 Coleção Journaling                          │
+│                                                  │
+│ Paleta:                                          │
+│ [🟫 Terracota] [🌿 Sálvia] [🍷 Borgonha]        │
+│ [🌊 Marinho] [🍑 Pêssego] [🤎 Creme] [🎲]      │
+│                                                  │
+│ Layouts (6):                                     │
+│ [thumb1] [thumb2] [thumb3] [thumb4] [thumb5] [thumb6]
+│                                                  │
+│ [✨ Aplicar Coleção (6 slides)]                 │
+│ [📥 Exportar prévia da coleção (.zip)]          │
+└─────────────────────────────────────────────────┘
+```
 
-## 5. Banco de Imagens grátis integrado (Unsplash + Pexels)
+- **6 swatches de paleta**: chips circulares 32×32 com `background: palette.swatch`, label sob hover. Clique → `applyJournalPalette(palette)` + persiste em `currentJournalPalette` no session state.
+- **Botão 🎲 Aleatório**: escolhe paleta aleatória.
+- **6 thumbnails de layouts**: mini-renderizações estáticas (80×80) usando paleta atual + texto curto exemplo. Clique aplica somente aquele layout no slide atual.
+- **Botão "Aplicar Coleção"**: roda fluxo do §3.
+- **Botão "Exportar prévia"**: roda fluxo do §1, com loading spinner (`exportingCollection`).
+- Persistir `currentJournalPalette` em `CarouselSessionState`.
 
-**Novo componente:** `src/components/carousel/ImageLibraryPicker.tsx`
-**Nova Edge Function:** `supabase/functions/image-library-search/index.ts`
+## 6. Tipos / persistência
 
-Recursos disponíveis (gratuitos, sem custo para o usuário):
-- **Unsplash API** (50 req/h grátis) — fotos profissionais
-- **Pexels API** (200 req/h grátis) — fotos + vídeos
-- **Pixabay API** (opcional) — ilustrações
+**Arquivo:** `src/components/carousel/CarouselEditor.tsx`
 
-**UX:**
-1. Em todos os pontos onde há "Upload de imagem" (slide, fundo, grid), adicionar tab **"🖼 Banco de imagens"** ao lado de "Upload" e "URL".
-2. Modal com:
-   - Busca por palavra-chave (ex: "café", "yoga", "produto")
-   - Filtros: Orientação (quadrada/vertical/horizontal), Cor dominante
-   - Sugestões automáticas baseadas no tema do carrossel + nicho da Persona
-   - Grid infinito com lazy-load
-   - Atribuição automática (footer discreto: "Foto: {autor} via Unsplash")
-3. Ao selecionar: imagem é baixada via Edge Function (proxy CORS), convertida em data URL e atribuída ao slide.
+Adicionar ao `CarouselSessionState`:
+- `currentJournalPaletteId: string` (default `"terracota"`).
 
-**Edge Function `image-library-search`:**
-- JWT-auth
-- Aceita: `{ query, orientation?, page?, source?: "unsplash"|"pexels" }`
-- Retorna: `{ images: [{ url, thumbUrl, author, sourceUrl, source }] }`
-- Cache simples em memória por query (5 min) para reduzir chamadas
-- Tratamento 429 → fallback para outra fonte automaticamente
-
-**Secrets necessários:**
-- `UNSPLASH_ACCESS_KEY` — você cria grátis em https://unsplash.com/developers
-- `PEXELS_API_KEY` — grátis em https://www.pexels.com/api/
-
-> Eu vou solicitar essas chaves quando começar a implementação.
-
-## 6. Render de novos modelos enviados pelo usuário
-
-Como **as imagens não chegaram nesta mensagem**, deixarei isso como passo final. Após você reenviar:
-- Analiso cada modelo (estrutura, paleta, tipografia, decorações)
-- Adiciono novos `CarouselLayout` + entradas no catálogo
-- Renderizo blocos no `SlidePreview.tsx`
-- Integro à seção Journaling (ou cria nova coleção, se forem outro estilo)
-
----
+Carregar/salvar no `useSessionPersistence` existente (sem mudar storage, só novos campos).
 
 ## Arquivos tocados
 
 **Novos:**
-- `src/components/carousel/ImageLibraryPicker.tsx` — modal de busca de fotos
-- `src/components/carousel/journalScaleHelpers.ts` — auto-scale 9:16
-- `supabase/functions/image-library-search/index.ts` — proxy para Unsplash/Pexels
+- `src/components/carousel/JournalCollectionExporter.tsx` — host off-screen com 6 SlidePreview reais.
 
 **Editados:**
-- `src/components/carousel/CarouselTemplates.ts` — `JOURNAL_PALETTES`, helper `applyJournalPalette`
-- `src/components/carousel/CarouselEditor.tsx` — botões de exportar coleção, swatches de paleta, integração ImageLibraryPicker
-- `src/components/carousel/SlidePreview.tsx` — fallbacks em layouts photo, safe-area 9:16
-- `src/hooks/useSessionPersistence.ts` — não muda; nova chave dentro do estado existente
+- `src/components/carousel/CarouselEditor.tsx` — substitui export, painel Journaling, botões library, persistência paleta.
+- `src/components/carousel/SlidePreview.tsx` — fallbacks ricos em photo-card/torn-paper.
+- `src/components/carousel/CarouselTemplates.ts` — exporta helper `getJournalSampleSlides(palette)` para o exporter usar conteúdo padrão.
 
 ## Resultado esperado
 
-- Layouts com foto nunca quebram (placeholder elegante).
-- 1 clique exporta ZIP com 6 PNGs da coleção Journaling.
-- 5 paletas + aleatório dão variações infinitas mantendo identidade.
-- Stories 9:16 sempre cabem texto no export PNG, sem cortes.
-- Usuário tem milhares de fotos profissionais grátis dentro do app, igual Canva, com busca, sugestões automáticas e atribuição correta.
-- Pronto para receber suas novas referências e adicioná-las como templates.
+- Clicar "Exportar prévia da coleção" gera um ZIP com **6 PNGs idênticos ao preview** (não mais um placeholder genérico).
+- `journal-photo-card` e `journal-torn-paper` sem foto exibem fundo decorativo coerente com a paleta — nunca quebram o export.
+- Selecionar qualquer template Journaling mostra o painel da coleção com 6 paletas, 6 thumbnails, botão "Aplicar Coleção" e "Exportar prévia".
+- Cada slide tem botão "🖼 Banco de imagens" ao lado de cada upload, que aplica a foto escolhida em `imageUrl` ou `bgImageUrl` automaticamente.
+- Estado da paleta atual persiste entre sessões.
 
