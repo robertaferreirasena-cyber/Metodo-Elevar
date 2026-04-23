@@ -343,12 +343,30 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     });
   }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, templateApplyMode, currentJournalPaletteId, setSessionState]);
 
-  // Apply the entire Journaling Collection (6 slides, 6 layouts in order, current palette)
-  const applyJournalCollection = useCallback((template: CarouselTemplate) => {
+  // Apply the entire Journaling Collection (6 slides, 6 layouts in order, current palette).
+  // keepContent=true → preserves user's title/body/images/profile; only swaps layout + colors.
+  const applyJournalCollection = useCallback((template: CarouselTemplate, opts: { keepContent: boolean } = { keepContent: true }) => {
     const palette = currentJournalPalette;
     const sample = buildJournalSampleSlides(palette, slides[0]?.profileHandle);
     const newSlides: SlideData[] = sample.map((s, i) => {
       const existing = slides[i];
+      if (opts.keepContent && existing) {
+        // Preserve user content; swap only layout, colors, and font family from template/palette
+        return {
+          ...existing,
+          layout: s.layout,
+          bgColor: palette.bgColor,
+          textColor: palette.textColor,
+          accentColor: palette.accentColor,
+          titleColor: undefined,
+          bodyColor: undefined,
+          fontFamily: template.fontFamily,
+          // fill body if empty AND layout typically expects body
+          body: existing.body || s.body,
+          title: existing.title || s.title,
+        };
+      }
+      // Replace mode (texto modelo)
       return {
         ...s,
         title: existing?.title || s.title,
@@ -357,7 +375,6 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
         titleSize: template.titleSize,
         bodySize: template.bodySize,
         align: template.align,
-        // preserve uploaded images for photo-based layouts
         imageUrl: existing?.imageUrl,
         bgImageUrl: existing?.bgImageUrl,
         profileHandle: existing?.profileHandle || s.profileHandle,
@@ -369,8 +386,27 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     setSlides(newSlides);
     setCurrentSlide(0);
     slideRefs.current = new Array(newSlides.length).fill(null);
-    toast.success("Coleção Journaling aplicada (6 slides)");
+    toast.success(
+      opts.keepContent
+        ? "Coleção aplicada — seu conteúdo foi preservado"
+        : "Coleção aplicada com texto modelo (6 slides)"
+    );
   }, [currentJournalPalette, slides]);
+
+  // Apply only one journal layout to the current slide (used by thumbnails).
+  const applyJournalLayoutToCurrent = useCallback((layout: CarouselLayout) => {
+    const palette = currentJournalPalette;
+    setSlides(prev => prev.map((s, i) => i === currentSlide ? {
+      ...s,
+      layout,
+      bgColor: palette.bgColor,
+      textColor: palette.textColor,
+      accentColor: palette.accentColor,
+      titleColor: undefined,
+      bodyColor: undefined,
+    } : s));
+    toast.success(`Layout aplicado ao slide ${currentSlide + 1}`);
+  }, [currentJournalPalette, currentSlide]);
 
   // Library picker target → applies returned data URL to current slide
   const handleLibrarySelect = useCallback((dataUrl: string, attribution: string) => {
