@@ -29,7 +29,16 @@ export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRat
   const previewRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
 
-  const v = { ...DEFAULTS, ...values };
+  // Safe merge: ignore undefined values from `values` so DEFAULTS always win
+  // when a key is missing or explicitly undefined (prevents v.scale.toFixed crash).
+  const v: Required<ImageAdjustValues> = {
+    positionX: values.positionX ?? DEFAULTS.positionX,
+    positionY: values.positionY ?? DEFAULTS.positionY,
+    scale: values.scale ?? DEFAULTS.scale,
+    blur: values.blur ?? DEFAULTS.blur,
+    brightness: values.brightness ?? DEFAULTS.brightness,
+    contrast: values.contrast ?? DEFAULTS.contrast,
+  };
 
   const update = (patch: Partial<ImageAdjustValues>) => onChange({ ...values, ...patch });
 

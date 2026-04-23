@@ -5,7 +5,8 @@
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface ImageResult {
@@ -31,11 +32,17 @@ const cache = new Map<string, { ts: number; data: ImageResult[] }>();
 const TTL = 5 * 60 * 1000;
 
 async function searchUnsplash(query: string, orientation: string, page: number): Promise<ImageResult[]> {
-  if (!UNSPLASH_KEY) return [];
+  if (!UNSPLASH_KEY) {
+    console.warn("UNSPLASH_ACCESS_KEY not configured");
+    return [];
+  }
   const o = orientation === "9:16" ? "portrait" : orientation === "16:9" ? "landscape" : "squarish";
   const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=20&page=${page}&orientation=${o}`;
   const r = await fetch(url, { headers: { Authorization: `Client-ID ${UNSPLASH_KEY}` } });
-  if (!r.ok) return [];
+  if (!r.ok) {
+    console.error(`Unsplash error ${r.status}: ${await r.text().catch(() => "")}`);
+    return [];
+  }
   const j = await r.json();
   return (j.results || []).map((p: any): ImageResult => ({
     id: `u_${p.id}`,
@@ -51,11 +58,17 @@ async function searchUnsplash(query: string, orientation: string, page: number):
 }
 
 async function searchPexels(query: string, orientation: string, page: number): Promise<ImageResult[]> {
-  if (!PEXELS_KEY) return [];
+  if (!PEXELS_KEY) {
+    console.warn("PEXELS_API_KEY not configured");
+    return [];
+  }
   const o = orientation === "9:16" ? "portrait" : orientation === "16:9" ? "landscape" : "square";
   const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=20&page=${page}&orientation=${o}`;
   const r = await fetch(url, { headers: { Authorization: PEXELS_KEY } });
-  if (!r.ok) return [];
+  if (!r.ok) {
+    console.error(`Pexels error ${r.status}: ${await r.text().catch(() => "")}`);
+    return [];
+  }
   const j = await r.json();
   return (j.photos || []).map((p: any): ImageResult => ({
     id: `p_${p.id}`,
