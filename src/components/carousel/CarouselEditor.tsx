@@ -34,6 +34,7 @@ import ImageAdjustPanel, { type ImageAdjustValues } from "./ImageAdjustPanel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
+  JOURNAL_TEMPLATE_IDS, JOURNAL_LAYOUT_SEQUENCE, isJournalTemplate,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
 } from "./CarouselTemplates";
 
@@ -302,12 +303,17 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
 
   const applyTemplateToAll = (template: CarouselTemplate) => {
     setSelectedTemplate(template);
+    const isJournal = isJournalTemplate(template.id);
     setSlides((prev) =>
-      prev.map((s) => ({
+      prev.map((s, i) => ({
         ...s,
         bgColor: template.bgColor, textColor: template.textColor, accentColor: template.accentColor,
         titleSize: template.titleSize, bodySize: template.bodySize, fontFamily: template.fontFamily,
-        align: template.align, bgGradient: template.bgGradient, layout: template.layout,
+        align: template.align, bgGradient: template.bgGradient,
+        // Journaling: distribui variantes em sequência para criar narrativa visual coerente
+        layout: isJournal
+          ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length]
+          : template.layout,
         highlightBgColor: template.highlightBgColor,
       }))
     );

@@ -7,7 +7,14 @@ export type CarouselLayout =
   | "editorial"
   | "tweet-post"
   | "prompt-card"
-  | "sticker-card";
+  | "sticker-card"
+  // ===== Família Journaling (papelaria orgânica) =====
+  | "journal-note"        // folha de caderno + selo dourado
+  | "journal-tape"        // folha presa com fita + card destaque
+  | "journal-photo-card"  // foto de fundo + card colorido sobreposto
+  | "journal-binder"      // espiral metálico no topo
+  | "journal-torn-paper"  // papel rasgado sobre foto
+  | "journal-envelope";   // envelope aberto + selo de cera
 
 export type AspectRatio = "1:1" | "16:9" | "9:16";
 
@@ -614,7 +621,120 @@ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
     layout: "sales-highlight",
     highlightBgColor: "rgba(255,255,255,0.95)",
   },
+
+  // ============================================================
+  // ========== COLEÇÃO JOURNALING (papelaria orgânica) ==========
+  // ============================================================
+  {
+    id: "journal-cream",
+    name: "📓 Caderno Cream",
+    description: "Folha de caderno + selo dourado, fundo linho creme",
+    aspectRatio: "1:1",
+    bgColor: "#f0e4cf",
+    textColor: "#3a1a12",
+    accentColor: "#a23e2e",
+    fontFamily: "'Cormorant Garamond', serif",
+    titleSize: 38,
+    bodySize: 18,
+    align: "center",
+    layout: "journal-note",
+  },
+  {
+    id: "journal-rust",
+    name: "📓 Caderno Rust",
+    description: "Folha presa com fita washi sobre fundo vermelho terra",
+    aspectRatio: "1:1",
+    bgColor: "#a23e2e",
+    textColor: "#3a1a12",
+    accentColor: "#f0e6d2",
+    fontFamily: "'Playfair Display', serif",
+    titleSize: 40,
+    bodySize: 18,
+    align: "center",
+    layout: "journal-tape",
+  },
+  {
+    id: "journal-olive",
+    name: "🌿 Caderno Olive",
+    description: "Foto de fundo + card oliva sobreposto",
+    aspectRatio: "1:1",
+    bgColor: "#6b7a3a",
+    textColor: "#fefdf8",
+    accentColor: "#6b7a3a",
+    fontFamily: "'Cormorant Garamond', serif",
+    titleSize: 38,
+    bodySize: 18,
+    align: "center",
+    layout: "journal-photo-card",
+  },
+  {
+    id: "journal-copper",
+    name: "✉️ Caderno Copper",
+    description: "Envelope aberto com selo de cera vermelho",
+    aspectRatio: "1:1",
+    bgColor: "#b8693d",
+    textColor: "#3a1a12",
+    accentColor: "#7a1f15",
+    fontFamily: "'Playfair Display', serif",
+    titleSize: 36,
+    bodySize: 18,
+    align: "center",
+    layout: "journal-envelope",
+  },
+  {
+    id: "journal-forest",
+    name: "🌱 Caderno Forest",
+    description: "Papel rasgado sobre foto de natureza",
+    aspectRatio: "1:1",
+    bgColor: "#3a4a32",
+    textColor: "#3a2a1a",
+    accentColor: "#8aa05a",
+    fontFamily: "'Cormorant Garamond', serif",
+    titleSize: 42,
+    bodySize: 18,
+    align: "center",
+    layout: "journal-torn-paper",
+  },
+  {
+    id: "journal-binder",
+    name: "📎 Caderno Espiral",
+    description: "Folha presa por espiral metálico no topo",
+    aspectRatio: "1:1",
+    bgColor: "#e85a2a",
+    textColor: "#3a1a12",
+    accentColor: "#a23e2e",
+    fontFamily: "'Cormorant Garamond', serif",
+    titleSize: 38,
+    bodySize: 18,
+    align: "center",
+    layout: "journal-binder",
+  },
 ];
+
+// IDs da família Journaling (para agrupamento na UI e distribuição em sequência)
+export const JOURNAL_TEMPLATE_IDS = [
+  "journal-rust",
+  "journal-cream",
+  "journal-olive",
+  "journal-binder",
+  "journal-forest",
+  "journal-copper",
+] as const;
+
+// Sequência de layouts aplicada automaticamente quando o usuário escolhe
+// "Aplicar a todos" em qualquer template Journaling — gera variação visual coerente.
+export const JOURNAL_LAYOUT_SEQUENCE: CarouselLayout[] = [
+  "journal-tape",        // capa impactante
+  "journal-note",        // desenvolvimento 1
+  "journal-photo-card",  // desenvolvimento 2
+  "journal-binder",      // desenvolvimento 3
+  "journal-torn-paper",  // desenvolvimento 4
+  "journal-envelope",    // CTA / encerramento
+];
+
+export function isJournalTemplate(templateId: string): boolean {
+  return (JOURNAL_TEMPLATE_IDS as readonly string[]).includes(templateId);
+}
 
 export interface SlideData {
   title: string;
