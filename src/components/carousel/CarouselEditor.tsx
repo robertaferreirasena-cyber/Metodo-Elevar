@@ -1118,19 +1118,37 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   >
                     <Sparkles className="h-3 w-3 mr-1" /> ✨ Manter meu texto
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs"
-                    onClick={() => {
-                      const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
-                        || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
-                      applyJournalCollection(tpl, { keepContent: false });
-                    }}
-                    title="Substitui textos pelo conteúdo modelo da coleção (offline)"
-                  >
-                    📋 Texto exemplo
-                  </Button>
+                  <div className="flex items-center gap-1.5 border border-border rounded-md pl-1.5 pr-1 py-0.5">
+                    <Select value={sampleThemeId} onValueChange={setSampleThemeId}>
+                      <SelectTrigger className="h-7 text-[11px] border-0 px-1 gap-1 w-[150px] focus:ring-0">
+                        <SelectValue placeholder="Tema" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {JOURNAL_SAMPLE_THEMES.map(t => (
+                          <SelectItem key={t.id} value={t.id} className="text-xs">
+                            {t.emoji} {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-7 px-2"
+                      onClick={() => {
+                        const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
+                          || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
+                        applyJournalCollection(tpl, {
+                          keepContent: false,
+                          themeId: sampleThemeId,
+                          forceSampleText: true,
+                        });
+                      }}
+                      title="Substitui textos pelo conteúdo modelo do tema escolhido (offline)"
+                    >
+                      📋 Aplicar exemplo
+                    </Button>
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
