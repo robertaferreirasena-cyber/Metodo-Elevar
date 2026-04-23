@@ -921,6 +921,9 @@ export interface SlideData {
   imageBlur?: number;
   imageBrightness?: number;
   imageContrast?: number;
+  // Journaling-only adjustments for the floating highlight card
+  highlightScale?: number;    // 0.7–1.3 (default 1)
+  highlightOffsetY?: number;  // -15 to +15 (% of slide height, default 0)
 }
 
 export function createSlidesFromTemplate(
