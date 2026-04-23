@@ -807,6 +807,73 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                 </TemplatePreviewTooltip>
               ))}
             </div>
+
+            {/* ========== COLEÇÃO JOURNALING — paletas + ações ========== */}
+            {(isJournalTemplate(selectedTemplate.id) || slides.some(s => (s.layout || "").startsWith("journal-"))) && (
+              <div className="mt-3 p-3 rounded-lg border border-amber-200/60 bg-amber-50/30 dark:bg-amber-950/10 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-xs font-semibold text-foreground flex items-center gap-1">
+                    📓 Coleção Journaling
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">6 layouts narrativos</Badge>
+                </div>
+
+                {/* Palette swatches */}
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">Paleta</Label>
+                  <div className="flex gap-1.5 mt-1 flex-wrap items-center">
+                    {JOURNAL_PALETTES.map((p) => (
+                      <button
+                        key={p.id}
+                        title={`${p.emoji} ${p.name}`}
+                        onClick={() => applyJournalPalette(p)}
+                        className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${currentJournalPaletteId === p.id ? "border-primary ring-2 ring-primary/40" : "border-border"}`}
+                        style={{ background: p.swatch }}
+                        aria-label={p.name}
+                      />
+                    ))}
+                    <button
+                      title="Paleta aleatória"
+                      onClick={() => {
+                        const rest = JOURNAL_PALETTES.filter(p => p.id !== currentJournalPaletteId);
+                        applyJournalPalette(rest[Math.floor(Math.random() * rest.length)]);
+                      }}
+                      className="w-8 h-8 rounded-full border-2 border-dashed border-border hover:border-primary/60 text-sm"
+                    >🎲</button>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="text-xs"
+                    onClick={() => {
+                      const tpl = CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
+                        || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id))!;
+                      applyJournalCollection(tpl);
+                    }}
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" /> Aplicar Coleção (6 slides)
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={exportJournalCollection}
+                    disabled={exportingCollection}
+                  >
+                    {exportingCollection
+                      ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Gerando...</>
+                      : <><DownloadCloud className="h-3 w-3 mr-1" /> 📥 Exportar prévia da coleção</>}
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  A paleta troca cores em todos os slides Journaling. A exportação gera um ZIP com 6 PNGs reais (1080×1080) usando o conteúdo de exemplo.
+                </p>
+              </div>
+            )}
           </div>
 
           <Button onClick={generateContent} disabled={generating} className="w-full">
