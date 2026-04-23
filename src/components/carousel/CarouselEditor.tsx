@@ -678,12 +678,12 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </Button>
                 </div>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                <Button size="sm" variant="outline" onClick={toggleFullscreen} title="Modo apresentação">
-                  <Maximize className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Apresentar</span>
+              <div className="flex gap-2 flex-wrap md:flex-nowrap md:static fixed bottom-0 left-0 right-0 md:bg-transparent bg-background/95 backdrop-blur md:p-0 p-2 md:border-0 border-t border-border z-40 md:z-auto justify-center md:justify-end" style={{ paddingBottom: isMobile ? "max(0.5rem, env(safe-area-inset-bottom))" : undefined }}>
+                <Button size="sm" variant="outline" onClick={toggleFullscreen} title="Modo apresentação" className="min-h-11 md:min-h-9">
+                  <Maximize className="h-4 w-4 mr-1" /> <span>Apresentar</span>
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => exportSlide(currentSlide)}><Download className="h-4 w-4 mr-1" /> PNG</Button>
-                <Button size="sm" onClick={exportAll} disabled={exporting}><DownloadCloud className="h-4 w-4 mr-1" />{exporting ? "Exportando..." : "Baixar Todos"}</Button>
+                <Button size="sm" variant="outline" onClick={() => exportSlide(currentSlide)} disabled={exporting} className="min-h-11 md:min-h-9"><Download className="h-4 w-4 mr-1" /> PNG</Button>
+                <Button size="sm" onClick={exportAll} disabled={exporting} className="min-h-11 md:min-h-9"><DownloadCloud className="h-4 w-4 mr-1" />{exporting ? "Exportando..." : "Baixar Todos"}</Button>
               </div>
             </div>
           </div>
