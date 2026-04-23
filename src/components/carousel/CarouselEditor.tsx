@@ -810,7 +810,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(currentSlide, f); }} />
                       </label>
                       {cur.imageUrl && (
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })}><X className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { snapshotSlideForUndo(currentSlide, "Imagem do layout removida"); updateSlide(currentSlide, { imageUrl: undefined, imagePositionX: undefined, imagePositionY: undefined, imageScale: undefined, imageBlur: undefined, imageBrightness: undefined, imageContrast: undefined }); }}><X className="h-4 w-4" /></Button>
                       )}
                     </div>
                     {cur.imageUrl && (
@@ -847,7 +847,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                         {cur.imageUrls!.map((url, i) => (
                           <div key={i} className="relative w-12 h-12 rounded overflow-hidden group">
                             <img src={url} alt="" className="w-full h-full object-cover" />
-                            <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity" onClick={() => { const u = [...(cur.imageUrls || [])]; u.splice(i, 1); updateSlide(currentSlide, { imageUrls: u }); }}>
+                            <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity" onClick={() => { snapshotSlideForUndo(currentSlide, "Foto removida do grid"); const u = [...(cur.imageUrls || [])]; u.splice(i, 1); updateSlide(currentSlide, { imageUrls: u }); }}>
                               <X className="h-3 w-3 text-white" />
                             </button>
                           </div>
