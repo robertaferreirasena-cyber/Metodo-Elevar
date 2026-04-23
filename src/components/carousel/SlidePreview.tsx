@@ -392,9 +392,16 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           const safePadY = spec.height * j.safeAreaFrac;
           const titleSizePx = slide.titleSize * fontScale * j.titleMul;
           const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
+          const hScale = slide.highlightScale ?? 1;
+          const hOffsetY = ((slide.highlightOffsetY ?? 0) / 100) * spec.height;
           const noteW = spec.width * 0.72;
           const noteH = spec.height * 0.50;
-          const cardW = spec.width * 0.62;
+          const cardW = spec.width * 0.62 * hScale;
+          const cardPadV = 20 * fontScale * j.bodyMul * hScale;
+          const cardPadH = 28 * fontScale * j.bodyMul * hScale;
+          const titleColor = slide.titleColor ?? slide.accentColor;
+          const cardBg = slide.highlightBgColor ?? slide.accentColor;
+          const cardTextColor = slide.bodyColor ?? "#fefdf8";
           return (
             <>
               <div className="absolute inset-0" style={{ backgroundImage: PAPER_TEXTURES.linen, backgroundColor: slide.bgColor }} />
@@ -412,19 +419,24 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 transform: "rotate(-1.2deg)",
                 padding: `${30 * fontScale}px`,
                 display: "flex", alignItems: "center", justifyContent: "center",
+                overflow: "hidden", boxSizing: "border-box",
               }}>
-                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", textAlign: "center", color: slide.accentColor }}>{slide.title}</h2>
+                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", textAlign: "center", color: titleColor }}>{slide.title}</h2>
               </div>
               <div className="absolute" style={{ left: `${spec.width * 0.5 - 35 * fontScale}px`, top: `${Math.max(spec.height * 0.15, safePadY)}px`, transform: "rotate(-8deg)" }}>
                 <GoldStamp size={70 * fontScale} />
               </div>
               <div className="absolute" style={{
                 left: `${(spec.width - cardW) / 2}px`,
-                bottom: `${Math.max(spec.height * 0.10, safePadY)}px`,
+                bottom: `${Math.max(spec.height * 0.06, safePadY) - hOffsetY}px`,
                 width: cardW,
-                background: slide.accentColor,
-                color: "#fefdf8",
-                padding: `${20 * fontScale}px ${28 * fontScale}px`,
+                maxWidth: spec.width * 0.88,
+                maxHeight: spec.height * 0.32,
+                overflow: "hidden",
+                boxSizing: "border-box",
+                background: cardBg,
+                color: cardTextColor,
+                padding: `${cardPadV}px ${cardPadH}px`,
                 transform: "rotate(1.5deg)",
                 boxShadow: "0 6px 14px rgba(0,0,0,0.20)",
                 fontFamily: "'DM Sans', sans-serif",
@@ -444,11 +456,18 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           const safePadY = spec.height * j.safeAreaFrac;
           const titleSizePx = slide.titleSize * fontScale * j.titleMul;
           const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
+          const hScale = slide.highlightScale ?? 1;
+          const hOffsetY = ((slide.highlightOffsetY ?? 0) / 100) * spec.height;
           const noteW = spec.width * 0.62;
           const noteH = spec.height * 0.55;
           const noteX = spec.width * 0.08;
           const noteY = spec.height * 0.12;
-          const cardW = spec.width * 0.42;
+          const cardW = spec.width * 0.42 * hScale;
+          const cardPadV = 18 * fontScale * j.bodyMul * hScale;
+          const cardPadH = 22 * fontScale * j.bodyMul * hScale;
+          const titleColor = slide.titleColor ?? slide.bgColor;
+          const cardBg = slide.highlightBgColor ?? "#fefdf8";
+          const cardTextColor = slide.bodyColor ?? slide.bgColor;
           return (
             <>
               <div className="absolute inset-0" style={{ background: slide.bgColor, backgroundImage: PAPER_TEXTURES.kraft }} />
@@ -464,18 +483,24 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
                 padding: `${36 * fontScale}px ${30 * fontScale}px`,
                 display: "flex", alignItems: "center",
+                overflow: "hidden", boxSizing: "border-box",
               }}>
-                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: slide.bgColor, textAlign: "left" }}>{slide.title}</h2>
+                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: titleColor, textAlign: "left" }}>{slide.title}</h2>
               </div>
               <WashiTape width={120 * fontScale} height={28 * fontScale} color="#e8d9b8" rotate={-15} style={{ left: noteX - 20 * fontScale, top: noteY - 8 * fontScale }} />
               <WashiTape width={100 * fontScale} height={26 * fontScale} color="#e8d9b8" rotate={20} style={{ left: noteX + noteW - 60 * fontScale, top: noteY - 6 * fontScale }} />
               <div className="absolute" style={{
-                right: spec.width * 0.06, bottom: spec.height * 0.10,
+                right: spec.width * 0.06,
+                bottom: Math.max(spec.height * 0.06, safePadY) - hOffsetY,
                 width: cardW,
-                background: "#fefdf8",
+                maxWidth: spec.width * 0.6,
+                maxHeight: spec.height * 0.3,
+                overflow: "hidden",
+                boxSizing: "border-box",
+                background: cardBg,
                 backgroundImage: PAPER_TEXTURES.grid,
-                color: slide.bgColor,
-                padding: `${18 * fontScale}px ${22 * fontScale}px`,
+                color: cardTextColor,
+                padding: `${cardPadV}px ${cardPadH}px`,
                 transform: "rotate(2.5deg)",
                 boxShadow: "0 6px 14px rgba(0,0,0,0.20)",
                 fontFamily: "'DM Sans', sans-serif",
@@ -495,9 +520,18 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           const safePadY = spec.height * j.safeAreaFrac;
           const titleSizePx = slide.titleSize * fontScale * j.titleMul;
           const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
-          const cardW = spec.width * 0.58;
-          const miniW = spec.width * 0.42;
+          const hScale = slide.highlightScale ?? 1;
+          const hOffsetY = ((slide.highlightOffsetY ?? 0) / 100) * spec.height;
+          const cardW = spec.width * 0.58 * hScale;
+          const miniW = spec.width * 0.42 * hScale;
+          const miniPadV = 18 * fontScale * j.bodyMul * hScale;
+          const miniPadH = 22 * fontScale * j.bodyMul * hScale;
+          const titleCardPadV = 28 * fontScale * j.bodyMul * hScale;
+          const titleCardPadH = 32 * fontScale * j.bodyMul * hScale;
           const photoUrl = slide.imageUrl || slide.bgImageUrl;
+          const titleColor = slide.titleColor ?? "#fefdf8";
+          const titleCardBg = slide.highlightBgColor ?? slide.accentColor;
+          const miniTextColor = slide.bodyColor ?? "#3a1a12";
           return (
             <>
               {photoUrl ? (
@@ -522,19 +556,28 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               <div className="absolute" style={{
                 left: `${(spec.width - cardW) / 2}px`, top: `${spec.height * 0.30}px`,
                 width: cardW,
-                background: slide.accentColor,
-                padding: `${28 * fontScale}px ${32 * fontScale}px`,
+                maxWidth: spec.width * 0.85,
+                maxHeight: spec.height * 0.35,
+                overflow: "hidden",
+                boxSizing: "border-box",
+                background: titleCardBg,
+                padding: `${titleCardPadV}px ${titleCardPadH}px`,
                 boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
               }}>
-                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: "#fefdf8", textAlign: "center" }}>{slide.title}</h2>
+                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: titleColor, textAlign: "center" }}>{slide.title}</h2>
               </div>
               <div className="absolute" style={{
-                right: spec.width * 0.06, bottom: spec.height * 0.08,
+                right: spec.width * 0.06,
+                bottom: Math.max(spec.height * 0.05, safePadY) - hOffsetY,
                 width: miniW,
+                maxWidth: spec.width * 0.6,
+                maxHeight: spec.height * 0.3,
+                overflow: "hidden",
+                boxSizing: "border-box",
                 background: "#fefdf8",
                 backgroundImage: PAPER_TEXTURES.grid,
-                color: "#3a1a12",
-                padding: `${18 * fontScale}px ${22 * fontScale}px`,
+                color: miniTextColor,
+                padding: `${miniPadV}px ${miniPadH}px`,
                 transform: "rotate(-2deg)",
                 boxShadow: "0 6px 14px rgba(0,0,0,0.30)",
                 fontFamily: "'DM Sans', sans-serif",
@@ -553,11 +596,17 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           const safePadY = spec.height * j.safeAreaFrac;
           const titleSizePx = slide.titleSize * fontScale * j.titleMul;
           const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
+          const hScale = slide.highlightScale ?? 1;
           const noteW = spec.width * 0.78;
           const noteH = spec.height * 0.72;
           const noteX = (spec.width - noteW) / 2;
           const noteY = spec.height * 0.16;
-          const cardW = noteW * 0.78;
+          const cardW = noteW * 0.78 * hScale;
+          const cardPadV = 18 * fontScale * j.bodyMul * hScale;
+          const cardPadH = 24 * fontScale * j.bodyMul * hScale;
+          const titleColor = slide.titleColor ?? slide.accentColor;
+          const cardBg = slide.highlightBgColor ?? slide.accentColor;
+          const cardTextColor = slide.bodyColor ?? "#fefdf8";
           return (
             <>
               <div className="absolute inset-0" style={{ background: slide.bgColor, backgroundImage: PAPER_TEXTURES.kraft }} />
@@ -572,13 +621,18 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 boxShadow: "0 12px 28px rgba(0,0,0,0.30)",
                 padding: `${60 * fontScale}px ${40 * fontScale}px ${30 * fontScale}px`,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between",
+                overflow: "hidden", boxSizing: "border-box",
               }}>
-                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: slide.accentColor, textAlign: "center", marginTop: 20 * fontScale }}>{slide.title}</h2>
+                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: titleColor, textAlign: "center", marginTop: 20 * fontScale }}>{slide.title}</h2>
                 <div style={{
                   width: cardW,
-                  background: slide.accentColor,
-                  color: "#fefdf8",
-                  padding: `${18 * fontScale}px ${24 * fontScale}px`,
+                  maxWidth: noteW * 0.92,
+                  maxHeight: noteH * 0.45,
+                  overflow: "hidden",
+                  boxSizing: "border-box",
+                  background: cardBg,
+                  color: cardTextColor,
+                  padding: `${cardPadV}px ${cardPadH}px`,
                   fontFamily: "'DM Sans', sans-serif",
                   fontSize: bodySizePx,
                   lineHeight: 1.45,
@@ -603,6 +657,8 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           const paperW = spec.width * 0.78;
           const paperH = spec.height * 0.62;
           const photoUrl = slide.bgImageUrl || slide.imageUrl;
+          const titleColor = slide.titleColor ?? slide.textColor;
+          const bodyTextColor = slide.bodyColor ?? slide.textColor;
           return (
             <>
               {photoUrl ? (
@@ -623,11 +679,11 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               </div>
               <div className="absolute" style={{ left: (spec.width - paperW) / 2, top: (spec.height - paperH) / 2 + 20 * fontScale }}>
                 <TornPaperPath width={paperW} height={paperH} fill="#fefdf8" rotate={-1.5}>
-                  <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: slide.textColor, textAlign: "center", marginBottom: 16 * fontScale }}>{slide.title}</h2>
+                  <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: titleColor, textAlign: "center", marginBottom: 16 * fontScale }}>{slide.title}</h2>
                   <p style={{
                     fontFamily: "'DM Sans', sans-serif",
                     fontSize: bodySizePx * 0.95,
-                    color: slide.textColor,
+                    color: bodyTextColor,
                     opacity: 0.8,
                     textAlign: "center",
                     lineHeight: 1.5,
@@ -644,10 +700,17 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           const safePadY = spec.height * j.safeAreaFrac;
           const titleSizePx = slide.titleSize * fontScale * j.titleMul;
           const bodySizePx = slide.bodySize * fontScale * j.bodyMul;
+          const hScale = slide.highlightScale ?? 1;
+          const hOffsetY = ((slide.highlightOffsetY ?? 0) / 100) * spec.height;
           const envW = spec.width * 0.66;
           const envH = envW * 0.7;
           const envX = (spec.width - envW) / 2;
           const envY = spec.height * 0.18;
+          const cardPadV = 16 * fontScale * j.bodyMul * hScale;
+          const cardPadH = 36 * fontScale * j.bodyMul * hScale;
+          const titleColor = slide.titleColor ?? "#fefdf8";
+          const cardBg = slide.highlightBgColor ?? slide.accentColor;
+          const cardTextColor = slide.bodyColor ?? "#fefdf8";
           return (
             <>
               <div className="absolute inset-0" style={{ background: slide.bgColor, backgroundImage: PAPER_TEXTURES.kraft }} />
@@ -662,14 +725,17 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 <WaxSeal size={90 * fontScale} color={slide.accentColor} />
               </div>
               <div className="absolute" style={{ left: spec.width * 0.10, top: envY + envH + 20 * fontScale, right: spec.width * 0.10, textAlign: "center" }}>
-                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: "#fefdf8" }}>{slide.title}</h2>
+                <h2 style={{ ...titleStyle, fontSize: titleSizePx, fontStyle: "italic", color: titleColor }}>{slide.title}</h2>
               </div>
               <div className="absolute" style={{
-                bottom: Math.max(spec.height * 0.05, safePadY),
+                bottom: Math.max(spec.height * 0.05, safePadY) - hOffsetY,
                 left: spec.width * 0.08, right: spec.width * 0.08,
-                background: slide.accentColor,
-                color: "#fefdf8",
-                padding: `${16 * fontScale}px ${36 * fontScale}px`,
+                maxHeight: spec.height * 0.28,
+                overflow: "hidden",
+                boxSizing: "border-box",
+                background: cardBg,
+                color: cardTextColor,
+                padding: `${cardPadV}px ${cardPadH}px`,
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: bodySizePx * 0.9,
                 lineHeight: 1.4,
