@@ -158,14 +158,19 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [libraryTarget, setLibraryTarget] = useState<"image" | "bg">("bg");
   const [exportingCollection, setExportingCollection] = useState(false);
 
-  // Current journal palette (persisted) — derived from id, source-of-truth is the id
-  const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(
-    sessionState.currentJournalPaletteId || "terracota"
-  );
+  // Current journal palette (persisted) — derived from id, source-of-truth is the id.
+  // Validates the persisted id against the current palette list so renames/removals fall back gracefully.
+  const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(() => {
+    const candidate = sessionState.currentJournalPaletteId || "terracota";
+    return JOURNAL_PALETTES.some(p => p.id === candidate) ? candidate : JOURNAL_PALETTES[0].id;
+  });
   const currentJournalPalette = useMemo(
     () => JOURNAL_PALETTES.find(p => p.id === currentJournalPaletteId) || JOURNAL_PALETTES[0],
     [currentJournalPaletteId]
   );
+
+  // Offline sample-text theme selector (for "📋 Texto exemplo" button)
+  const [sampleThemeId, setSampleThemeId] = useState<string>("generico");
   // Real mini-thumb slides for the 6 layouts using current palette (memoized for perf)
   const journalThumbSlides = useMemo(
     () => buildJournalSampleSlides(currentJournalPalette).map(s => ({
