@@ -7,7 +7,14 @@ export type CarouselLayout =
   | "editorial"
   | "tweet-post"
   | "prompt-card"
-  | "sticker-card";
+  | "sticker-card"
+  // ===== Família Journaling (papelaria orgânica) =====
+  | "journal-note"        // folha de caderno + selo dourado
+  | "journal-tape"        // folha presa com fita + card destaque
+  | "journal-photo-card"  // foto de fundo + card colorido sobreposto
+  | "journal-binder"      // espiral metálico no topo
+  | "journal-torn-paper"  // papel rasgado sobre foto
+  | "journal-envelope";   // envelope aberto + selo de cera
 
 export type AspectRatio = "1:1" | "16:9" | "9:16";
 
