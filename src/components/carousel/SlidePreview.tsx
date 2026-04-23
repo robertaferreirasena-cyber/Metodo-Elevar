@@ -67,13 +67,41 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     // Use inline padding for exact control
     const padPx = `${padSize}px`;
 
+    // Helper: build CSS style object for an image with optional pan/zoom/filter adjustments.
+    const buildImageStyle = (
+      url: string,
+      opts: {
+        positionX?: number; positionY?: number; scale?: number;
+        blur?: number; brightness?: number; contrast?: number;
+      } = {}
+    ): React.CSSProperties => {
+      const posX = opts.positionX ?? 50;
+      const posY = opts.positionY ?? 50;
+      const scl = opts.scale ?? 1;
+      const blur = opts.blur ?? 0;
+      const bright = opts.brightness ?? 100;
+      const contrast = opts.contrast ?? 100;
+      return {
+        backgroundImage: `url(${url})`,
+        backgroundSize: `${scl * 100}%`,
+        backgroundPosition: `${posX}% ${posY}%`,
+        backgroundRepeat: "no-repeat",
+        filter: `blur(${blur}px) brightness(${bright}%) contrast(${contrast}%)`,
+      };
+    };
+
     const renderBgImage = () => {
       const bgUrl = slide.bgImageUrl || (layout === "image-bg" ? slide.imageUrl : undefined);
       if (!bgUrl) return null;
       const opacity = slide.overlayOpacity ?? 0.55;
+      // Use bg-specific adjustments when bgImageUrl is set; otherwise use image-* (image-bg layout fallback)
+      const useBg = !!slide.bgImageUrl;
+      const adj = useBg
+        ? { positionX: slide.bgImagePositionX, positionY: slide.bgImagePositionY, scale: slide.bgImageScale, blur: slide.bgImageBlur, brightness: slide.bgImageBrightness, contrast: slide.bgImageContrast }
+        : { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast };
       return (
         <>
-          <div className="absolute inset-0" style={{ background: `url(${bgUrl}) center/cover no-repeat` }} />
+          <div className="absolute inset-0" style={buildImageStyle(bgUrl, adj)} />
           <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${opacity})` }} />
         </>
       );
@@ -127,7 +155,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               </div>
               <div className="w-[45%] relative">
                 {slide.imageUrl ? (
-                  <div className="absolute inset-0" style={{ background: `url(${slide.imageUrl}) center/cover no-repeat` }} />
+                  <div className="absolute inset-0" style={buildImageStyle(slide.imageUrl, { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
                     <ImagePlus style={{ color: slide.accentColor, opacity: 0.4, width: 60 * fontScale, height: 60 * fontScale }} />

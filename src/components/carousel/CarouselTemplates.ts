@@ -646,6 +646,20 @@ export interface SlideData {
   overlayOpacity?: number;
   bgImageUrl?: string;
   verticalAlign?: "top" | "center" | "bottom";
+  // Background image adjustments (per slide)
+  bgImagePositionX?: number;  // 0–100 (%) – default 50
+  bgImagePositionY?: number;  // 0–100 (%) – default 50
+  bgImageScale?: number;      // 1–3 (zoom) – default 1
+  bgImageBlur?: number;       // 0–20 (px) – default 0
+  bgImageBrightness?: number; // 50–150 (%) – default 100
+  bgImageContrast?: number;   // 50–150 (%) – default 100
+  // Layout image (image-bg / editorial) adjustments
+  imagePositionX?: number;
+  imagePositionY?: number;
+  imageScale?: number;
+  imageBlur?: number;
+  imageBrightness?: number;
+  imageContrast?: number;
 }
 
 export function createSlidesFromTemplate(
