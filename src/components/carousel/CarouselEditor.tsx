@@ -367,17 +367,22 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   // templateApplyMode is declared earlier (with persisted initial value via state restore below)
 
   const handleImageUpload = async (index: number, file: File) => {
-    try { updateSlide(index, { imageUrl: await fileToDataUrl(file) }); }
-    catch { toast.error("Erro ao carregar imagem"); }
+    try {
+      snapshotSlideForUndo(index, "Imagem do layout atualizada");
+      updateSlide(index, { imageUrl: await fileToDataUrl(file) });
+    } catch { toast.error("Erro ao carregar imagem"); }
   };
 
   const handleBgImageUpload = async (index: number, file: File) => {
-    try { updateSlide(index, { bgImageUrl: await fileToDataUrl(file) }); }
-    catch { toast.error("Erro ao carregar imagem de fundo"); }
+    try {
+      snapshotSlideForUndo(index, "Imagem de fundo atualizada");
+      updateSlide(index, { bgImageUrl: await fileToDataUrl(file) });
+    } catch { toast.error("Erro ao carregar imagem de fundo"); }
   };
 
   const handleMultiImageUpload = async (index: number, files: FileList) => {
     try {
+      snapshotSlideForUndo(index, "Fotos do grid atualizadas");
       const urls = await Promise.all(Array.from(files).map(fileToDataUrl));
       const current = slides[index]?.imageUrls || [];
       updateSlide(index, { imageUrls: [...current, ...urls].slice(0, 4) });
@@ -385,8 +390,10 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   };
 
   const handleProfileImageUpload = async (index: number, file: File) => {
-    try { updateSlide(index, { profileImageUrl: await fileToDataUrl(file) }); }
-    catch { toast.error("Erro ao carregar foto de perfil"); }
+    try {
+      snapshotSlideForUndo(index, "Avatar atualizado");
+      updateSlide(index, { profileImageUrl: await fileToDataUrl(file) });
+    } catch { toast.error("Erro ao carregar foto de perfil"); }
   };
 
   // Hidden export refs for native-size rendering
