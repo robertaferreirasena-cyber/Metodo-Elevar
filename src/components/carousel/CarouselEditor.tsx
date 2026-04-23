@@ -1033,6 +1033,15 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                         {cur.imageUrl ? "Trocar imagem" : "Enviar imagem"}
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(currentSlide, f); }} />
                       </label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-9 shrink-0"
+                        onClick={() => { setLibraryTarget("image"); setLibraryOpen(true); }}
+                        title="Buscar no banco de imagens grátis"
+                      >
+                        🖼 Banco
+                      </Button>
                       {cur.imageUrl && (
                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { snapshotSlideForUndo(currentSlide, "Imagem do layout removida"); updateSlide(currentSlide, { imageUrl: undefined, imagePositionX: undefined, imagePositionY: undefined, imageScale: undefined, imageBlur: undefined, imageBrightness: undefined, imageContrast: undefined }); }}><X className="h-4 w-4" /></Button>
                       )}
