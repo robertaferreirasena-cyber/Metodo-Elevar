@@ -35,16 +35,18 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
   JOURNAL_TEMPLATE_IDS, JOURNAL_LAYOUT_SEQUENCE, isJournalTemplate,
-  JOURNAL_PALETTES, applyPaletteToSlide, type JournalPalette,
+  JOURNAL_PALETTES, applyPaletteToSlide, buildJournalSampleSlides, type JournalPalette,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
 } from "./CarouselTemplates";
 import ImageLibraryPicker from "./ImageLibraryPicker";
+import JournalCollectionExporter, { type JournalExporterHandle } from "./JournalCollectionExporter";
 import JSZip from "jszip";
 
-const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial"];
+const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial", "journal-photo-card", "journal-torn-paper"];
 const MULTI_IMAGE_LAYOUTS: CarouselLayout[] = ["photo-grid", "tweet-post"];
 const PROFILE_LAYOUTS: CarouselLayout[] = ["profile-post", "photo-grid", "tweet-post", "prompt-card", "sticker-card"];
 const HIGHLIGHT_LAYOUTS: CarouselLayout[] = ["sales-highlight"];
+const BG_IMAGE_LAYOUTS: CarouselLayout[] = ["journal-photo-card", "journal-torn-paper", "image-bg"];
 
 type FormatFilter = "all" | "1:1" | "16:9" | "9:16";
 
@@ -72,12 +74,14 @@ interface CarouselSessionState {
   giMessages: { role: "user" | "assistant"; content: string }[];
   giOpen: boolean;
   templateApplyMode: "all" | "current" | "preserve";
+  currentJournalPaletteId: string;
 }
 
 const EMPTY_CAROUSEL_STATE: CarouselSessionState = {
   topic: "", slideCount: 5, tone: "profissional", formatFilter: "all",
   selectedTemplateId: CAROUSEL_TEMPLATES[0].id, slides: [], currentSlide: 0,
   giMessages: [], giOpen: false, templateApplyMode: "all",
+  currentJournalPaletteId: "terracota",
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-mentor-chat`;
