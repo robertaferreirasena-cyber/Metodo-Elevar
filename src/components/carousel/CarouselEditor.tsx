@@ -1114,8 +1114,8 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
           </div>
 
           {/* Slide */}
-          <div className="flex items-center justify-center w-full h-full px-2 sm:p-8" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))", paddingBottom: "calc(56px + env(safe-area-inset-bottom))" }}>
-            <div style={{ maxWidth: "94vw", maxHeight: "78vh" }}>
+          <div className="flex items-center justify-center w-full h-full" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))", paddingBottom: "calc(56px + env(safe-area-inset-bottom))", paddingLeft: "max(0.5rem, env(safe-area-inset-left))", paddingRight: "max(0.5rem, env(safe-area-inset-right))" }}>
+            <div style={{ maxWidth: "min(94vw, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1rem))", maxHeight: "78vh" }}>
               <SlidePreview
                 slide={slides[currentSlide]}
                 slideIndex={currentSlide}
