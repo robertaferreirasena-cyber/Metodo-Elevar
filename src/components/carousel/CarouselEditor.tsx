@@ -148,6 +148,22 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const lastSlidesSnapshot = useRef<SlideData[] | null>(null);
   const lastTemplateSnapshot = useRef<CarouselTemplate | null>(null);
 
+  // Snapshot for undo of last single-slide image change/removal/reset
+  const snapshotSlideForUndo = useCallback((index: number, label: string) => {
+    const before = slides[index];
+    if (!before) return;
+    const snap = { ...before };
+    toast.success(label, {
+      duration: 6000,
+      action: {
+        label: "Desfazer",
+        onClick: () => {
+          setSlides(prev => prev.map((s, i) => (i === index ? snap : s)));
+        },
+      },
+    });
+  }, [slides]);
+
   // Pending topic confirmation (when a new initialTopic arrives but user already has work in progress)
   const [pendingTopic, setPendingTopic] = useState<string | null>(null);
   const lastAppliedInitialTopic = useRef<string>(sessionState.topic || initialTopic || "");
