@@ -1,103 +1,83 @@
 
-# Plano: Coleção Journaling consistente com geração da Mentora Gi + correções
+# Plano: Cache de imagens, temas offline para "Texto exemplo" e persistência da paleta Journaling
 
-## 1. Fix runtime error no `ImageAdjustPanel`
-**Arquivo:** `src/components/carousel/ImageAdjustPanel.tsx` (linha 32)
+Três ajustes pontuais e independentes nas peças já existentes da Coleção Journaling.
 
-`v = { ...DEFAULTS, ...values }` quebra quando `values` contém `scale: undefined` explicitamente (spread sobrescreve com `undefined`, e `v.scale.toFixed(2)` crasha). Vou trocar por merge seguro que ignora `undefined`:
+## 1. Cache de resultados no "Banco de imagens"
 
-```ts
-const v = (Object.keys(DEFAULTS) as (keyof typeof DEFAULTS)[]).reduce((acc, k) => {
-  acc[k] = values[k] ?? DEFAULTS[k];
-  return acc;
-}, {} as Required<ImageAdjustValues>);
-```
+**Arquivo:** `src/components/carousel/ImageLibraryPicker.tsx`
 
-## 2. Fix do "Banco de imagens" (CORS + erro de chamada)
-**Arquivo:** `supabase/functions/image-library-search/index.ts`
+Adicionar cache client-side em `sessionStorage` (complementa o cache de 5min que já existe no edge worker, mas elimina até a chamada de rede quando o usuário alterna entre layouts):
 
-Adicionar `apikey` e `x-supabase-*` no `Access-Control-Allow-Headers` (faltam os `x-supabase-client-*` que o navegador envia hoje, causando preflight fail):
+- Chave: `img_lib_cache_v1::${query}::${orientation}::${page}`
+- TTL: 10 minutos
+- Estrutura: `{ ts: number, images: ImageItem[] }`
+- Tamanho máximo: 30 entradas (LRU simples por timestamp)
 
-```ts
-"Access-Control-Allow-Headers":
-  "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-```
+Fluxo na função `search()`:
+1. Normaliza `term` (lowercase + trim).
+2. Lê `sessionStorage` — se houver hit válido, `setResults(cached.images)` e retorna sem chamar fetch.
+3. Em miss, chama o edge function como hoje, e ao receber resposta `ok` grava no cache.
+4. Em erro, NÃO grava no cache.
 
-Também:
-- Trocar a auth manual por `createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY).auth.getUser(token)` (mais robusto, igual aos outros functions).
-- Garantir mensagens de erro claras quando `UNSPLASH_ACCESS_KEY`/`PEXELS_API_KEY` faltarem ou retornarem 401 (logar status e devolver `{ error }` legível para o toast no client mostrar).
+Também: ao abrir o dialog com `suggestedQuery`, dispara `search(suggestedQuery)` automaticamente uma vez (hoje exige clique). Isso aproveita o cache imediatamente quando o usuário troca de layout no mesmo tema.
 
-**Arquivo:** `src/components/carousel/ImageLibraryPicker.tsx` — adicionar header `apikey: VITE_SUPABASE_PUBLISHABLE_KEY` nas duas chamadas (search + fetch) para passar pelo gateway do Supabase consistentemente.
+Helpers internos (`getCached`, `setCached`, `pruneCache`) ficam no próprio arquivo — sem nova lib.
 
-Redeploy automático da function.
+## 2. Seletor de tema para "📋 Texto exemplo"
 
-## 3. Templates Journaling se comportam como os outros (texto da Mentora Gi + layouts distribuídos)
+**Arquivos:**
+- `src/components/carousel/CarouselTemplates.ts` — exportar `JOURNAL_SAMPLE_THEMES`
+- `src/components/carousel/CarouselEditor.tsx` — UI do seletor
 
-**Arquivo:** `src/components/carousel/CarouselTemplates.ts`
-
-Atualizar `createSlidesFromTemplate` para detectar templates Journaling e distribuir os 6 layouts da `JOURNAL_LAYOUT_SEQUENCE` em vez de aplicar sempre `template.layout`:
+**Em `CarouselTemplates.ts`:** criar e exportar 4 temas pré-prontos compatíveis com `buildJournalSampleSlides(palette, themeId)`:
 
 ```ts
-export function createSlidesFromTemplate(template, content) {
-  const isJournal = isJournalTemplate(template.id);
-  return content.map((c, i) => ({
-    title: c.title, body: c.body,
-    bgColor: template.bgColor, textColor: template.textColor, accentColor: template.accentColor,
-    titleSize: template.titleSize, bodySize: template.bodySize,
-    fontFamily: template.fontFamily, align: template.align, bgGradient: template.bgGradient,
-    layout: isJournal
-      ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length]
-      : template.layout,
-    highlightBgColor: template.highlightBgColor,
-  }));
-}
+export const JOURNAL_SAMPLE_THEMES = [
+  { id: "autoestima",   label: "Autoestima",          slides: [...6 títulos+corpos...] },
+  { id: "rotina",       label: "Rotina matinal",      slides: [...] },
+  { id: "produtividade",label: "Produtividade leve",  slides: [...] },
+  { id: "vendas",       label: "Vendas com leveza",   slides: [...] },
+];
 ```
 
-Resultado: ao escolher um template Journaling + clicar **"Gerar Carrossel com Mentora Gi"**, o carrossel sai com os títulos/corpos gerados pela IA E com os 6 layouts narrativos distribuídos automaticamente — exatamente como os outros templates, mas com a riqueza visual da coleção.
+`buildJournalSampleSlides(palette, themeId?)` aceita `themeId` opcional; quando ausente, mantém o conteúdo genérico atual (compat).
 
-## 4. "Aplicar com texto modelo" agora gera com IA baseado no tema
+**No painel da Coleção em `CarouselEditor.tsx`:** o botão "📋 Texto exemplo" vira um pequeno cluster:
 
-**Arquivo:** `src/components/carousel/CarouselEditor.tsx`
-
-Hoje o botão usa `buildJournalSampleSlides()` (texto genérico estático). Vou:
-
-- Renomear/atualizar o botão para **"🪄 Gerar coleção com texto da Mentora Gi"**.
-- Adicionar nova função `generateJournalCollection()` que:
-  1. Valida `topic` (se vazio, abre toast "Informe o tema do carrossel acima").
-  2. Faz a mesma chamada que `generateContent`, mas forçando `slideCount = 6` e adicionando ao prompt instrução específica:
-     > "Os 6 slides serão renderizados em layouts visuais distintos de uma coleção 'Journaling' (capa com fita, página de caderno, foto + card, espiral, papel rasgado, envelope/CTA). Mantenha consistência narrativa entre eles."
-  3. No retorno, chama `createSlidesFromTemplate(journalTemplate, slides)` (que agora distribui os 6 layouts), aplica `applyPaletteToSlide` com a paleta atual em cada um e seta `setSlides(...)`.
-  4. Toast de sucesso + Undo.
-- Manter o botão **"✨ Aplicar coleção (manter meu texto)"** como está (preserva conteúdo, troca só layouts/paleta).
-- Manter um terceiro botão menor **"📋 Usar texto exemplo"** para fallback offline (usa `buildJournalSampleSlides` atual).
-
-Layout dos botões no painel da Coleção:
 ```text
-[🪄 Gerar com Mentora Gi] [✨ Manter meu texto] [📋 Texto exemplo]
-[📥 Exportar prévia da coleção]
+[Tema: ▼ Autoestima ] [📋 Aplicar texto exemplo]
 ```
 
-## 5. Autonomia total de edição em templates Journaling
+- `Select` shadcn com as 4 opções + "Genérico" (default).
+- Estado local `sampleThemeId` (não precisa persistir).
+- Ao clicar "Aplicar", chama `buildJournalSampleSlides(currentJournalPalette, sampleThemeId)` + distribui `JOURNAL_LAYOUT_SEQUENCE` + `setSlides(...)` + Undo + toast.
+
+## 3. Persistência robusta de `currentJournalPaletteId`
 
 **Arquivo:** `src/components/carousel/CarouselEditor.tsx`
 
-Verificação: o painel direito (sliders de fonte, color pickers de título/corpo/accent/fundo, alinhamento, negrito/itálico, upload de imagem, ajustes de imagem) já é renderizado para qualquer template — não há guard escondendo controles para Journaling. O problema percebido vem do `applyPaletteToSlide` que zerava `titleColor`/`bodyColor` sempre que a paleta era aplicada, sobrescrevendo o que o usuário escolheu.
+Hoje a paleta já é persistida em `localStorage` (chave `journal_palette_id`), mas existem dois pontos onde ela pode "voltar diferente":
 
-Ajustes:
-- Em `applyJournalPalette` e `applyJournalLayoutToCurrent`: **só** zerar `titleColor`/`bodyColor` se ainda forem `undefined` (preservar customizações do usuário).
-- Adicionar ao painel direito, quando o slide atual for layout Journaling, um mini-bloco **"🎨 Cores do Journaling"** com 4 color pickers diretos (`bgColor`, `textColor`, `accentColor`, `highlightBgColor`) + botão "Resetar para paleta". Isso deixa explícito que tudo é editável.
-- Garantir que `bgImageUrl`/`imageUrl`/ajustes de imagem (zoom, brilho, contraste, blur, posição) já existentes funcionem nos layouts `journal-photo-card` e `journal-torn-paper` (já funcionam — só verificar que o painel `ImageAdjustPanel` aparece quando `bgImageUrl` está setado, mesmo em layouts journal).
+**3.1.** Ao trocar de template Journaling, hoje algumas branches resetam o id para o default da paleta da template. Vou:
+- Centralizar a leitura inicial num `useState(() => localStorage.getItem("journal_palette_id") || JOURNAL_PALETTES[0].id)`.
+- No `useEffect` que reage a mudança de template, NÃO sobrescrever `currentJournalPaletteId` se já houver um valor válido salvo (verificar se o id ainda existe em `JOURNAL_PALETTES`); só fazer fallback para o default quando o id salvo for inválido.
+
+**3.2.** Garantir gravação imediata em todo `setCurrentJournalPaletteId`:
+- Trocar chamadas diretas por um wrapper `updateJournalPaletteId(id)` que faz `setCurrentJournalPaletteId(id)` + `localStorage.setItem("journal_palette_id", id)` na mesma linha.
+- Aplicar o wrapper em: `applyJournalPalette`, clique nos swatches, `applyJournalCollection` (todas as variantes), `generateJournalCollection`, `applyJournalLayoutToCurrent`.
+
+**3.3.** No mount inicial do editor, após hidratar `currentJournalPaletteId` do storage, disparar uma vez `applyJournalPalette(palette, { onlyMissing: true })` para reaplicar as cores da paleta nos slides Journaling existentes que ainda não tenham `bgColor`/`textColor` customizados — sem sobrescrever o que o usuário editou.
+
+## Critérios de aceitação
+
+- Trocar entre layouts Journaling com o "Banco de imagens" aberto e a mesma busca: segundo open mostra resultados instantaneamente, sem chamada de rede (verificável no DevTools).
+- Painel da Coleção mostra "Tema: [Select] [📋 Aplicar texto exemplo]"; cada um dos 4 temas gera 6 slides coerentes naquele tom, com layouts distribuídos.
+- Escolher paleta "Pôr do sol", recarregar a página → paleta volta como "Pôr do sol" e os slides Journaling renderizam com as cores certas.
+- Trocar de template Journaling A → B → A: a paleta escolhida persiste em todas as transições.
+- Cores customizadas pelo usuário (via color pickers) não são sobrescritas pela reaplicação automática da paleta no mount.
 
 ## Arquivos editados
-- `src/components/carousel/ImageAdjustPanel.tsx` — fix do undefined merge
-- `supabase/functions/image-library-search/index.ts` — CORS headers + auth
-- `src/components/carousel/ImageLibraryPicker.tsx` — header `apikey`
-- `src/components/carousel/CarouselTemplates.ts` — `createSlidesFromTemplate` distribui layouts journal
-- `src/components/carousel/CarouselEditor.tsx` — `generateJournalCollection`, novos botões, painel "Cores do Journaling", preserva customizações de cor
-
-## Resultado esperado
-- Slider de zoom da imagem volta a funcionar sem crash.
-- Banco de imagens abre, busca e aplica fotos do Unsplash/Pexels nos slides sem erro.
-- Selecionar um template Journaling + digitar tema + clicar "Gerar Carrossel com Mentora Gi" produz 6 slides com **textos gerados pela IA** distribuídos nos **6 layouts narrativos** da coleção.
-- Novo botão "🪄 Gerar coleção com texto da Mentora Gi" no painel da Coleção faz o mesmo de forma direta para quem já está editando.
-- Color pickers de fundo, título, corpo, destaque funcionam normalmente em qualquer slide journal — sem reset automático nem locks.
+- `src/components/carousel/ImageLibraryPicker.tsx`
+- `src/components/carousel/CarouselTemplates.ts`
+- `src/components/carousel/CarouselEditor.tsx`
