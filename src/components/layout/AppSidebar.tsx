@@ -1,4 +1,4 @@
-import { Home, Smartphone, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target, FileText, CheckCircle2, AlertCircle, Megaphone, Bot } from "lucide-react";
+import { Home, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target, FileText, CheckCircle2, AlertCircle, Megaphone, Bot } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,7 +27,6 @@ import { useState } from "react";
 
 const mainItems = [
   { title: "Dashboard", url: "/", icon: Home },
-  { title: "WhatsApp", url: "/whatsapp", icon: Smartphone },
   { title: "Mentora Gi", url: "/mentora-hub", icon: BotMessageSquare },
   { title: "Tráfego Pago", url: "/trafego-pago", icon: Megaphone },
   { title: "Central Instagram", url: "/instagram", icon: Bot },

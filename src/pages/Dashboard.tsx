@@ -1,5 +1,5 @@
 import {
-  Smartphone, BotMessageSquare, GraduationCap, Trophy, ArrowRight,
+  BotMessageSquare, GraduationCap, Trophy, ArrowRight,
   Brain, Target, AlertTriangle, Zap, TrendingUp, BookOpen, Sparkles, DollarSign,
   MapPin, CheckCircle2
 } from "lucide-react";
@@ -21,8 +21,6 @@ import { useSalesReminder } from "@/hooks/useSalesReminder";
 
 // Activity type to route mapping
 const activityRoutes: Record<string, { route: string; label: string }> = {
-  whatsapp_private: { route: '/whatsapp', label: 'WhatsApp - Vendas 1:1' },
-  whatsapp_group: { route: '/whatsapp', label: 'WhatsApp - Grupos' },
   persona: { route: '/persona', label: 'Raio-X Persona' },
   content: { route: '/mentora-hub', label: 'Mentora Gi' },
   mentor: { route: '/mentora-hub', label: 'Mentora Gi' },
@@ -301,12 +299,6 @@ export default function Dashboard() {
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground mb-3">Acesso Rápido</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <QuickHub
-            icon={<Smartphone className="h-5 w-5 text-emerald-500" />}
-            label="WhatsApp"
-            href="/whatsapp"
-            color="bg-emerald-500/10"
-          />
           <QuickHub
             icon={<BotMessageSquare className="h-5 w-5 text-primary" />}
             label="Mentora Gi"
