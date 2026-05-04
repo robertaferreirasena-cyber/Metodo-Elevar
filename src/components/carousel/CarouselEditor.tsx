@@ -938,7 +938,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
         <CardContent className="space-y-4">
           <div>
             <Label>Tema do carrossel</Label>
-            <Textarea placeholder="Ex: 5 dicas para vender mais no WhatsApp" value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-1" />
+            <Textarea placeholder="Ex: 5 dicas para vender mais no Instagram" value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-1" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

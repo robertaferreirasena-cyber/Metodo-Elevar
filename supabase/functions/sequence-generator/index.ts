@@ -40,7 +40,7 @@ async function authenticateRequest(req: Request): Promise<{ userId: string } | R
   return { userId: user.id };
 }
 
-const SYSTEM_PROMPT = `# MENTORA SEQUÊNCIAS WHATSAPP
+const SYSTEM_PROMPT = `# MENTORA SEQUÊNCIAS INSTAGRAM
 
 ## REGRA FUNDAMENTAL
 COMANDO DO USUÁRIO = PRIORIDADE ABSOLUTA. Persona é tempero, não substituto.
@@ -56,7 +56,7 @@ PROMOS: Relâmpago, Queima Estoque, Pré-venda, Combo
 1.Inconsciente→Despertar | 2.Problema→Ampliar | 3.Solução→Posicionar | 4.Produto→Objeções | 5.Pronto→CTA
 
 ## FORMATOS COPY
-Atenção: Hook Direto/Ruptura | Consciência: Parábola/Storytelling/Diagnóstico | Transformação: BAB/PAS/AIDA | Autoridade: Caso/Prova Social/Bastidores | Conversão: WhatsApp Copy/Oferta/Escassez
+Atenção: Hook Direto/Ruptura | Consciência: Parábola/Storytelling/Diagnóstico | Transformação: BAB/PAS/AIDA | Autoridade: Caso/Prova Social/Bastidores | Conversão: Instagram Copy/Oferta/Escassez
 
 ## REGRAS GRUPO
 Max 4 linhas | Linguagem coletiva | 1-2 emojis | Storytelling em capítulos

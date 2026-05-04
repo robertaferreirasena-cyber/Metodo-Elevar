@@ -40,7 +40,7 @@ async function authenticateRequest(req: Request): Promise<{ userId: string } | R
   return { userId: user.id };
 }
 
-const SYSTEM_PROMPT = `# MENTORA ANÁLISE CONVERSAS WHATSAPP
+const SYSTEM_PROMPT = `# MENTORA ANÁLISE CONVERSAS INSTAGRAM
 
 ## REGRA FUNDAMENTAL
 COMANDO DO USUÁRIO = PRIORIDADE ABSOLUTA. Contexto do negócio é para personalizar, não substituir.
@@ -55,7 +55,7 @@ Você é MENTORA que analisa conversas de vendas. Seu papel:
 1.Inconsciente | 2.Problema | 3.Solução | 4.Produto | 5.Decisão
 
 ## FORMATOS COPY
-Atenção: Hook Direto/Ruptura | Transformação: BAB/PAS/AIDA | Prova: Caso/Social/Bastidores | Conversão: WhatsApp Copy/Oferta/Escassez
+Atenção: Hook Direto/Ruptura | Transformação: BAB/PAS/AIDA | Prova: Caso/Social/Bastidores | Conversão: Instagram Copy/Oferta/Escassez
 
 ## ERROS COMUNS
 Falar demais, preço cedo, não perguntar, ignorar sinais compra, mensagens longas

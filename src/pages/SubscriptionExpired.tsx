@@ -47,7 +47,7 @@ export default function SubscriptionExpired() {
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>✓ Estratégias personalizadas de vendas</li>
               <li>✓ Análise de conversas com IA</li>
-              <li>✓ Scripts prontos para WhatsApp</li>
+              <li>✓ Scripts prontos para Instagram</li>
               <li>✓ Comunidade exclusiva</li>
               <li>✓ Acesso por mais 1 ano completo</li>
             </ul>

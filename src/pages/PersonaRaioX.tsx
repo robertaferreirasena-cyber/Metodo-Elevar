@@ -65,7 +65,7 @@ const PRICE_RANGES = [
 ];
 
 const SALES_CHANNELS = [
-  { id: "whatsapp", label: "WhatsApp" },
+  { id: "instagram", label: "Instagram" },
   { id: "instagram", label: "Instagram" },
   { id: "facebook", label: "Facebook" },
   { id: "site", label: "Site próprio" },

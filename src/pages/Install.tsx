@@ -95,7 +95,7 @@ export default function Install() {
                   </div>
                   <div className="text-center px-4">
                     <p className="text-sm font-semibold text-foreground">Estrategista IA</p>
-                    <p className="text-xs text-muted-foreground">Vendas WhatsApp</p>
+                    <p className="text-xs text-muted-foreground">Vendas Instagram</p>
                   </div>
                 </div>
                 {/* Home Indicator */}
@@ -105,7 +105,7 @@ export default function Install() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-foreground">Estrategista IA</h2>
-            <p className="text-sm text-muted-foreground">Vendas WhatsApp com IA</p>
+            <p className="text-sm text-muted-foreground">Vendas Instagram com IA</p>
           </div>
           <div className="flex justify-center gap-2">
             <Badge variant="secondary" className="gap-1">

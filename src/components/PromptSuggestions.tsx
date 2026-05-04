@@ -233,12 +233,12 @@ export const IDEAS_GENERATOR_SUGGESTIONS = [
   {
     emoji: "🚀",
     title: "Ideias para lançamento",
-    prompt: "Preciso de ideias criativas para lançar meu novo produto no WhatsApp. Como gerar expectativa e vendas?"
+    prompt: "Preciso de ideias criativas para lançar meu novo produto no Instagram. Como gerar expectativa e vendas?"
   },
   {
     emoji: "📱",
     title: "Conteúdo para stories",
-    prompt: "Quero ideias de conteúdo para stories do WhatsApp que gerem engajamento e vendas indiretas."
+    prompt: "Quero ideias de conteúdo para stories do Instagram que gerem engajamento e vendas indiretas."
   },
   {
     emoji: "🎁",
@@ -248,7 +248,7 @@ export const IDEAS_GENERATOR_SUGGESTIONS = [
   {
     emoji: "✨",
     title: "Diferenciação da concorrência",
-    prompt: "Como posso me diferenciar da concorrência nas minhas abordagens de vendas no WhatsApp?"
+    prompt: "Como posso me diferenciar da concorrência nas minhas abordagens de vendas no Instagram?"
   }
 ];
 
@@ -264,7 +264,7 @@ export const NICHE_MODA_SUGGESTIONS = [
   {
     emoji: "📦",
     title: "Lançamento de coleção nova",
-    prompt: "Vou lançar uma coleção nova de roupas femininas. Como criar expectativa e gerar vendas no WhatsApp?"
+    prompt: "Vou lançar uma coleção nova de roupas femininas. Como criar expectativa e gerar vendas no Instagram?"
   },
   {
     emoji: "💃",

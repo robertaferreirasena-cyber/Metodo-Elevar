@@ -347,8 +347,8 @@ export default function AdminLearning() {
               <Select value={lessonForm.activity_type} onValueChange={v => setLessonForm(f => ({ ...f, activity_type: v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecione o tipo..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="whatsapp_private">WhatsApp - Vendas 1:1</SelectItem>
-                  <SelectItem value="whatsapp_group">WhatsApp - Grupos</SelectItem>
+                  <SelectItem value="instagram_private">Instagram - Vendas 1:1</SelectItem>
+                  <SelectItem value="instagram_group">Instagram - Grupos</SelectItem>
                   <SelectItem value="persona">Raio-X Persona</SelectItem>
                   <SelectItem value="content">Conteúdo / Copy</SelectItem>
                   <SelectItem value="mentor">Mentora Gi</SelectItem>

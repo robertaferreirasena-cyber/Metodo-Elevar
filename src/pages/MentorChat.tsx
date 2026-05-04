@@ -21,7 +21,7 @@ const PERSONAS = [
 ];
 
 const SUGGESTIONS = [
-  "Como criar um funil de vendas pelo WhatsApp?",
+  "Como criar um funil de vendas pelo Instagram?",
   "Me ajude a escrever uma bio para o Instagram",
   "Quais são os melhores gatilhos mentais para vendas?",
   "Como precificar meus produtos digitais?",

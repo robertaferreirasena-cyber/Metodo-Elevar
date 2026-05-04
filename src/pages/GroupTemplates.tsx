@@ -384,7 +384,7 @@ const templates: NicheTemplate[] = [
     niche: "gastronomia",
     category: "Promoção",
     title: "Combo Especial",
-    content: "🔥 COMBO DA SEMANA 🔥\n\n[Produto 1] + [Produto 2]\n\nDe R$[X] por R$[Y]!\n\nPeça pelo WhatsApp 📲",
+    content: "🔥 COMBO DA SEMANA 🔥\n\n[Produto 1] + [Produto 2]\n\nDe R$[X] por R$[Y]!\n\nPeça pelo Instagram 📲",
   },
   {
     niche: "gastronomia",
@@ -461,7 +461,7 @@ export default function GroupTemplates() {
       return;
     }
 
-    const prompt = `Adapte este template de post para grupo WhatsApp:
+    const prompt = `Adapte este template de post para grupo Instagram:
 
 ---
 **${template.title}** (${template.category})

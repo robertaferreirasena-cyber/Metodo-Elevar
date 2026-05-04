@@ -101,7 +101,7 @@ export default function StrategyGenerator() {
               </div>
               <h2 className="font-semibold text-foreground">Pronto para criar sua estratégia?</h2>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Descreva seu produto, serviço ou situação de vendas e receba estratégias personalizadas para vender mais via WhatsApp.
+                Descreva seu produto, serviço ou situação de vendas e receba estratégias personalizadas para vender mais via Instagram.
               </p>
             </div>
             <div className="w-full max-w-lg">

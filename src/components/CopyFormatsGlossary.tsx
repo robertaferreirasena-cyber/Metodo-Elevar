@@ -42,7 +42,7 @@ const COPY_FORMATS: CopyFormat[] = [
       "Solução: Apresente seu produto/serviço como a resposta"
     ],
     whenToUse: "Quando o lead está no nível 1-2 de consciência (inconsciente ou consciente do problema)",
-    example: "Cansada de perder vendas no WhatsApp? (P) Cada cliente que some é dinheiro deixado na mesa, e seus concorrentes agradecem. (A) Com meu método de follow-up, você transforma 'vou pensar' em 'pode enviar o pix'. (S)",
+    example: "Cansada de perder vendas no Instagram? (P) Cada cliente que some é dinheiro deixado na mesa, e seus concorrentes agradecem. (A) Com meu método de follow-up, você transforma 'vou pensar' em 'pode enviar o pix'. (S)",
     consciousnessLevel: "Níveis 1-2"
   },
   {
@@ -57,7 +57,7 @@ const COPY_FORMATS: CopyFormat[] = [
       "Bridge (Ponte): Apresente como chegar lá"
     ],
     whenToUse: "Quando o lead conhece o problema mas precisa visualizar a transformação",
-    example: "Antes: Você responde cliente por cliente, sem padrão, perdendo vendas. Depois: Você tem scripts prontos, sabe exatamente o que dizer, e fecha 3x mais. A ponte? Meus templates de WhatsApp testados.",
+    example: "Antes: Você responde cliente por cliente, sem padrão, perdendo vendas. Depois: Você tem scripts prontos, sabe exatamente o que dizer, e fecha 3x mais. A ponte? Meus templates de Instagram testados.",
     consciousnessLevel: "Níveis 2-3"
   },
   {
@@ -73,7 +73,7 @@ const COPY_FORMATS: CopyFormat[] = [
       "Ação: CTA claro e urgente"
     ],
     whenToUse: "Para posts de grupo e conteúdos mais longos",
-    example: "🚨 97% das vendas no WhatsApp morrem por UM erro (A). Descobri isso analisando 500+ conversas de lojistas (I). Imagine nunca mais ouvir 'vou pensar' (D). Quer ver os 3 erros? Comenta EU QUERO (A).",
+    example: "🚨 97% das vendas no Instagram morrem por UM erro (A). Descobri isso analisando 500+ conversas de lojistas (I). Imagine nunca mais ouvir 'vou pensar' (D). Quer ver os 3 erros? Comenta EU QUERO (A).",
     consciousnessLevel: "Níveis 1-4"
   },
   {
@@ -104,7 +104,7 @@ const COPY_FORMATS: CopyFormat[] = [
       "Conexão: Como você pode ter o mesmo"
     ],
     whenToUse: "Para leads no nível 4 que precisam de segurança para decidir",
-    example: "A Maria vendia R$3k/mês no WhatsApp. Depois de aplicar meu método de follow-up, fechou R$12k no mês seguinte. [print do depoimento] Quer saber como ela fez?",
+    example: "A Maria vendia R$3k/mês no Instagram. Depois de aplicar meu método de follow-up, fechou R$12k no mês seguinte. [print do depoimento] Quer saber como ela fez?",
     consciousnessLevel: "Nível 4"
   },
   {
@@ -159,10 +159,10 @@ const COPY_FORMATS: CopyFormat[] = [
   },
   {
     id: "conversa-guiada",
-    name: "WhatsApp Copy (Conversa Guiada)",
+    name: "Instagram Copy (Conversa Guiada)",
     emoji: "💬",
     shortDescription: "Conduz o lead com perguntas estratégicas",
-    fullDescription: "Formato específico para WhatsApp que usa perguntas para manter o lead engajado e guiá-lo naturalmente até a oferta, sem parecer vendedor.",
+    fullDescription: "Formato específico para Instagram que usa perguntas para manter o lead engajado e guiá-lo naturalmente até a oferta, sem parecer vendedor.",
     structure: [
       "Abertura: Pergunta que gera 'sim' fácil",
       "Diagnóstico: Perguntas que revelam a dor",
@@ -170,7 +170,7 @@ const COPY_FORMATS: CopyFormat[] = [
       "Ponte: Conexão com sua solução",
       "Micro-compromisso: Pergunta que avança"
     ],
-    whenToUse: "Para conversas 1:1 no WhatsApp em qualquer estágio",
+    whenToUse: "Para conversas 1:1 no Instagram em qualquer estágio",
     example: "Oi [nome]! Vi que você curtiu o post sobre scripts de vendas 😊 Você já usa algum modelo de mensagem pronta hoje? [espera resposta] E qual sua maior dificuldade quando o cliente diz 'vou pensar'?",
     consciousnessLevel: "Todos os níveis"
   },

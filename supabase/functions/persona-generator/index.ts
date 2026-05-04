@@ -23,7 +23,7 @@ async function authenticateRequest(req: Request): Promise<{ userId: string } | R
   return { userId: user.id };
 }
 
-const PERSONA_PROMPT = `# Especialista em Neuromarketing e Vendas WhatsApp
+const PERSONA_PROMPT = `# Especialista em Neuromarketing e Vendas Instagram
 
 Crie RAIO-X DE PERSONA completo baseado nos dados fornecidos.
 
@@ -76,7 +76,7 @@ Recomende os 3 mais eficazes para este público:
     "processamento_informacao": "Como absorve informação",
     "gatilhos_confianca": "O que gera confiança",
     "gatilhos_resistencia": "O que afasta",
-    "canal_comunicacao_ideal": "WhatsApp X1 ou Grupo?"
+    "canal_comunicacao_ideal": "Instagram X1 ou Grupo?"
   },
   "estrategia_recomendada": {
     "tom_comunicacao": "Tom ideal (ex: Amiga especialista)",

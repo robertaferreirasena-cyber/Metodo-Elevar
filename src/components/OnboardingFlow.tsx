@@ -70,11 +70,11 @@ export default function OnboardingFlow({ open, currentStep, onUpdateStep, onComp
               <Rocket className="h-8 w-8 text-primary" />
             </div>
             <h2 className="text-xl font-bold text-foreground">Bem-vinda à Mentoria Elevar! 🎉</h2>
-            <p className="text-sm text-muted-foreground">Sua plataforma exclusiva para elevar suas vendas pelo WhatsApp com inteligência artificial.</p>
+            <p className="text-sm text-muted-foreground">Sua plataforma exclusiva para elevar suas vendas pelo Instagram com inteligência artificial.</p>
             <div className="grid gap-3 text-left pt-2">
               {[
                 { icon: Brain, text: 'Mentora Gi: sua IA de vendas pessoal' },
-                { icon: MessageCircle, text: 'Estratégias prontas para WhatsApp' },
+                { icon: MessageCircle, text: 'Estratégias prontas para Instagram' },
                 { icon: GraduationCap, text: 'Módulos de aprendizado exclusivos' },
                 { icon: Trophy, text: 'Gamificação e conquistas' },
               ].map(({ icon: Icon, text }, i) => (
