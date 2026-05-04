@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { markMissionPending } from "@/hooks/useMissionAutoComplete";
 import { usePersonaContext } from "@/contexts/PersonaContext";
 import confetti from "canvas-confetti";
+import { scopedLocal } from "@/lib/userScopedKey";
 
 interface Mission {
   id: string;

@@ -710,18 +710,17 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     }
   };
 
-  // Save current carousel as a draft in localStorage so user can restore later
+  // Save current carousel as a draft (scoped to current user)
   const saveCurrentAsDraft = () => {
     try {
-      const drafts: any[] = JSON.parse(localStorage.getItem("carousel_drafts") || "[]");
+      const drafts: any[] = JSON.parse(scopedLocal.get("carousel_drafts") || "[]");
       drafts.unshift({
         id: Date.now(),
         topic, slides, selectedTemplateId: selectedTemplate.id,
         slideCount, tone, formatFilter, currentSlide,
         savedAt: new Date().toISOString(),
       });
-      // Keep only last 10
-      localStorage.setItem("carousel_drafts", JSON.stringify(drafts.slice(0, 10)));
+      scopedLocal.set("carousel_drafts", JSON.stringify(drafts.slice(0, 10)));
       toast.success("Carrossel atual salvo como rascunho");
     } catch (e) {
       console.error("Failed to save draft:", e);
