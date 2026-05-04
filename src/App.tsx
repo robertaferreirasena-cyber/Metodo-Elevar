@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -17,7 +18,6 @@ import PrivateMode from "./pages/PrivateMode";
 import GroupMode from "./pages/GroupMode";
 import StrategyGenerator from "./pages/StrategyGenerator";
 import ConversationAnalysis from "./pages/ConversationAnalysis";
-import WhatsAppStrategies from "./pages/WhatsAppStrategies";
 import GroupContent from "./pages/GroupContent";
 import GroupSequences from "./pages/GroupSequences";
 import GroupTemplates from "./pages/GroupTemplates";
@@ -48,20 +48,11 @@ import FinancialReport from "./pages/FinancialReport";
 import Gamification from "./pages/Gamification";
 import LearningModules from "./pages/LearningModules";
 import MentorChat from "./pages/MentorChat";
-import WhatsAppHub from "./pages/WhatsAppHub";
 import MentoraHub from "./pages/MentoraHub";
 import TrafficAds from "./pages/TrafficAds";
 import ManyChatFlows from "./pages/ManyChatFlows";
 import FormalizeCommitment from "./pages/FormalizeCommitment";
 import InstagramHub from "./pages/InstagramHub";
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 5 * 60 * 1000,
-    },
-  },
-});
 
 function GlobalErrorHandler({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -168,15 +159,7 @@ const App = () => (
               />
               <Route
                 path="/privado/scripts"
-                element={
-                  <ProtectedRoute>
-                    <ModuleGuard module="module_private">
-                      <AppLayout>
-                        <WhatsAppStrategies />
-                      </AppLayout>
-                    </ModuleGuard>
-                  </ProtectedRoute>
-                }
+                element={<Navigate to="/privado" replace />}
               />
 
               {/* Group Mode Routes */}
@@ -352,17 +335,8 @@ const App = () => (
               <Route path="/admin/aprendizado" element={<ProtectedRoute><AdminRoute><AppLayout><AdminLearning /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin/base-conhecimento" element={<ProtectedRoute><AdminRoute><AppLayout><AdminKnowledgeBase /></AppLayout></AdminRoute></ProtectedRoute>} />
 
-              {/* WhatsApp Hub */}
-              <Route
-                path="/whatsapp"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <WhatsAppHub />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
+              {/* Legacy Instagram redirect */}
+              <Route path="/instagram" element={<Navigate to="/" replace />} />
 
               {/* Mentora Hub */}
               <Route

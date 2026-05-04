@@ -592,7 +592,7 @@ export default function Community() {
                         <Input
                           value={materialTitle}
                           onChange={(e) => setMaterialTitle(e.target.value)}
-                          placeholder="Ex: Guia de Copy para WhatsApp"
+                          placeholder="Ex: Guia de Copy para Instagram"
                         />
                       </div>
                       <div>

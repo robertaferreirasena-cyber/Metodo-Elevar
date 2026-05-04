@@ -193,7 +193,7 @@ serve(async (req) => {
     let destinationInstructions = "";
     if (destination && destination !== "não especificado") {
       const destMap: Record<string, string> = {
-        "📱 WhatsApp": "DESTINO: WhatsApp. Otimize o CTA para 'Enviar mensagem no WhatsApp'. O texto deve criar urgência para iniciar uma conversa. Use linguagem conversacional. Sugira mensagem de boas-vindas automática. O botão do anúncio deve ser 'Enviar mensagem' ou 'Falar no WhatsApp'.",
+        "📱 Instagram": "DESTINO: Instagram. Otimize o CTA para 'Enviar mensagem no Instagram'. O texto deve criar urgência para iniciar uma conversa. Use linguagem conversacional. Sugira mensagem de boas-vindas automática. O botão do anúncio deve ser 'Enviar mensagem' ou 'Falar no Instagram'.",
         "🛒 Página de Vendas": "DESTINO: Página de vendas. CTA direto para compra ('Comprar agora', 'Garantir minha vaga'). Copy focada em benefícios, prova social e escassez. Destaque oferta e preço.",
         "📋 Página de Captura (Lead)": "DESTINO: Landing page de captura. CTA para download de material gratuito ('Baixar grátis', 'Receber agora'). Copy focada na isca digital e no valor do material. Minimizar fricção.",
         "📸 Perfil do Instagram": "DESTINO: Perfil do Instagram. CTA para 'Visitar perfil' ou 'Seguir'. Copy que gere curiosidade sobre o conteúdo do perfil. Destaque autoridade e conteúdo exclusivo.",

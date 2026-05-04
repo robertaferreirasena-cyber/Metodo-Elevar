@@ -2,19 +2,20 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { consumePendingMission } from "@/hooks/useMissionAutoComplete";
+import { scopedLocal } from "@/lib/userScopedKey";
 
 const COMING_FROM_KEY = "coming_from_learning";
 
 export function setComingFromLearning() {
-  localStorage.setItem(COMING_FROM_KEY, "true");
+  scopedLocal.set(COMING_FROM_KEY, "true");
 }
 
 export function isComingFromLearning(): boolean {
-  return localStorage.getItem(COMING_FROM_KEY) === "true";
+  return scopedLocal.get(COMING_FROM_KEY) === "true";
 }
 
 export function clearComingFromLearning() {
-  localStorage.removeItem(COMING_FROM_KEY);
+  scopedLocal.remove(COMING_FROM_KEY);
 }
 
 export default function FinishMissionButton() {
@@ -24,7 +25,6 @@ export default function FinishMissionButton() {
 
   const handleFinish = () => {
     clearComingFromLearning();
-    // Consume any pending mission
     consumePendingMission();
     navigate("/aprendizado");
   };

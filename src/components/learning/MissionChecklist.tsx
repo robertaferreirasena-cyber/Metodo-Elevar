@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { markMissionPending } from "@/hooks/useMissionAutoComplete";
 import { usePersonaContext } from "@/contexts/PersonaContext";
 import confetti from "canvas-confetti";
+import { scopedLocal } from "@/lib/userScopedKey";
 
 interface Mission {
   id: string;
@@ -42,8 +43,8 @@ const ACTIVITY_CONFIG: Record<string, { route: string; label: string }> = {
   content: { route: "/mentora", label: "Conteúdo / Copy" },
   photo: { route: "/ensaio-fotografico", label: "PhotoBoss" },
   foto: { route: "/ensaio-fotografico", label: "PhotoBoss" },
-  whatsapp_private: { route: "/privado", label: "WhatsApp Privado" },
-  whatsapp_group: { route: "/grupo", label: "WhatsApp Grupo" },
+  instagram_private: { route: "/privado", label: "Instagram Privado" },
+  instagram_group: { route: "/grupo", label: "Instagram Grupo" },
   financeiro: { route: "/financeiro", label: "Central Financeira" },
   metas: { route: "/metas-elevar", label: "Metas Elevar" },
   trafego: { route: "/trafego-pago", label: "Tráfego Pago" },
@@ -295,7 +296,7 @@ export default function MissionChecklist({
                 className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
                 onClick={(e) => {
                   e.stopPropagation();
-                  localStorage.setItem(`elevar_completed_${module.id}`, new Date().toISOString());
+                  scopedLocal.set(`elevar_completed_${module.id}`, new Date().toISOString());
                   fireBigConfetti();
                   toast.success(`🎉 Encontro "${module.title}" finalizado com sucesso!`, {
                     description: "Parabéns! Continue para o próximo encontro do Método ELEVAR. 🚀",

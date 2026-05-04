@@ -36,7 +36,7 @@ const COPY_FORMAT_DESCRIPTIONS: Record<string, { emoji: string; description: str
   "storytelling": { emoji: "📖", description: "Conecta através de histórias e narrativas", levels: "Todos" },
   "história": { emoji: "📖", description: "Conecta através de histórias e narrativas", levels: "Todos" },
   "quebra de objeção": { emoji: "🛡️", description: "Antecipa e neutraliza resistências comuns", levels: "Níveis 3-5" },
-  "whatsapp copy": { emoji: "💬", description: "Conduz o lead com perguntas estratégicas", levels: "Todos" },
+  "instagram copy": { emoji: "💬", description: "Conduz o lead com perguntas estratégicas", levels: "Todos" },
   "conversa guiada": { emoji: "💬", description: "Conduz o lead com perguntas estratégicas", levels: "Todos" },
   "curiosidade": { emoji: "🔮", description: "Cria mistério que obriga a continuar lendo", levels: "Níveis 1-3" },
   "gancho": { emoji: "🔮", description: "Cria mistério que obriga a continuar lendo", levels: "Níveis 1-3" },

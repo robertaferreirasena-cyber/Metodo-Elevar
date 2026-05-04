@@ -1,103 +1,64 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { scopedSession, scopedKey } from "@/lib/userScopedKey";
 
-const SESSION_METADATA_KEY = "session_metadata";
-const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+const SESSION_METADATA_BASE = "session_metadata";
+const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 interface SessionMetadata {
-  [key: string]: number; // key -> last accessed timestamp
+  [key: string]: number;
 }
 
-/**
- * Auto-cleanup old sessions (>24h) on app load.
- * Runs once per session.
- */
+function readMetadata(): SessionMetadata {
+  try {
+    const raw = scopedSession.get(SESSION_METADATA_BASE);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function writeMetadata(metadata: SessionMetadata) {
+  try { scopedSession.set(SESSION_METADATA_BASE, JSON.stringify(metadata)); } catch { /* ignore */ }
+}
+
 function cleanupOldSessions() {
   try {
-    const metadataRaw = sessionStorage.getItem(SESSION_METADATA_KEY);
-    if (!metadataRaw) return;
-
-    const metadata: SessionMetadata = JSON.parse(metadataRaw);
+    const metadata = readMetadata();
     const now = Date.now();
     let hasChanges = false;
-
-    for (const key of Object.keys(metadata)) {
-      if (now - metadata[key] > SESSION_MAX_AGE_MS) {
-        sessionStorage.removeItem(key);
-        delete metadata[key];
+    for (const k of Object.keys(metadata)) {
+      if (now - metadata[k] > SESSION_MAX_AGE_MS) {
+        scopedSession.removeRaw(k);
+        delete metadata[k];
         hasChanges = true;
-        console.log(`[Session] Cleaned up stale session: ${key}`);
       }
     }
-
-    if (hasChanges) {
-      sessionStorage.setItem(SESSION_METADATA_KEY, JSON.stringify(metadata));
-    }
-  } catch (error) {
-    console.warn("Failed to cleanup old sessions:", error);
-  }
+    if (hasChanges) writeMetadata(metadata);
+  } catch { /* ignore */ }
 }
 
-// Run cleanup once on module load
 cleanupOldSessions();
 
-/**
- * Update session metadata with last access time.
- */
-function updateSessionMetadata(key: string) {
-  try {
-    const metadataRaw = sessionStorage.getItem(SESSION_METADATA_KEY);
-    const metadata: SessionMetadata = metadataRaw ? JSON.parse(metadataRaw) : {};
-    metadata[key] = Date.now();
-    sessionStorage.setItem(SESSION_METADATA_KEY, JSON.stringify(metadata));
-  } catch (error) {
-    console.warn("Failed to update session metadata:", error);
-  }
+function updateSessionMetadata(rawScopedKey: string) {
+  const m = readMetadata();
+  m[rawScopedKey] = Date.now();
+  writeMetadata(m);
 }
 
-/**
- * Remove session from metadata.
- */
-function removeSessionMetadata(key: string) {
-  try {
-    const metadataRaw = sessionStorage.getItem(SESSION_METADATA_KEY);
-    if (!metadataRaw) return;
-    
-    const metadata: SessionMetadata = JSON.parse(metadataRaw);
-    delete metadata[key];
-    sessionStorage.setItem(SESSION_METADATA_KEY, JSON.stringify(metadata));
-  } catch (error) {
-    console.warn("Failed to remove session metadata:", error);
-  }
+function removeSessionMetadata(rawScopedKey: string) {
+  const m = readMetadata();
+  delete m[rawScopedKey];
+  writeMetadata(m);
 }
 
-/**
- * Limpa todas as sessões armazenadas no sessionStorage.
- * Usado para limpeza manual ou automática (cada 48h).
- */
+/** Limpa todas as sessões do usuário atual. */
 export function clearAllSessions(): void {
   try {
-    const metadataRaw = sessionStorage.getItem(SESSION_METADATA_KEY);
-    if (metadataRaw) {
-      const metadata: SessionMetadata = JSON.parse(metadataRaw);
-      for (const key of Object.keys(metadata)) {
-        sessionStorage.removeItem(key);
-      }
-    }
-    sessionStorage.removeItem(SESSION_METADATA_KEY);
-    console.log("[Session] Todas as sessões foram limpas");
-  } catch (error) {
-    console.warn("Falha ao limpar sessões:", error);
-  }
+    scopedSession.clearAllForCurrentUser();
+  } catch { /* ignore */ }
 }
 
 /**
  * Hook for persisting state to sessionStorage with debounce.
- * State is automatically restored on mount and saved on changes.
- * Sessions older than 24h are automatically cleaned up.
- * 
- * @param key - Unique key for sessionStorage
- * @param initialState - Default state if nothing is stored
- * @param debounceMs - Debounce delay for saving (default: 500ms)
+ * Keys are automatically scoped to the current user via scopedKey().
  */
 export function useSessionPersistence<T>(
   key: string,
@@ -106,9 +67,9 @@ export function useSessionPersistence<T>(
 ): [T, (value: T | ((prev: T) => T)) => void, () => void, boolean] {
   const [state, setState] = useState<T>(() => {
     try {
-      const stored = sessionStorage.getItem(key);
+      const stored = scopedSession.get(key);
       if (stored) {
-        updateSessionMetadata(key); // Mark as recently accessed
+        updateSessionMetadata(scopedKey(key));
         return JSON.parse(stored) as T;
       }
     } catch (error) {
@@ -118,49 +79,35 @@ export function useSessionPersistence<T>(
   });
 
   const [hasRestoredSession, setHasRestoredSession] = useState(() => {
-    try {
-      return sessionStorage.getItem(key) !== null;
-    } catch {
-      return false;
-    }
+    try { return scopedSession.get(key) !== null; } catch { return false; }
   });
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFirstRender = useRef(true);
 
-  // Debounced save to sessionStorage
   useEffect(() => {
-    // Skip first render to avoid saving initial state immediately
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       try {
-        sessionStorage.setItem(key, JSON.stringify(state));
-        updateSessionMetadata(key); // Update last access time
+        scopedSession.set(key, JSON.stringify(state));
+        updateSessionMetadata(scopedKey(key));
       } catch (error) {
         console.warn(`Failed to save session for ${key}:`, error);
       }
     }, debounceMs);
-
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [state, key, debounceMs]);
 
-  // Clear session
   const clearSession = useCallback(() => {
     try {
-      sessionStorage.removeItem(key);
-      removeSessionMetadata(key);
+      scopedSession.remove(key);
+      removeSessionMetadata(scopedKey(key));
       setState(initialState);
       setHasRestoredSession(false);
     } catch (error) {
@@ -171,19 +118,12 @@ export function useSessionPersistence<T>(
   return [state, setState, clearSession, hasRestoredSession];
 }
 
-/**
- * Simplified hook for persisting chat-like state.
- * Includes messages and conversationId.
- */
 export interface ChatSessionState {
   messages: Array<{ role: "user" | "assistant"; content: string; id?: string }>;
   conversationId: string | null;
 }
 
-const EMPTY_CHAT_STATE: ChatSessionState = {
-  messages: [],
-  conversationId: null,
-};
+const EMPTY_CHAT_STATE: ChatSessionState = { messages: [], conversationId: null };
 
 export function useChatSessionPersistence(key: string) {
   return useSessionPersistence<ChatSessionState>(key, EMPTY_CHAT_STATE);

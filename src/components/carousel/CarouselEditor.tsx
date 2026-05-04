@@ -29,6 +29,7 @@ import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
+import { scopedLocal } from "@/lib/userScopedKey";
 import TemplatePreviewTooltip from "./TemplatePreviewTooltip";
 import ImageAdjustPanel, { type ImageAdjustValues } from "./ImageAdjustPanel";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -710,18 +711,17 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     }
   };
 
-  // Save current carousel as a draft in localStorage so user can restore later
+  // Save current carousel as a draft (scoped to current user)
   const saveCurrentAsDraft = () => {
     try {
-      const drafts: any[] = JSON.parse(localStorage.getItem("carousel_drafts") || "[]");
+      const drafts: any[] = JSON.parse(scopedLocal.get("carousel_drafts") || "[]");
       drafts.unshift({
         id: Date.now(),
         topic, slides, selectedTemplateId: selectedTemplate.id,
         slideCount, tone, formatFilter, currentSlide,
         savedAt: new Date().toISOString(),
       });
-      // Keep only last 10
-      localStorage.setItem("carousel_drafts", JSON.stringify(drafts.slice(0, 10)));
+      scopedLocal.set("carousel_drafts", JSON.stringify(drafts.slice(0, 10)));
       toast.success("Carrossel atual salvo como rascunho");
     } catch (e) {
       console.error("Failed to save draft:", e);
@@ -938,7 +938,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
         <CardContent className="space-y-4">
           <div>
             <Label>Tema do carrossel</Label>
-            <Textarea placeholder="Ex: 5 dicas para vender mais no WhatsApp" value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-1" />
+            <Textarea placeholder="Ex: 5 dicas para vender mais no Instagram" value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-1" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

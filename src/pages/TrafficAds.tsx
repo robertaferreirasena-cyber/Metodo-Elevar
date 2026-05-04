@@ -43,7 +43,7 @@ const TONES = [
 ];
 
 const DESTINATIONS = [
-  { value: "whatsapp", label: "📱 WhatsApp" },
+  { value: "instagram", label: "📱 Instagram" },
   { value: "pagina-vendas", label: "🛒 Página de Vendas" },
   { value: "pagina-captura", label: "📋 Página de Captura (Lead)" },
   { value: "perfil-instagram", label: "📸 Perfil do Instagram" },
@@ -351,7 +351,7 @@ export default function TrafficAds() {
                   </Select>
                   {destination && (
                     <p className="text-[10px] text-muted-foreground">
-                      {destination === "whatsapp" && "A IA vai otimizar copy e CTA para conversão via WhatsApp (botão de mensagem)."}
+                      {destination === "instagram" && "A IA vai otimizar copy e CTA para conversão via Instagram (botão de mensagem)."}
                       {destination === "pagina-vendas" && "Copy otimizada para levar direto à página de vendas com CTA de compra."}
                       {destination === "pagina-captura" && "Foco em captura de lead com isca digital, formulário e urgência."}
                       {destination === "perfil-instagram" && "Copy para gerar seguidores, engajamento e visitas ao perfil."}

@@ -58,7 +58,7 @@ const Index = () => {
 
                 {/* Description */}
                 <p className="text-muted-foreground text-base">
-                  Sua plataforma exclusiva para elevar suas vendas pelo WhatsApp
+                  Sua plataforma exclusiva para dobrar o faturamento da sua loja
                 </p>
               </div>
 

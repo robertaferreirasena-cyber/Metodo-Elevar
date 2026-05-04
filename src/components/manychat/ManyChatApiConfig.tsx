@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { scopedLocal } from "@/lib/userScopedKey";
 
 interface ManyChatAccount {
   name: string;
@@ -24,10 +25,10 @@ export default function ManyChatApiConfig() {
   const [accountData, setAccountData] = useState<ManyChatAccount | null>(null);
   const [isValid, setIsValid] = useState<boolean | null>(null);
 
-  // Load saved key from localStorage
+  // Load saved key (scoped per-user)
   useEffect(() => {
     if (user) {
-      const stored = localStorage.getItem(`manychat_api_key_${user.id}`);
+      const stored = scopedLocal.get("manychat_api_key");
       if (stored) {
         setSavedKey(stored);
         setApiKey(stored);
@@ -66,7 +67,7 @@ export default function ManyChatApiConfig() {
         setIsValid(true);
         setAccountData(data.account);
         // Save the key
-        localStorage.setItem(`manychat_api_key_${user.id}`, keyToValidate);
+        scopedLocal.set("manychat_api_key", keyToValidate);
         setSavedKey(keyToValidate);
         toast.success("API Key válida! Dados da conta carregados.");
       } else {
@@ -84,7 +85,7 @@ export default function ManyChatApiConfig() {
 
   const handleRemoveKey = () => {
     if (user) {
-      localStorage.removeItem(`manychat_api_key_${user.id}`);
+      scopedLocal.remove("manychat_api_key");
       setSavedKey("");
       setApiKey("");
       setAccountData(null);

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { scopedKey } from "@/lib/userScopedKey";
 
 interface ImageItem {
   id: string;
@@ -31,12 +32,13 @@ const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-library-
 // ---------- Client-side cache (sessionStorage + localStorage) ----------
 // sessionStorage = fast in-tab; localStorage = survives browser restarts.
 // Both share the same TTL (10 min) and 30-entry LRU cap.
-const CACHE_PREFIX = "img_lib_cache_v1::";
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min
+const CACHE_BASE = "img_lib_cache_v1";
+const CACHE_TTL_MS = 10 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 30;
 
+function cachePrefix() { return scopedKey(CACHE_BASE) + "::"; }
 function cacheKey(query: string, orientation: string, page: number) {
-  return `${CACHE_PREFIX}${query.trim().toLowerCase()}::${orientation}::${page}`;
+  return `${cachePrefix()}${query.trim().toLowerCase()}::${orientation}::${page}`;
 }
 
 function readEntry(storage: Storage, key: string): { ts: number; images: ImageItem[] } | null {
@@ -97,10 +99,11 @@ function setCached(query: string, orientation: string, page: number, images: Ima
 
 function pruneStorage(storage: Storage, maxEntries: number = CACHE_MAX_ENTRIES) {
   try {
+    const prefix = cachePrefix();
     const keys: { k: string; ts: number }[] = [];
     for (let i = 0; i < storage.length; i++) {
       const k = storage.key(i);
-      if (!k || !k.startsWith(CACHE_PREFIX)) continue;
+      if (!k || !k.startsWith(prefix)) continue;
       try {
         const ts = JSON.parse(storage.getItem(k)!).ts ?? 0;
         if (Date.now() - ts > CACHE_TTL_MS) {
