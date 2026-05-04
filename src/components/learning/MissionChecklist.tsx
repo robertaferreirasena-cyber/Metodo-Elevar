@@ -295,7 +295,7 @@ export default function MissionChecklist({
                 className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
                 onClick={(e) => {
                   e.stopPropagation();
-                  localStorage.setItem(`elevar_completed_${module.id}`, new Date().toISOString());
+                  scopedLocal.set(`elevar_completed_${module.id}`, new Date().toISOString());
                   fireBigConfetti();
                   toast.success(`🎉 Encontro "${module.title}" finalizado com sucesso!`, {
                     description: "Parabéns! Continue para o próximo encontro do Método ELEVAR. 🚀",
