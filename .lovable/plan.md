@@ -1,183 +1,158 @@
-# Plano revisado: Remover WhatsApp + isolamento total por usuário + guard de CI
 
-Mantém tudo do plano anterior e incorpora os 3 reforços pedidos.
+# Plano: Calculadora Financeira — multi-itens, modo serviço flexível e importação de catálogo organizada
 
----
-
-## 1. Remoção de WhatsApp (igual ao plano anterior)
-
-- Deletar `src/pages/WhatsAppHub.tsx` e `src/pages/WhatsAppStrategies.tsx`
-- Remover rotas `/whatsapp` e `/privado/scripts` em `src/App.tsx` (mantendo redirect para `/privado` por compat)
-- Remover item da sidebar (`AppSidebar.tsx`) e cards/labels do `Dashboard.tsx`
-- Trocar copy do `Index.tsx` ("vendas pelo WhatsApp" → "vendas da sua loja/Instagram")
-- Limpar menções textuais em componentes de prompt/glossário/onboarding e em system prompts das edge functions (`sales-strategist`, `sequence-generator`, `ad-creator`, `conversation-analyzer`, `ai-mentor-chat`, `persona-generator`, `carousel-generator`)
-
-### 1.1. Guard de CI contra reintrodução
-
-Criar **`scripts/check-no-whatsapp.mjs`**:
-
-```text
-- Roda ripgrep (ou fallback Node) procurando /whats?app/i em:
-    src/**/*.{ts,tsx,js,jsx,html,css}
-    supabase/functions/**/*.{ts,js,json}
-- Ignora explicitamente:
-    supabase/migrations/**     (histórico imutável)
-    scripts/check-no-whatsapp.mjs  (este próprio arquivo)
-    node_modules, dist, build
-- Se encontrar qualquer match → imprime arquivo:linha e exit 1
-- Se zero matches → exit 0 com "OK: no whatsapp references"
-```
-
-Integrar em **`package.json`**:
-```text
-"scripts": {
-  "check:no-whatsapp": "node scripts/check-no-whatsapp.mjs",
-  "prebuild": "node scripts/check-no-whatsapp.mjs"   // roda automaticamente antes de `vite build`
-}
-```
-
-Assim qualquer build (local ou CI) quebra se "whatsapp" voltar ao código.
+Reformulação da calculadora em `src/pages/PriceCalculator.tsx` para suportar múltiplos produtos, múltiplos serviços (incluindo prestadoras como esteticistas/cabeleireiras), e tornar a importação por catálogo (IA) usável de verdade — com PDF, todos os formatos, importação em lote, dados reais (frete incluso) e cálculo de break-even por produto.
 
 ---
 
-## 2. Namespacing centralizado de cache por usuário
+## 1. Aba "Produto" → Catálogo de Produtos (multi-produto)
 
-### 2.1. Helper central — `src/lib/userScopedKey.ts` (novo)
+Hoje a aba calcula **um único produto por vez**. Vou trocar por uma lista de produtos cadastrados, com cálculo individual e visão consolidada.
 
-Responsabilidade única: gerar chaves prefixadas com o usuário atual e oferecer wrappers de Storage seguros.
+### Estrutura
+- Novo tipo `ProductRow`:
+  ```ts
+  { id, name, businessType: 'lojista'|'produtor',
+    purchaseCost, freightPerUnit, extraPackaging,
+    directCosts: CostItem[],     // só produtor
+    quantityPerMonth, desiredMargin, taxPercent }
+  ```
+- Estado `products: ProductRow[]` persistido em sessionStorage (mesma chave migrada com fallback).
+- Custos fixos mensais e rateio passam a ser **globais** (uma seção única no topo), com import do Mapa Financeiro como hoje.
 
-```text
-- currentUserIdRef: { value: string | null }   (módulo singleton)
-- setCurrentUserId(id: string | null): void
-    → atualiza ref e dispara CustomEvent('app:user-changed', {detail:{id}})
-- getCurrentUserId(): string | null
-- scopedKey(base: string): string
-    → retorna `u:${id ?? 'anon'}::${base}`
-- scopedSession / scopedLocal: wrappers com get/set/remove/clearAllForCurrentUser/clearAllForAnyUser
-    → todas as escritas passam por scopedKey
-    → clearAllForCurrentUser varre storage e remove tudo que casa /^u:${currentId}::/
-    → clearAllForAnyUser varre storage e remove tudo que casa /^u:[^:]+::/
-```
+### UI
+- Lista colapsável de produtos (Accordion):
+  - Cabeçalho mostra: nome • preço sugerido • margem real • un. p/ break-even.
+  - Conteúdo expandido = formulário atual de um produto (sem tipo de negócio repetido para cada — fica por linha).
+- Botões: **+ Adicionar produto**, **Duplicar**, **Remover**.
+- Card consolidado no fim:
+  - Faturamento mensal somado (todos os produtos)
+  - Lucro mensal somado
+  - Margem média ponderada
+  - Quanto cada produto contribui (% do faturamento) — gráfico de pizza pequeno (recharts já está no arquivo)
 
-### 2.2. Integração com `useAuth`
-
-Em `src/hooks/useAuth.ts`:
-- Ao receber sessão (boot e `onAuthStateChange`): `setCurrentUserId(session?.user?.id ?? null)` **antes** de qualquer fetch.
-- Ao deslogar: `setCurrentUserId(null)` após o `clearCaches()`.
-
-### 2.3. Migrar TODAS as chaves de storage para o helper
-
-Refatorar para usar `scopedSession`/`scopedLocal` (não mais `sessionStorage.setItem` / `localStorage.setItem` direto):
-
-- `src/hooks/useSessionPersistence.ts` (todo o módulo: persistência de formulários)
-- `src/lib/response-cache.ts` (`CACHE_KEY` → `scopedKey('ai_response_cache')`)
-- `src/components/carousel/ImageLibraryPicker.tsx` (`CACHE_PREFIX` agora derivado de `scopedKey`)
-- `src/components/carousel/CarouselEditor.tsx` (rascunhos)
-- `src/components/manychat/ManyChatApiConfig.tsx` (config local do ManyChat)
-- `src/hooks/useMissionAutoComplete.ts` (`pending_lesson_completion`, `coming_from_learning`)
-- `src/components/learning/MissionChecklist.tsx` e `FinishMissionButton.tsx`
-
-**Não migrar:** `src/integrations/supabase/client.ts` — o token Supabase **deve** continuar em `localStorage` puro (gerenciado pela própria SDK; namespacing quebraria login).
-
-### 2.4. Listener de evento `app:user-changed`
-
-`src/lib/clearUserScopedCaches.ts` (novo) escuta `app:user-changed` para chamar:
-- `scopedLocal.clearAllForAnyUser()` quando id antigo ≠ id novo
-- `queryClient.clear()` (ver §3)
+### Break-even por produto (rateio justo)
+Hoje o break-even assume "um produto carrega todos os custos fixos". Vou trocar por:
+- Rateio dos custos fixos proporcional ao **faturamento esperado** de cada produto.
+- Cada linha mostra: "Para cobrir sua parte dos custos fixos (R$ X), você precisa vender **N unidades/mês**".
+- Card adicional global: "Para cobrir 100% dos custos fixos com este mix, faturamento mínimo = R$ Y".
 
 ---
 
-## 3. Limpeza completa do React Query
+## 2. Aba "Serviço" → multi-serviço com modelo "preço por serviço"
 
-### 3.1. Expor o `queryClient`
+Hoje só aceita modelo horas × R$/hora (psicólogo, consultor). Vou adicionar segundo modo para esteticista/cabeleireira/manicure/etc.
 
-Mover a criação do `queryClient` de `src/App.tsx` para **`src/lib/queryClient.ts`** (novo) e exportá-lo. `App.tsx` apenas importa e passa ao `QueryClientProvider`. Assim pode ser importado de qualquer lugar (incluindo `useAuth`).
+### Modos por serviço (radio na linha)
+- **Por hora**: `hoursPerMonth × hourlyRate` (atual)
+- **Por atendimento**: `pricePerSession × sessionsPerMonth` (NOVO — padrão p/ esteticista, cabeleireira, manicure, massagista)
 
-### 3.2. Em `useAuth.ts`
-
-Adicionar tracking de `lastUserIdRef` e três pontos de limpeza:
-
-```text
-import { queryClient } from '@/lib/queryClient';
-import { clearUserScopedCaches } from '@/lib/clearUserScopedCaches';
-import { setCurrentUserId } from '@/lib/userScopedKey';
-
-// dentro de onAuthStateChange:
-const newId = session?.user?.id ?? null;
-const oldId = lastUserIdRef.current;
-if (oldId && newId && oldId !== newId) {
-  // Troca de usuário detectada (ex: login com outra conta sem logout)
-  clearUserScopedCaches({ allUsers: true });
-  queryClient.clear();
-}
-lastUserIdRef.current = newId;
-setCurrentUserId(newId);
-
-// após signIn bem-sucedido:
-queryClient.clear();   // descarta qualquer query do estado anônimo/anterior
-
-// dentro de signOut, ANTES de supabase.auth.signOut():
-clearUserScopedCaches({ allUsers: true });
-queryClient.clear();
-queryClient.removeQueries();    // garante remoção de queries inativas em cache
-queryClient.cancelQueries();    // cancela queries em voo
-setCurrentUserId(null);
+### Campos novos no `ServiceItem`
+```ts
+{ id, name, mode: 'hourly'|'session',
+  // hourly:
+  hoursPerMonth, hourlyRate,
+  // session:
+  pricePerSession, sessionsPerMonth, durationMinutes,
+  // ambos:
+  materialCostPerUnit,   // produto usado por atendimento (esmalte, cera, tintura...)
+  fixedCosts }
 ```
 
-`clearUserScopedCaches({ allUsers: true })` remove todas as chaves prefixadas com `u:` em `localStorage` e `sessionStorage`, mais chaves específicas legadas (`pending_lesson_completion`, `coming_from_learning`, etc.).
+### Cálculo
+- Receita do serviço = (modo hora) horas × R$/h **ou** (modo sessão) preço × sessões.
+- Custo do serviço = materiais × qtd + fixos da linha.
+- Mantém pró-labore + margem + impostos globais.
+- Resultado por linha mostra: receita, custo, margem, lucro, e **"quantos atendimentos para empatar"**.
 
-### 3.3. Boot defensivo
+### Exemplos pré-preenchidos
+Templates rápidos no botão "+ Adicionar":
+- Atendimento (esteticista) — sessão R$ 80, 60 sessões/mês, material R$ 8
+- Corte + escova — sessão R$ 90, 80/mês
+- Hora consultoria — 20h/mês, R$ 150/h
+Usuário pode clicar e ajustar.
 
-No `useAuth.ts`, após `getSession()`:
-```text
-const bootedId = session?.user?.id ?? null;
-const lastSeenId = localStorage.getItem('last_user_id');
-if (bootedId && lastSeenId && bootedId !== lastSeenId) {
-  clearUserScopedCaches({ allUsers: true });
-  queryClient.clear();
-}
-if (bootedId) localStorage.setItem('last_user_id', bootedId);
-else localStorage.removeItem('last_user_id');
-```
-
-Cobre o caso "abro a aba novamente como outro usuário" antes que qualquer componente monte.
+### Copy
+Trocar "Calculadora de Preço de Serviço" para algo inclusivo:
+- Subtítulo: "Para cabeleireiras, esteticistas, manicures, consultoras, terapeutas e qualquer prestadora de serviço."
 
 ---
 
-## Critérios de aceitação
+## 3. Importação de Catálogo (IA) — usável de verdade
 
-**Guard CI:**
-- `npm run check:no-whatsapp` falha (exit 1) se eu adicionar a string "whatsapp" em qualquer arquivo de `src/` ou `supabase/functions/`.
-- O build (`vite build`) é interrompido pelo `prebuild` se houver match.
-- Migrations antigas são ignoradas (não falsos positivos).
+### 3a. Aceitar todos os formatos relevantes
+`src/components/catalog/CatalogUploader.tsx` já aceita PDF/JPG/PNG/WEBP/TXT/CSV. O problema é o backend: `supabase/functions/catalog-price-analyzer/index.ts` trata PDF com `data.text()` cru (lixo binário) — por isso "não aceita PDF".
 
-**Namespacing:**
-- Após login do usuário B, inspecionar `localStorage`/`sessionStorage` mostra apenas chaves `u:<idB>::*` (e o token Supabase nativo). Nenhuma chave `u:<idA>::*` ou chave "solta" sem prefixo.
-- Hooks `useSessionPersistence`, `response-cache`, `ImageLibraryPicker` etc. não acessam mais `sessionStorage`/`localStorage` diretamente — todos vão pelo helper.
+**Fix backend:**
+- PDF → enviar como **imagem multimodal** ao Gemini (cada página). Como o gateway aceita data URLs `application/pdf`? Não confiável. Vou:
+  1. Detectar PDF.
+  2. Subir o PDF como `image_url` com mime `application/pdf` para `google/gemini-2.5-flash` (Gemini suporta PDF nativo via gateway data-URL).
+  3. Fallback: se gateway recusar, ler até 4MB e mandar como anexo base64 com instrução textual ("este é um PDF de catálogo, leia tabela de preços").
+- Aumentar limite para 8 arquivos e 15MB (ajustar `CatalogUploader` props e validação backend).
+- Adicionar `.xlsx`, `.xls`, `.docx` no aceito do uploader; backend tenta extrair texto (xlsx via SheetJS importado por `esm.sh`, docx via mammoth).
 
-**React Query:**
-- Logout → todos os dados (persona, conversas, métricas) desaparecem imediatamente.
-- Login com outra conta no mesmo navegador (sem logout intermediário) → caches limpos automaticamente; primeiro fetch traz dados do novo usuário.
-- Boot da aba com usuário diferente do `last_user_id` → caches limpos antes de qualquer render.
+### 3b. Schema de retorno mais rico
+Atualizar prompt e tipos `DetectedProduct`:
+```ts
+{ name, sku?, category,
+  detected_price, suggested_price,
+  estimated_cost, freight_estimate,    // NOVO
+  packaging_estimate,                   // NOVO
+  margin_percent,
+  expected_monthly_units?,              // NOVO (heurística da IA)
+  notes? }
+```
+Prompt instrui a IA a:
+- Extrair **todos** os produtos do material (sem limite de 10).
+- Incluir frete/embalagem se mencionados; senão estimar (5% do preço como frete default; sinalizar `freight_source: 'detected'|'estimated'`).
+- Sugerir custo realista por categoria.
 
-## Arquivos criados
-- `scripts/check-no-whatsapp.mjs`
-- `src/lib/userScopedKey.ts`
-- `src/lib/clearUserScopedCaches.ts`
-- `src/lib/queryClient.ts`
+### 3c. Resultado organizado (`CatalogAnalysisResult.tsx`)
+Reescrever em formato tabela com colunas:
+| Produto | Custo | Frete | Emb. | Preço atual | Sugerido | Margem | Un. p/ break-even | [Importar] |
 
-## Arquivos editados
-- `package.json` (script `prebuild` + `check:no-whatsapp`)
-- `src/App.tsx` (importa queryClient externo, remove rotas WhatsApp)
-- `src/hooks/useAuth.ts` (limpeza + tracking de troca + setCurrentUserId)
-- `src/hooks/useSessionPersistence.ts`, `src/hooks/useMissionAutoComplete.ts`
-- `src/lib/response-cache.ts`
-- `src/components/carousel/ImageLibraryPicker.tsx`, `src/components/carousel/CarouselEditor.tsx`
-- `src/components/manychat/ManyChatApiConfig.tsx`
-- `src/components/learning/MissionChecklist.tsx`, `FinishMissionButton.tsx`
-- `src/components/layout/AppSidebar.tsx`, `src/pages/Dashboard.tsx`, `src/pages/Index.tsx`
-- Componentes/edge functions com texto "WhatsApp" (substituições de copy)
+- Filtros: ordenar por margem, preço, nome.
+- Badge de fonte do dado (📄 detectado vs 🤖 estimado).
+- Cabeçalho com totais: "X produtos • margem média Y% • ticket médio R$ Z".
 
-## Arquivos deletados
-- `src/pages/WhatsAppHub.tsx`
-- `src/pages/WhatsAppStrategies.tsx`
+### 3d. Importação em LOTE
+Botão grande **"Importar todos os N produtos"** acima da tabela:
+- Cria uma `ProductRow` por produto detectado.
+- Mapeia: `purchaseCost` ← `estimated_cost`, `freightPerUnit` ← `freight_estimate`, `extraPackaging` ← `packaging_estimate`, `desiredMargin` ← `margin_percent` (ou 30 default), `quantityPerMonth` ← `expected_monthly_units` (ou 10 default).
+- `businessType` da linha = inferido por preço/categoria (categoria "revenda/loja" → lojista; "artesanato/feito" → produtor; default lojista).
+- Botão por linha continua existindo para importar individual.
+- Toast: "12 produtos importados. Revise as quantidades vendidas/mês para break-even preciso."
+
+### 3e. Break-even integrado pós-importação
+Após importar, o card consolidado da aba Produto destaca:
+- "Para cobrir R$ X de custos fixos com este catálogo, você precisa vender pelo menos: produto A (5un), produto B (10un)..."
+- Tabela ordenada por menor esforço (produto com maior margem absoluta primeiro).
+
+---
+
+## 4. Persistência e PDF
+
+- `useSessionPersistence` keys: migrar `session_product_calc` (single) → `session_product_calc_v2` (lista). Migration silenciosa: se v1 existir e v2 não, converte para 1 produto.
+- `exportPDF` da aba Produto: passa a iterar a lista, cada produto em um bloco, e termina com consolidado + break-even global.
+- `exportPDF` da aba Serviço: idem, agora respeitando modo hora/sessão.
+
+---
+
+## Detalhes técnicos
+
+### Arquivos editados
+- `src/pages/PriceCalculator.tsx` — refatoração das abas Produto e Serviço (multi-itens, novos modos, consolidado, break-even rateado, novo PDF).
+- `src/components/catalog/CatalogUploader.tsx` — aceitar xlsx/xls/docx, max 8 arquivos / 15MB, copy.
+- `src/components/catalog/CatalogAnalysisResult.tsx` — nova UI em tabela, filtros, "Importar todos", colunas frete/embalagem/break-even.
+- `supabase/functions/catalog-price-analyzer/index.ts` — handling de PDF/xlsx/docx, novo schema de saída (frete, embalagem, unidades esperadas, sem limite arbitrário de produtos), prompt revisado.
+
+### Nada toca em
+- Schema de banco (não precisa migration).
+- RLS, edge auth, ou contagem de uso (já usa `increment_usage_admin` + `track_token_usage_admin`).
+- Bucket `product-catalogs` (já existe).
+
+### Comportamento esperado pós-deploy
+- Aba Produto mostra lista vazia + botão "Adicionar produto" e "Importar catálogo".
+- Importar PDF de catálogo: IA lê tabela, retorna 10–50+ produtos com preço, custo, frete, margem.
+- Clicar "Importar todos": calculadora preenche N linhas, cada uma já com preço sugerido e quantas unidades vender p/ pagar custos fixos.
+- Aba Serviço aceita esteticista/cabeleireira (modo "Por atendimento") sem precisar pensar em "horas".
