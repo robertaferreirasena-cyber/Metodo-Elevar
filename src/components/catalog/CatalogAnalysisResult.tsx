@@ -143,17 +143,50 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, 
                         {product.cost_source === "detected" && <span title="Detectado" className="text-[9px]">📄</span>}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Frete:</span>
-                      <span className="flex items-center gap-1">
-                        {fmt(product.freight_estimate)}
-                        {product.freight_source === "estimated" && <span title="Estimado" className="text-[9px]">🤖</span>}
-                        {product.freight_source === "detected" && <span title="Detectado" className="text-[9px]">📄</span>}
-                      </span>
+                      {onUpdateProduct ? (
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={product.freight_estimate ?? ""}
+                          onChange={(e) =>
+                            onUpdateProduct((product as any).__originalIndex, {
+                              freight_estimate: e.target.value === "" ? null : parseFloat(e.target.value),
+                              freight_source: "detected",
+                            })
+                          }
+                          className="h-6 w-20 text-[11px] px-1.5 text-right"
+                          aria-label="Editar frete"
+                        />
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          {fmt(product.freight_estimate)}
+                          {product.freight_source === "estimated" && <span title="Estimado" className="text-[9px]">🤖</span>}
+                          {product.freight_source === "detected" && <span title="Detectado" className="text-[9px]">📄</span>}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Embalagem:</span>
-                      <span>{fmt(product.packaging_estimate)}</span>
+                      {onUpdateProduct ? (
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={product.packaging_estimate ?? ""}
+                          onChange={(e) =>
+                            onUpdateProduct((product as any).__originalIndex, {
+                              packaging_estimate: e.target.value === "" ? null : parseFloat(e.target.value),
+                            })
+                          }
+                          className="h-6 w-20 text-[11px] px-1.5 text-right"
+                          aria-label="Editar embalagem"
+                        />
+                      ) : (
+                        <span>{fmt(product.packaging_estimate)}</span>
+                      )}
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Total custo:</span>
