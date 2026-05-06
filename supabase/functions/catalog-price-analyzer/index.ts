@@ -131,9 +131,9 @@ Para cada produto retorne:
 - suggested_price (number ou null) — preço sugerido com base no nicho "${niche || 'geral'}"
 - estimated_cost (number ou null) — custo unitário (compra/produção)
 - cost_source ("detected" se veio explícito no material, "estimated" se você inferiu)
-- freight_estimate (number ou null) — frete por unidade. Se não mencionado, estime ~5% do preço para produtos físicos pequenos, R$ 0 para serviços/digitais
+- freight_estimate (number, OBRIGATÓRIO para produto físico — nunca null/0). Se não mencionado, estime: 5% do preço sugerido com piso de R$ 2,00 (produtos pequenos) ou R$ 8–15 (eletrônicos/grandes). Use 0 SOMENTE para serviços/digitais.
 - freight_source ("detected" ou "estimated")
-- packaging_estimate (number ou null) — embalagem por unidade (~R$ 1-3 para produtos físicos pequenos, 0 para serviços)
+- packaging_estimate (number, OBRIGATÓRIO para produto físico — nunca null/0). Padrão R$ 1–3 (sacola/caixinha simples), R$ 4–8 (caixa + papel de seda + adesivos), 0 SOMENTE para digital/serviço.
 - margin_percent (number) — margem percentual sobre o preço sugerido
 - expected_monthly_units (number ou null) — estimativa razoável de quantas unidades/mês esse tipo de produto vende em pequeno negócio (5–100)
 - notes (string opcional) — observação curta
