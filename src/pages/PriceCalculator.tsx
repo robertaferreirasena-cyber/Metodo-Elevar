@@ -520,7 +520,10 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                     <div className="text-sm font-medium truncate">
                       {idx + 1}. {p.name || <span className="text-muted-foreground italic">Sem nome</span>}
                     </div>
-                    <div className="flex gap-2 flex-wrap text-[10px] text-muted-foreground mt-0.5">
+                    <div className="flex gap-2 flex-wrap items-center text-[10px] text-muted-foreground mt-0.5">
+                      <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-1">
+                        {p.businessType === "lojista" ? <><Package className="h-2.5 w-2.5" /> Revendo</> : <><Briefcase className="h-2.5 w-2.5" /> Produzo</>}
+                      </Badge>
                       <span>Preço: <strong className="text-foreground">{fmt(r.sellingPrice)}</strong></span>
                       <span>Margem: <strong className={r.realMargin >= 20 ? "text-emerald-600" : "text-destructive"}>{r.realMargin.toFixed(0)}%</strong></span>
                       {r.breakEvenUnits !== Infinity && (
