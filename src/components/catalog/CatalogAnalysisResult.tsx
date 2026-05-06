@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Package, TrendingUp, Lightbulb, ArrowRight, ArrowDownAZ, Percent, DollarSign, FileCheck, Calculator } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Package, TrendingUp, Lightbulb, ArrowRight, ArrowDownAZ, Percent, DollarSign, FileCheck, Calculator, Save, Wand2 } from "lucide-react";
 
 export interface DetectedProduct {
   name: string;
@@ -32,6 +33,9 @@ interface CatalogAnalysisResultProps {
   onImportProduct?: (product: DetectedProduct) => void;
   onImportAll?: (products: DetectedProduct[]) => void;
   onUpdateProduct?: (index: number, patch: Partial<DetectedProduct>) => void;
+  onSaveEdits?: () => void;
+  onBulkUpdate?: (patch: Partial<Pick<DetectedProduct, "freight_estimate" | "packaging_estimate">>) => void;
+  hasUnsavedEdits?: boolean;
 }
 
 const fmt = (v: number | null | undefined) =>
@@ -39,8 +43,21 @@ const fmt = (v: number | null | undefined) =>
 
 type SortKey = "name" | "margin" | "price";
 
-export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, onUpdateProduct }: CatalogAnalysisResultProps) {
+export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, onUpdateProduct, onSaveEdits, onBulkUpdate, hasUnsavedEdits }: CatalogAnalysisResultProps) {
   const [sort, setSort] = useState<SortKey>("margin");
+  const [bulkFreight, setBulkFreight] = useState<string>("");
+  const [bulkPackaging, setBulkPackaging] = useState<string>("");
+
+  const applyBulk = () => {
+    if (!onBulkUpdate) return;
+    const patch: Partial<Pick<DetectedProduct, "freight_estimate" | "packaging_estimate">> = {};
+    if (bulkFreight !== "") patch.freight_estimate = parseFloat(bulkFreight) || 0;
+    if (bulkPackaging !== "") patch.packaging_estimate = parseFloat(bulkPackaging) || 0;
+    if (Object.keys(patch).length === 0) return;
+    onBulkUpdate(patch);
+    setBulkFreight("");
+    setBulkPackaging("");
+  };
 
   const sorted = useMemo(() => {
     const arr = analysis.products.map((p, originalIndex) => ({ ...p, __originalIndex: originalIndex }));
