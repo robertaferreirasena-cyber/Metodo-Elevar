@@ -43,7 +43,7 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, 
   const [sort, setSort] = useState<SortKey>("margin");
 
   const sorted = useMemo(() => {
-    const arr = [...analysis.products];
+    const arr = analysis.products.map((p, originalIndex) => ({ ...p, __originalIndex: originalIndex }));
     if (sort === "name") arr.sort((a, b) => a.name.localeCompare(b.name));
     if (sort === "margin") arr.sort((a, b) => (b.margin_percent ?? -1) - (a.margin_percent ?? -1));
     if (sort === "price") arr.sort((a, b) => (b.suggested_price ?? b.detected_price ?? 0) - (a.suggested_price ?? a.detected_price ?? 0));
