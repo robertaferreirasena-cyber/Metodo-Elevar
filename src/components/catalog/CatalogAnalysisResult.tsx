@@ -106,7 +106,7 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, 
               <span>Margem média: <strong className="text-foreground">{stats.avgMargin.toFixed(1)}%</strong></span>
               <span>Ticket médio: <strong className="text-foreground">{fmt(stats.avgPrice)}</strong></span>
             </div>
-            <div className="flex gap-1 mt-2">
+            <div className="flex gap-1 mt-2 items-center flex-wrap">
               <Button size="sm" variant={sort === "name" ? "default" : "outline"} onClick={() => setSort("name")} className="h-6 text-[10px] px-2 gap-1">
                 <ArrowDownAZ className="h-3 w-3" /> Nome
               </Button>
@@ -116,7 +116,66 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, 
               <Button size="sm" variant={sort === "price" ? "default" : "outline"} onClick={() => setSort("price")} className="h-6 text-[10px] px-2 gap-1">
                 <DollarSign className="h-3 w-3" /> Preço
               </Button>
+              {onSaveEdits && (
+                <Button
+                  size="sm"
+                  variant={hasUnsavedEdits ? "default" : "outline"}
+                  onClick={onSaveEdits}
+                  disabled={!hasUnsavedEdits}
+                  className="h-6 text-[10px] px-2 gap-1 ml-auto"
+                  title="Salvar alterações de frete/embalagem"
+                >
+                  <Save className="h-3 w-3" />
+                  {hasUnsavedEdits ? "Salvar edições" : "Salvo"}
+                </Button>
+              )}
             </div>
+
+            {onBulkUpdate && (
+              <div className="mt-2 rounded-md border border-dashed bg-muted/30 p-2 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-[11px] font-medium">
+                  <Wand2 className="h-3 w-3 text-primary" />
+                  Edição em massa (aplica a todos os {stats.count} produtos)
+                </div>
+                <div className="flex items-end gap-2 flex-wrap">
+                  <div className="flex-1 min-w-[100px]">
+                    <Label className="text-[10px] text-muted-foreground">Frete (R$)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={bulkFreight}
+                      placeholder="Ex: 3,50"
+                      onChange={(e) => setBulkFreight(e.target.value)}
+                      className="h-7 text-[11px] mt-0.5"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[100px]">
+                    <Label className="text-[10px] text-muted-foreground">Embalagem (R$)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={bulkPackaging}
+                      placeholder="Ex: 2,00"
+                      onChange={(e) => setBulkPackaging(e.target.value)}
+                      className="h-7 text-[11px] mt-0.5"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={applyBulk}
+                    disabled={bulkFreight === "" && bulkPackaging === ""}
+                    className="h-7 text-[10px] gap-1"
+                  >
+                    Aplicar a todos
+                  </Button>
+                </div>
+                <p className="text-[9px] text-muted-foreground">
+                  Deixe um campo vazio para não alterá-lo.
+                </p>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-2">
             {sorted.map((product, i) => {
