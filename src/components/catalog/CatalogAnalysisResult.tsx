@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, TrendingUp, Lightbulb, ArrowRight, ArrowDownAZ, Percent, DollarSign, FileCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Package, TrendingUp, Lightbulb, ArrowRight, ArrowDownAZ, Percent, DollarSign, FileCheck, Calculator } from "lucide-react";
 
 export interface DetectedProduct {
   name: string;
@@ -30,6 +31,7 @@ interface CatalogAnalysisResultProps {
   analysis: CatalogAnalysis;
   onImportProduct?: (product: DetectedProduct) => void;
   onImportAll?: (products: DetectedProduct[]) => void;
+  onUpdateProduct?: (index: number, patch: Partial<DetectedProduct>) => void;
 }
 
 const fmt = (v: number | null | undefined) =>
@@ -37,11 +39,11 @@ const fmt = (v: number | null | undefined) =>
 
 type SortKey = "name" | "margin" | "price";
 
-export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll }: CatalogAnalysisResultProps) {
+export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, onUpdateProduct }: CatalogAnalysisResultProps) {
   const [sort, setSort] = useState<SortKey>("margin");
 
   const sorted = useMemo(() => {
-    const arr = [...analysis.products];
+    const arr = analysis.products.map((p, originalIndex) => ({ ...p, __originalIndex: originalIndex }));
     if (sort === "name") arr.sort((a, b) => a.name.localeCompare(b.name));
     if (sort === "margin") arr.sort((a, b) => (b.margin_percent ?? -1) - (a.margin_percent ?? -1));
     if (sort === "price") arr.sort((a, b) => (b.suggested_price ?? b.detected_price ?? 0) - (a.suggested_price ?? a.detected_price ?? 0));
@@ -51,10 +53,19 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll }
   const stats = useMemo(() => {
     const margins = analysis.products.map(p => p.margin_percent).filter((v): v is number => v != null);
     const prices = analysis.products.map(p => p.suggested_price ?? p.detected_price).filter((v): v is number => v != null);
+    const sum = (key: keyof DetectedProduct) =>
+      analysis.products.reduce((s, p) => s + (Number(p[key]) || 0), 0);
+    const totalCost = sum("estimated_cost");
+    const totalFreight = sum("freight_estimate");
+    const totalPackaging = sum("packaging_estimate");
     return {
       count: analysis.products.length,
       avgMargin: margins.length ? margins.reduce((s, v) => s + v, 0) / margins.length : 0,
       avgPrice: prices.length ? prices.reduce((s, v) => s + v, 0) / prices.length : 0,
+      totalCost,
+      totalFreight,
+      totalPackaging,
+      totalDirectCosts: totalCost + totalFreight + totalPackaging,
     };
   }, [analysis.products]);
 
@@ -132,17 +143,50 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll }
                         {product.cost_source === "detected" && <span title="Detectado" className="text-[9px]">📄</span>}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Frete:</span>
-                      <span className="flex items-center gap-1">
-                        {fmt(product.freight_estimate)}
-                        {product.freight_source === "estimated" && <span title="Estimado" className="text-[9px]">🤖</span>}
-                        {product.freight_source === "detected" && <span title="Detectado" className="text-[9px]">📄</span>}
-                      </span>
+                      {onUpdateProduct ? (
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={product.freight_estimate ?? ""}
+                          onChange={(e) =>
+                            onUpdateProduct((product as any).__originalIndex, {
+                              freight_estimate: e.target.value === "" ? null : parseFloat(e.target.value),
+                              freight_source: "detected",
+                            })
+                          }
+                          className="h-6 w-20 text-[11px] px-1.5 text-right"
+                          aria-label="Editar frete"
+                        />
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          {fmt(product.freight_estimate)}
+                          {product.freight_source === "estimated" && <span title="Estimado" className="text-[9px]">🤖</span>}
+                          {product.freight_source === "detected" && <span title="Detectado" className="text-[9px]">📄</span>}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Embalagem:</span>
-                      <span>{fmt(product.packaging_estimate)}</span>
+                      {onUpdateProduct ? (
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={product.packaging_estimate ?? ""}
+                          onChange={(e) =>
+                            onUpdateProduct((product as any).__originalIndex, {
+                              packaging_estimate: e.target.value === "" ? null : parseFloat(e.target.value),
+                            })
+                          }
+                          className="h-6 w-20 text-[11px] px-1.5 text-right"
+                          aria-label="Editar embalagem"
+                        />
+                      ) : (
+                        <span>{fmt(product.packaging_estimate)}</span>
+                      )}
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Total custo:</span>
@@ -180,6 +224,40 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll }
                 </div>
               );
             })}
+          </CardContent>
+        </Card>
+      )}
+
+      {analysis.products.length > 0 && (
+        <Card className="border-emerald-500/30 bg-emerald-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-emerald-600" />
+              Resumo da importação ({stats.count} {stats.count > 1 ? "produtos" : "produto"})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total custo (compra/produção):</span>
+                <span className="font-medium">{fmt(stats.totalCost)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total frete:</span>
+                <span className="font-medium">{fmt(stats.totalFreight)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total embalagem:</span>
+                <span className="font-medium">{fmt(stats.totalPackaging)}</span>
+              </div>
+              <div className="flex justify-between border-t pt-1.5 col-span-2 mt-1">
+                <span className="font-semibold">Custos diretos totais:</span>
+                <span className="font-bold text-emerald-700">{fmt(stats.totalDirectCosts)}</span>
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground italic">
+              Edite frete e embalagem direto na linha de cada produto acima — os totais atualizam automaticamente.
+            </p>
           </CardContent>
         </Card>
       )}
