@@ -360,8 +360,14 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
   const productFromDetected = (d: DetectedProduct): ProductRow => {
     const bt = inferBusinessType(d.category);
     const cost = d.estimated_cost ?? 0;
-    const freight = d.freight_estimate ?? 0;
-    const pkg = d.packaging_estimate ?? 0;
+    const price = d.suggested_price ?? d.detected_price ?? 0;
+    // Garante frete e embalagem mesmo se a IA retornar 0/null
+    const freight = (d.freight_estimate && d.freight_estimate > 0)
+      ? d.freight_estimate
+      : (price > 0 ? Math.max(2, Math.round(price * 0.05 * 100) / 100) : 3);
+    const pkg = (d.packaging_estimate && d.packaging_estimate > 0)
+      ? d.packaging_estimate
+      : 2;
     return {
       id: newId(),
       name: d.name || "Produto",
@@ -370,7 +376,12 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
       freightPerUnit: freight,
       extraPackaging: pkg,
       directCosts: bt === "produtor"
-        ? [{ id: newId(), name: "Custo estimado (catálogo)", value: cost }]
+        ? [
+            { id: newId(), name: "Matéria-prima", value: cost },
+            { id: newId(), name: "Embalagem", value: pkg },
+            { id: newId(), name: "Frete/envio", value: freight },
+            { id: newId(), name: "Mão de obra direta", value: 0 },
+          ]
         : [{ id: "1", name: "Matéria-prima", value: 0 }, { id: "2", name: "Embalagem", value: 0 }, { id: "3", name: "Mão de obra direta", value: 0 }],
       quantityPerMonth: d.expected_monthly_units ?? 10,
       desiredMargin: d.margin_percent ?? 30,
