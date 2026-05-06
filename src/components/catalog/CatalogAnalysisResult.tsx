@@ -228,6 +228,40 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, 
         </Card>
       )}
 
+      {analysis.products.length > 0 && (
+        <Card className="border-emerald-500/30 bg-emerald-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-emerald-600" />
+              Resumo da importação ({stats.count} {stats.count > 1 ? "produtos" : "produto"})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total custo (compra/produção):</span>
+                <span className="font-medium">{fmt(stats.totalCost)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total frete:</span>
+                <span className="font-medium">{fmt(stats.totalFreight)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total embalagem:</span>
+                <span className="font-medium">{fmt(stats.totalPackaging)}</span>
+              </div>
+              <div className="flex justify-between border-t pt-1.5 col-span-2 mt-1">
+                <span className="font-semibold">Custos diretos totais:</span>
+                <span className="font-bold text-emerald-700">{fmt(stats.totalDirectCosts)}</span>
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground italic">
+              Edite frete e embalagem direto na linha de cada produto acima — os totais atualizam automaticamente.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {analysis.insights.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
