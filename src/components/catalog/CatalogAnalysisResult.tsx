@@ -278,6 +278,16 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, 
                     </div>
                   </div>
 
+                  <div className="rounded-md bg-muted/40 px-2 py-1 text-[10px] text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-medium text-foreground">Composição:</span>
+                    <span>
+                      Direto <strong className="text-foreground">{fmt(product.estimated_cost)}</strong>
+                      {" + "}Frete <strong className="text-foreground">{fmt(product.freight_estimate)}</strong>
+                      {" + "}Embalagem <strong className="text-foreground">{fmt(product.packaging_estimate)}</strong>
+                      {" = "}<strong className="text-emerald-700">{fmt(totalCost)}</strong>
+                    </span>
+                  </div>
+
                   <div className="flex items-center gap-2 flex-wrap pt-1">
                     {margin != null && (
                       <Badge
