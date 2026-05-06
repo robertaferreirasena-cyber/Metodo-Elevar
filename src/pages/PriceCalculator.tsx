@@ -512,6 +512,16 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                   analysis={catalogAnalysis}
                   onImportProduct={handleImportProduct}
                   onImportAll={handleImportAll}
+                  onUpdateProduct={(idx, patch) =>
+                    setCatalogAnalysis(prev =>
+                      prev
+                        ? {
+                            ...prev,
+                            products: prev.products.map((p, i) => (i === idx ? { ...p, ...patch } : p)),
+                          }
+                        : prev
+                    )
+                  }
                 />
               )}
             </div>
