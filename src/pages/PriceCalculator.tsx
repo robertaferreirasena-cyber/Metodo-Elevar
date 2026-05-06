@@ -568,6 +568,9 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                         : prev
                     )
                   }
+                  onSaveEdits={saveCatalogEdits}
+                  onBulkUpdate={bulkUpdateCatalog}
+                  hasUnsavedEdits={hasUnsavedCatalogEdits}
                 />
               )}
             </div>
