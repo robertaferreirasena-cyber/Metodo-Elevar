@@ -20,32 +20,22 @@ const ACCEPTED_TYPES = [
   "image/webp",
   "text/plain",
   "text/csv",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
 ];
 
-const FILE_ICONS: Record<string, typeof FileText> = {
-  "application/pdf": FileText,
-  "text/plain": FileText,
-  "text/csv": FileText,
-};
-
-function getFileIcon(type: string) {
-  if (type.startsWith("image/")) return Image;
-  return FILE_ICONS[type] || File;
-}
-
-function getTypeBadge(type: string) {
-  if (type === "application/pdf") return "PDF";
-  if (type.startsWith("image/")) return "IMG";
-  if (type === "text/csv") return "CSV";
-  if (type === "text/plain") return "TXT";
-  return "FILE";
+function getTypeBadge(name: string) {
+  const ext = name.split(".").pop()?.toUpperCase() || "FILE";
+  return ext;
 }
 
 export function CatalogUploader({
   fileUrls,
   onFilesChange,
-  maxFiles = 5,
-  maxSizeMB = 10,
+  maxFiles = 8,
+  maxSizeMB = 15,
 }: CatalogUploaderProps) {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
@@ -66,7 +56,9 @@ export function CatalogUploader({
     }
 
     const validFiles = fileArray.slice(0, remaining).filter((f) => {
-      if (!ACCEPTED_TYPES.includes(f.type)) {
+      const okType = ACCEPTED_TYPES.includes(f.type) ||
+        /\.(pdf|jpg|jpeg|png|webp|txt|csv|xlsx|xls|docx|doc)$/i.test(f.name);
+      if (!okType) {
         toast.error(`${f.name}: tipo não suportado`);
         return false;
       }
@@ -88,7 +80,7 @@ export function CatalogUploader({
 
       const { error } = await supabase.storage
         .from("product-catalogs")
-        .upload(path, file, { contentType: file.type });
+        .upload(path, file, { contentType: file.type || "application/octet-stream" });
 
       if (error) {
         toast.error(`Erro ao enviar ${file.name}`);
@@ -96,11 +88,6 @@ export function CatalogUploader({
         continue;
       }
 
-      const { data: urlData } = supabase.storage
-        .from("product-catalogs")
-        .getPublicUrl(path);
-
-      // Since bucket is private, we store the path and will use service role in edge function
       newUrls.push(path);
     }
 
@@ -114,7 +101,6 @@ export function CatalogUploader({
 
   const removeFile = useCallback((index: number) => {
     const path = fileUrls[index];
-    // Delete from storage
     supabase.storage.from("product-catalogs").remove([path]);
     onFilesChange(fileUrls.filter((_, i) => i !== index));
   }, [fileUrls, onFilesChange]);
@@ -122,9 +108,7 @@ export function CatalogUploader({
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    if (e.dataTransfer.files.length > 0) {
-      uploadFiles(e.dataTransfer.files);
-    }
+    if (e.dataTransfer.files.length > 0) uploadFiles(e.dataTransfer.files);
   }, [uploadFiles]);
 
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,15 +120,12 @@ export function CatalogUploader({
 
   return (
     <div className="space-y-3">
-      {/* Drop zone */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
-          dragOver
-            ? "border-primary bg-primary/5"
-            : "border-muted-foreground/25 hover:border-primary/50"
+          dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
         }`}
         onClick={() => document.getElementById("catalog-file-input")?.click()}
       >
@@ -160,7 +141,7 @@ export function CatalogUploader({
               Arraste arquivos ou clique para selecionar
             </span>
             <span className="text-[10px] text-muted-foreground/70">
-              PDF, imagens (JPG/PNG), TXT • Máx {maxFiles} arquivos, {maxSizeMB}MB cada
+              PDF, imagens, Excel (XLSX/XLS), Word (DOCX), TXT/CSV • Máx {maxFiles} arquivos, {maxSizeMB}MB cada
             </span>
           </div>
         )}
@@ -168,27 +149,22 @@ export function CatalogUploader({
           id="catalog-file-input"
           type="file"
           multiple
-          accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.csv"
+          accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,.xlsx,.xls,.docx,.doc"
           className="hidden"
           onChange={handleFileInput}
         />
       </div>
 
-      {/* File list */}
       {fileUrls.length > 0 && (
         <div className="space-y-1.5">
           {fileUrls.map((path, i) => {
             const fileName = path.split("/").pop() || path;
-            const ext = fileName.split(".").pop()?.toUpperCase() || "FILE";
             return (
-              <div
-                key={i}
-                className="flex items-center gap-2 p-2 rounded-md bg-muted/50 text-sm"
-              >
+              <div key={i} className="flex items-center gap-2 p-2 rounded-md bg-muted/50 text-sm">
                 <File className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span className="truncate flex-1 text-xs">{fileName}</span>
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                  {ext}
+                  {getTypeBadge(fileName)}
                 </Badge>
                 <Button
                   size="icon"
