@@ -31,6 +31,7 @@ interface CatalogAnalysisResultProps {
   analysis: CatalogAnalysis;
   onImportProduct?: (product: DetectedProduct) => void;
   onImportAll?: (products: DetectedProduct[]) => void;
+  onUpdateProduct?: (index: number, patch: Partial<DetectedProduct>) => void;
 }
 
 const fmt = (v: number | null | undefined) =>
@@ -38,7 +39,7 @@ const fmt = (v: number | null | undefined) =>
 
 type SortKey = "name" | "margin" | "price";
 
-export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll }: CatalogAnalysisResultProps) {
+export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, onUpdateProduct }: CatalogAnalysisResultProps) {
   const [sort, setSort] = useState<SortKey>("margin");
 
   const sorted = useMemo(() => {
