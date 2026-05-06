@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, TrendingUp, Lightbulb, ArrowRight, ArrowDownAZ, Percent, DollarSign, FileCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Package, TrendingUp, Lightbulb, ArrowRight, ArrowDownAZ, Percent, DollarSign, FileCheck, Calculator } from "lucide-react";
 
 export interface DetectedProduct {
   name: string;
