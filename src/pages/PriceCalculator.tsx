@@ -520,7 +520,10 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                     <div className="text-sm font-medium truncate">
                       {idx + 1}. {p.name || <span className="text-muted-foreground italic">Sem nome</span>}
                     </div>
-                    <div className="flex gap-2 flex-wrap text-[10px] text-muted-foreground mt-0.5">
+                    <div className="flex gap-2 flex-wrap items-center text-[10px] text-muted-foreground mt-0.5">
+                      <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-1">
+                        {p.businessType === "lojista" ? <><Package className="h-2.5 w-2.5" /> Revendo</> : <><Briefcase className="h-2.5 w-2.5" /> Produzo</>}
+                      </Badge>
                       <span>Preço: <strong className="text-foreground">{fmt(r.sellingPrice)}</strong></span>
                       <span>Margem: <strong className={r.realMargin >= 20 ? "text-emerald-600" : "text-destructive"}>{r.realMargin.toFixed(0)}%</strong></span>
                       {r.breakEvenUnits !== Infinity && (
@@ -546,14 +549,17 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                 </div>
 
                 {/* Tipo */}
-                <div>
-                  <Label className="text-xs">Tipo de Negócio</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    <Button variant={p.businessType === "lojista" ? "default" : "outline"} size="sm" onClick={() => updateProduct(p.id, { businessType: "lojista" })} className="gap-1.5 text-xs">
-                      <Package className="h-3.5 w-3.5" /> Revendo
+                <div className="rounded-md border bg-muted/30 p-2.5">
+                  <Label className="text-xs font-semibold">Como você obtém este produto?</Label>
+                  <p className="text-[10px] text-muted-foreground mb-2">Define quais custos a calculadora considera.</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant={p.businessType === "lojista" ? "default" : "outline"} size="sm" onClick={() => updateProduct(p.id, { businessType: "lojista" })} className="h-auto py-2 flex flex-col items-start gap-0.5 text-left">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold"><Package className="h-3.5 w-3.5" /> Revendo (compro pronto)</span>
+                      <span className="text-[9px] opacity-80 font-normal">Compra + frete + embalagem</span>
                     </Button>
-                    <Button variant={p.businessType === "produtor" ? "default" : "outline"} size="sm" onClick={() => updateProduct(p.id, { businessType: "produtor" })} className="gap-1.5 text-xs">
-                      <Briefcase className="h-3.5 w-3.5" /> Produzo
+                    <Button variant={p.businessType === "produtor" ? "default" : "outline"} size="sm" onClick={() => updateProduct(p.id, { businessType: "produtor" })} className="h-auto py-2 flex flex-col items-start gap-0.5 text-left">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold"><Briefcase className="h-3.5 w-3.5" /> Eu produzo</span>
+                      <span className="text-[9px] opacity-80 font-normal">Matéria-prima + embalagem + mão de obra</span>
                     </Button>
                   </div>
                 </div>
