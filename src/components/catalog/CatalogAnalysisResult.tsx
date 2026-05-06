@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Package, TrendingUp, Lightbulb, ArrowRight, ArrowDownAZ, Percent, DollarSign, FileCheck, Calculator } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Package, TrendingUp, Lightbulb, ArrowRight, ArrowDownAZ, Percent, DollarSign, FileCheck, Calculator, Save, Wand2 } from "lucide-react";
 
 export interface DetectedProduct {
   name: string;
@@ -32,6 +33,9 @@ interface CatalogAnalysisResultProps {
   onImportProduct?: (product: DetectedProduct) => void;
   onImportAll?: (products: DetectedProduct[]) => void;
   onUpdateProduct?: (index: number, patch: Partial<DetectedProduct>) => void;
+  onSaveEdits?: () => void;
+  onBulkUpdate?: (patch: Partial<Pick<DetectedProduct, "freight_estimate" | "packaging_estimate">>) => void;
+  hasUnsavedEdits?: boolean;
 }
 
 const fmt = (v: number | null | undefined) =>
@@ -39,8 +43,21 @@ const fmt = (v: number | null | undefined) =>
 
 type SortKey = "name" | "margin" | "price";
 
-export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, onUpdateProduct }: CatalogAnalysisResultProps) {
+export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, onUpdateProduct, onSaveEdits, onBulkUpdate, hasUnsavedEdits }: CatalogAnalysisResultProps) {
   const [sort, setSort] = useState<SortKey>("margin");
+  const [bulkFreight, setBulkFreight] = useState<string>("");
+  const [bulkPackaging, setBulkPackaging] = useState<string>("");
+
+  const applyBulk = () => {
+    if (!onBulkUpdate) return;
+    const patch: Partial<Pick<DetectedProduct, "freight_estimate" | "packaging_estimate">> = {};
+    if (bulkFreight !== "") patch.freight_estimate = parseFloat(bulkFreight) || 0;
+    if (bulkPackaging !== "") patch.packaging_estimate = parseFloat(bulkPackaging) || 0;
+    if (Object.keys(patch).length === 0) return;
+    onBulkUpdate(patch);
+    setBulkFreight("");
+    setBulkPackaging("");
+  };
 
   const sorted = useMemo(() => {
     const arr = analysis.products.map((p, originalIndex) => ({ ...p, __originalIndex: originalIndex }));
@@ -89,7 +106,7 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, 
               <span>Margem média: <strong className="text-foreground">{stats.avgMargin.toFixed(1)}%</strong></span>
               <span>Ticket médio: <strong className="text-foreground">{fmt(stats.avgPrice)}</strong></span>
             </div>
-            <div className="flex gap-1 mt-2">
+            <div className="flex gap-1 mt-2 items-center flex-wrap">
               <Button size="sm" variant={sort === "name" ? "default" : "outline"} onClick={() => setSort("name")} className="h-6 text-[10px] px-2 gap-1">
                 <ArrowDownAZ className="h-3 w-3" /> Nome
               </Button>
@@ -99,7 +116,66 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, 
               <Button size="sm" variant={sort === "price" ? "default" : "outline"} onClick={() => setSort("price")} className="h-6 text-[10px] px-2 gap-1">
                 <DollarSign className="h-3 w-3" /> Preço
               </Button>
+              {onSaveEdits && (
+                <Button
+                  size="sm"
+                  variant={hasUnsavedEdits ? "default" : "outline"}
+                  onClick={onSaveEdits}
+                  disabled={!hasUnsavedEdits}
+                  className="h-6 text-[10px] px-2 gap-1 ml-auto"
+                  title="Salvar alterações de frete/embalagem"
+                >
+                  <Save className="h-3 w-3" />
+                  {hasUnsavedEdits ? "Salvar edições" : "Salvo"}
+                </Button>
+              )}
             </div>
+
+            {onBulkUpdate && (
+              <div className="mt-2 rounded-md border border-dashed bg-muted/30 p-2 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-[11px] font-medium">
+                  <Wand2 className="h-3 w-3 text-primary" />
+                  Edição em massa (aplica a todos os {stats.count} produtos)
+                </div>
+                <div className="flex items-end gap-2 flex-wrap">
+                  <div className="flex-1 min-w-[100px]">
+                    <Label className="text-[10px] text-muted-foreground">Frete (R$)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={bulkFreight}
+                      placeholder="Ex: 3,50"
+                      onChange={(e) => setBulkFreight(e.target.value)}
+                      className="h-7 text-[11px] mt-0.5"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[100px]">
+                    <Label className="text-[10px] text-muted-foreground">Embalagem (R$)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={bulkPackaging}
+                      placeholder="Ex: 2,00"
+                      onChange={(e) => setBulkPackaging(e.target.value)}
+                      className="h-7 text-[11px] mt-0.5"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={applyBulk}
+                    disabled={bulkFreight === "" && bulkPackaging === ""}
+                    className="h-7 text-[10px] gap-1"
+                  >
+                    Aplicar a todos
+                  </Button>
+                </div>
+                <p className="text-[9px] text-muted-foreground">
+                  Deixe um campo vazio para não alterá-lo.
+                </p>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-2">
             {sorted.map((product, i) => {
@@ -200,6 +276,16 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll, 
                       <span className="text-muted-foreground">Sugerido:</span>
                       <span className="font-semibold text-primary">{fmt(product.suggested_price)}</span>
                     </div>
+                  </div>
+
+                  <div className="rounded-md bg-muted/40 px-2 py-1 text-[10px] text-muted-foreground flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-medium text-foreground">Composição:</span>
+                    <span>
+                      Direto <strong className="text-foreground">{fmt(product.estimated_cost)}</strong>
+                      {" + "}Frete <strong className="text-foreground">{fmt(product.freight_estimate)}</strong>
+                      {" + "}Embalagem <strong className="text-foreground">{fmt(product.packaging_estimate)}</strong>
+                      {" = "}<strong className="text-emerald-700">{fmt(totalCost)}</strong>
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap pt-1">

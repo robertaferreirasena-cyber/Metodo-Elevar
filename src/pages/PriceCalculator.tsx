@@ -226,10 +226,51 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
   }, [products, monthlyFixedCosts, fixedCostsFromMap, setSessionState]);
 
   // Catalog import state
+  const CATALOG_STORAGE_KEY = "priceCalculator.catalogAnalysis";
   const [catalogFiles, setCatalogFiles] = useState<string[]>([]);
-  const [catalogAnalysis, setCatalogAnalysis] = useState<CatalogAnalysis | null>(null);
+  const [catalogAnalysis, setCatalogAnalysis] = useState<CatalogAnalysis | null>(() => {
+    try {
+      const raw = sessionStorage.getItem(CATALOG_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as CatalogAnalysis) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [savedCatalogSnapshot, setSavedCatalogSnapshot] = useState<string>(() => {
+    try {
+      return sessionStorage.getItem(CATALOG_STORAGE_KEY) || "";
+    } catch {
+      return "";
+    }
+  });
   const [analyzingCatalog, setAnalyzingCatalog] = useState(false);
   const [catalogDialogOpen, setCatalogDialogOpen] = useState(false);
+
+  const hasUnsavedCatalogEdits = useMemo(() => {
+    if (!catalogAnalysis) return false;
+    return JSON.stringify(catalogAnalysis) !== savedCatalogSnapshot;
+  }, [catalogAnalysis, savedCatalogSnapshot]);
+
+  const saveCatalogEdits = () => {
+    if (!catalogAnalysis) return;
+    const serialized = JSON.stringify(catalogAnalysis);
+    try {
+      sessionStorage.setItem(CATALOG_STORAGE_KEY, serialized);
+      setSavedCatalogSnapshot(serialized);
+      toast.success("Edições de frete e embalagem salvas");
+    } catch {
+      toast.error("Não foi possível salvar localmente");
+    }
+  };
+
+  const bulkUpdateCatalog = (patch: Partial<DetectedProduct>) => {
+    setCatalogAnalysis(prev =>
+      prev
+        ? { ...prev, products: prev.products.map(p => ({ ...p, ...patch })) }
+        : prev
+    );
+    toast.success("Aplicado a todos os produtos. Lembre de salvar.");
+  };
 
   // ── Product CRUD ──
   const updateProduct = (id: string, patch: Partial<ProductRow>) =>
@@ -342,6 +383,11 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
       if (!response.ok) throw new Error("Erro na análise");
       const { analysis } = await response.json();
       setCatalogAnalysis(analysis);
+      try {
+        const serialized = JSON.stringify(analysis);
+        sessionStorage.setItem(CATALOG_STORAGE_KEY, serialized);
+        setSavedCatalogSnapshot(serialized);
+      } catch { /* ignore */ }
       toast.success(`Análise concluída! ${analysis.products?.length || 0} produto(s) detectado(s).`);
     } catch (err) {
       toast.error("Erro ao analisar catálogo");
@@ -522,6 +568,9 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                         : prev
                     )
                   }
+                  onSaveEdits={saveCatalogEdits}
+                  onBulkUpdate={bulkUpdateCatalog}
+                  hasUnsavedEdits={hasUnsavedCatalogEdits}
                 />
               )}
             </div>
