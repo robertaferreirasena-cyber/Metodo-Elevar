@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3?target=deno";
+import * as XLSX from "https://esm.sh/xlsx@0.18.5?target=deno";
+import mammoth from "https://esm.sh/mammoth@1.7.2?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,22 +8,28 @@ const corsHeaders = {
 };
 
 interface ExtractedFile {
-  type: "text" | "image";
+  type: "text" | "image" | "pdf";
   name: string;
   content?: string;
   base64?: string;
   mimeType?: string;
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)) as any);
+  }
+  return btoa(binary);
+}
+
 async function extractFiles(supabase: any, filePaths: string[]): Promise<ExtractedFile[]> {
   const results: ExtractedFile[] = [];
 
-  for (const path of filePaths.slice(0, 5)) {
+  for (const path of filePaths.slice(0, 8)) {
     try {
-      const { data, error } = await supabase.storage
-        .from("product-catalogs")
-        .download(path);
-
+      const { data, error } = await supabase.storage.from("product-catalogs").download(path);
       if (error || !data) {
         console.error("Download error for", path, error);
         continue;
@@ -29,26 +37,65 @@ async function extractFiles(supabase: any, filePaths: string[]): Promise<Extract
 
       const ext = path.split(".").pop()?.toLowerCase() || "";
       const name = path.split("/").pop() || path;
+      const buffer = await data.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
 
       if (["txt", "csv"].includes(ext)) {
-        const text = await data.text();
-        results.push({ type: "text", name, content: text.slice(0, 2000) });
+        const text = new TextDecoder().decode(bytes);
+        results.push({ type: "text", name, content: text.slice(0, 8000) });
       } else if (ext === "pdf") {
-        const text = await data.text();
-        const readable = text.replace(/[^\x20-\x7E\xC0-\xFF\n]/g, " ").replace(/\s+/g, " ").trim();
-        results.push({ type: "text", name, content: readable.slice(0, 2000) });
-      } else if (["jpg", "jpeg", "png", "webp"].includes(ext)) {
-        const arrayBuffer = await data.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuffer);
-        // Check size - skip images > 4MB for base64
-        if (bytes.length > 4 * 1024 * 1024) {
-          results.push({ type: "text", name, content: `[Imagem ${name} muito grande para análise visual]` });
+        if (bytes.length > 12 * 1024 * 1024) {
+          results.push({ type: "text", name, content: `[PDF ${name} muito grande]` });
           continue;
         }
-        let binary = "";
-        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-        const mimeType = ext === "jpg" ? "image/jpeg" : ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
-        results.push({ type: "image", name, base64: btoa(binary), mimeType });
+        results.push({
+          type: "pdf",
+          name,
+          base64: bytesToBase64(bytes),
+          mimeType: "application/pdf",
+        });
+      } else if (["xlsx", "xls"].includes(ext)) {
+        try {
+          const wb = XLSX.read(bytes, { type: "array" });
+          let text = "";
+          for (const sheetName of wb.SheetNames) {
+            const sheet = wb.Sheets[sheetName];
+            text += `\n=== Planilha: ${sheetName} ===\n`;
+            text += XLSX.utils.sheet_to_csv(sheet);
+          }
+          results.push({ type: "text", name, content: text.slice(0, 12000) });
+        } catch (err) {
+          console.error("xlsx parse error:", err);
+          results.push({ type: "text", name, content: `[Erro lendo planilha ${name}]` });
+        }
+      } else if (["docx"].includes(ext)) {
+        try {
+          const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+          results.push({ type: "text", name, content: (result.value || "").slice(0, 8000) });
+        } catch (err) {
+          console.error("docx parse error:", err);
+          results.push({ type: "text", name, content: `[Erro lendo docx ${name}]` });
+        }
+      } else if (["jpg", "jpeg", "png", "webp"].includes(ext)) {
+        if (bytes.length > 6 * 1024 * 1024) {
+          results.push({ type: "text", name, content: `[Imagem ${name} muito grande]` });
+          continue;
+        }
+        const mimeType =
+          ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+        results.push({
+          type: "image",
+          name,
+          base64: bytesToBase64(bytes),
+          mimeType,
+        });
+      } else {
+        // unknown — try as text
+        const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+        const clean = text.replace(/[^\x20-\x7E\xC0-\xFF\n]/g, " ").replace(/\s+/g, " ").trim();
+        if (clean.length > 50) {
+          results.push({ type: "text", name, content: clean.slice(0, 4000) });
+        }
       }
     } catch (err) {
       console.error("Error processing file:", path, err);
@@ -59,54 +106,71 @@ async function extractFiles(supabase: any, filePaths: string[]): Promise<Extract
 }
 
 function buildMessages(files: ExtractedFile[], niche: string) {
-  // Build multimodal user message content parts
   const parts: any[] = [];
 
-  // Text instruction
   const textFiles = files.filter(f => f.type === "text");
   const imageFiles = files.filter(f => f.type === "image");
+  const pdfFiles = files.filter(f => f.type === "pdf");
 
   let textContent = "";
   if (textFiles.length > 0) {
-    textContent = textFiles.map(f => `[${f.name}]:\n${f.content}`).join("\n\n").slice(0, 3000);
+    textContent = textFiles.map(f => `[${f.name}]:\n${f.content}`).join("\n\n").slice(0, 16000);
   }
 
   parts.push({
     type: "text",
-    text: `Você é um especialista em precificação e análise de catálogos.
+    text: `Você é um especialista em precificação e análise de catálogos para pequenas empresas brasileiras (lojistas, esteticistas, cabeleireiras, artesãos, prestadoras de serviço).
 
-Analise os materiais enviados (textos e/ou fotos de catálogos/produtos) e extraia:
+Analise TODOS os materiais enviados e extraia TODOS os produtos/serviços mencionados (sem limite — se houver 30, 50, 100 produtos, extraia todos).
 
-1. **Lista de produtos/serviços** com nome, preço detectado, categoria
-2. **Preço sugerido** com base no mercado do nicho "${niche || 'geral'}"
-3. **Custo estimado** e margem percentual
-4. **Insights** de precificação (comparação com mercado, oportunidades)
-5. **Recomendações** estratégicas de preço
+Para cada produto retorne:
+- name (string, obrigatório)
+- sku (string, opcional)
+- category (string — ex: "Esmalte", "Tintura", "Roupa", "Acessório", "Cosmético")
+- detected_price (number ou null) — preço encontrado no material
+- suggested_price (number ou null) — preço sugerido com base no nicho "${niche || 'geral'}"
+- estimated_cost (number ou null) — custo unitário (compra/produção)
+- cost_source ("detected" se veio explícito no material, "estimated" se você inferiu)
+- freight_estimate (number ou null) — frete por unidade. Se não mencionado, estime ~5% do preço para produtos físicos pequenos, R$ 0 para serviços/digitais
+- freight_source ("detected" ou "estimated")
+- packaging_estimate (number ou null) — embalagem por unidade (~R$ 1-3 para produtos físicos pequenos, 0 para serviços)
+- margin_percent (number) — margem percentual sobre o preço sugerido
+- expected_monthly_units (number ou null) — estimativa razoável de quantas unidades/mês esse tipo de produto vende em pequeno negócio (5–100)
+- notes (string opcional) — observação curta
 
-${textContent ? `CONTEÚDO TEXTUAL DOS MATERIAIS:\n${textContent}` : ""}
-${imageFiles.length > 0 ? `\n${imageFiles.length} IMAGEM(NS) DO CATÁLOGO ANEXADA(S) - Analise visualmente cada produto visível: nomes, preços, descrições, embalagens, etc.` : ""}
+${textContent ? `\nCONTEÚDO TEXTUAL DOS MATERIAIS:\n${textContent}\n` : ""}
+${pdfFiles.length > 0 ? `\n${pdfFiles.length} PDF(s) ANEXADO(S) — leia cada página e extraia produtos das tabelas/listas de preços.\n` : ""}
+${imageFiles.length > 0 ? `\n${imageFiles.length} IMAGEM(NS) ANEXADA(S) — analise visualmente: nomes, preços em etiquetas/tabelas, descrições.\n` : ""}
 
-Retorne APENAS JSON válido:
+Retorne APENAS JSON válido (sem markdown, sem texto extra):
 {
-  "products": [{"name": "...", "detected_price": number|null, "suggested_price": number|null, "estimated_cost": number|null, "margin_percent": number|null, "category": "..."}],
-  "insights": ["insight 1", "insight 2", ...],
-  "pricing_recommendations": ["rec 1", "rec 2", ...]
+  "products": [{...}, {...}],
+  "insights": ["insight curto 1", "insight curto 2"],
+  "pricing_recommendations": ["recomendação curta 1", "recomendação curta 2"]
 }`
   });
 
-  // Add images as vision content
-  for (const img of imageFiles.slice(0, 4)) {
+  for (const pdf of pdfFiles.slice(0, 4)) {
     parts.push({
       type: "image_url",
-      image_url: {
-        url: `data:${img.mimeType};base64,${img.base64}`
-      }
+      image_url: { url: `data:${pdf.mimeType};base64,${pdf.base64}` },
+    });
+  }
+
+  for (const img of imageFiles.slice(0, 6)) {
+    parts.push({
+      type: "image_url",
+      image_url: { url: `data:${img.mimeType};base64,${img.base64}` },
     });
   }
 
   return [
-    { role: "system", content: "Você é um especialista em precificação, análise de catálogos e neuromarketing. Analise materiais (textos E imagens) e extraia informações detalhadas de produtos, preços e custos. Para imagens de catálogos físicos, identifique cada produto visível, leia preços nas etiquetas/tabelas, e descreva categorias. Retorne APENAS JSON válido." },
-    { role: "user", content: parts }
+    {
+      role: "system",
+      content:
+        "Você é um analista de catálogos e precificação. Extraia TODOS os produtos visíveis (nada de limite arbitrário). Sempre preencha frete e embalagem (estimando se necessário). Retorne JSON válido apenas."
+    },
+    { role: "user", content: parts },
   ];
 }
 
@@ -142,7 +206,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check subscription
     const { data: sub } = await supabase
       .from("subscriptions")
       .select("status, expires_at")
@@ -163,14 +226,17 @@ Deno.serve(async (req) => {
 
     await supabase.rpc("increment_usage_admin", { p_user_id: user.id, p_function_type: "general" });
 
-    // Extract all files (text + images)
     const extractedFiles = await extractFiles(supabase, filePaths);
     const imageCount = extractedFiles.filter(f => f.type === "image").length;
+    const pdfCount = extractedFiles.filter(f => f.type === "pdf").length;
 
-    console.log("[catalog-price-analyzer] user:", user.id.slice(0, 8), "files:", filePaths.length, "images:", imageCount);
+    console.log(
+      "[catalog-price-analyzer] user:", user.id.slice(0, 8),
+      "files:", filePaths.length, "images:", imageCount, "pdfs:", pdfCount
+    );
 
-    // Use vision-capable model when images are present
-    const model = imageCount > 0 ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite";
+    // Always use vision-capable model when PDFs/images present
+    const model = (imageCount > 0 || pdfCount > 0) ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite";
     const messages = buildMessages(extractedFiles, niche || "");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -181,9 +247,9 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model,
-        max_tokens: 4000,
+        max_tokens: 8000,
         messages,
-        temperature: 0.5,
+        temperature: 0.4,
       }),
     });
 
@@ -218,10 +284,13 @@ Deno.serve(async (req) => {
 
     const tokensUsed = data.usage?.total_tokens || 2000;
     await supabase.rpc("track_token_usage_admin", {
-      p_user_id: user.id, p_feature: "catalog-analyzer", p_tokens: tokensUsed
+      p_user_id: user.id, p_feature: "catalog-analyzer", p_tokens: tokensUsed,
     });
 
-    console.log("[catalog-price-analyzer] Success, model:", model, "tokens:", tokensUsed, "products:", analysis.products?.length || 0);
+    console.log(
+      "[catalog-price-analyzer] OK model:", model, "tokens:", tokensUsed,
+      "products:", analysis.products?.length || 0
+    );
 
     return new Response(JSON.stringify({ analysis }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },

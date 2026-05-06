@@ -1,16 +1,23 @@
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Package, TrendingUp, Lightbulb, ArrowRight } from "lucide-react";
+import { Package, TrendingUp, Lightbulb, ArrowRight, ArrowDownAZ, Percent, DollarSign, FileCheck } from "lucide-react";
 
 export interface DetectedProduct {
   name: string;
-  detected_price: number | null;
-  suggested_price: number | null;
-  estimated_cost: number | null;
-  margin_percent: number | null;
-  category: string;
+  sku?: string | null;
+  category?: string | null;
+  detected_price?: number | null;
+  suggested_price?: number | null;
+  estimated_cost?: number | null;
+  freight_estimate?: number | null;
+  packaging_estimate?: number | null;
+  margin_percent?: number | null;
+  expected_monthly_units?: number | null;
+  freight_source?: "detected" | "estimated" | null;
+  cost_source?: "detected" | "estimated" | null;
+  notes?: string | null;
 }
 
 export interface CatalogAnalysis {
@@ -22,71 +29,161 @@ export interface CatalogAnalysis {
 interface CatalogAnalysisResultProps {
   analysis: CatalogAnalysis;
   onImportProduct?: (product: DetectedProduct) => void;
+  onImportAll?: (products: DetectedProduct[]) => void;
 }
 
-const fmt = (v: number) =>
-  `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (v: number | null | undefined) =>
+  v == null ? "—" : `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export function CatalogAnalysisResult({ analysis, onImportProduct }: CatalogAnalysisResultProps) {
+type SortKey = "name" | "margin" | "price";
+
+export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll }: CatalogAnalysisResultProps) {
+  const [sort, setSort] = useState<SortKey>("margin");
+
+  const sorted = useMemo(() => {
+    const arr = [...analysis.products];
+    if (sort === "name") arr.sort((a, b) => a.name.localeCompare(b.name));
+    if (sort === "margin") arr.sort((a, b) => (b.margin_percent ?? -1) - (a.margin_percent ?? -1));
+    if (sort === "price") arr.sort((a, b) => (b.suggested_price ?? b.detected_price ?? 0) - (a.suggested_price ?? a.detected_price ?? 0));
+    return arr;
+  }, [analysis.products, sort]);
+
+  const stats = useMemo(() => {
+    const margins = analysis.products.map(p => p.margin_percent).filter((v): v is number => v != null);
+    const prices = analysis.products.map(p => p.suggested_price ?? p.detected_price).filter((v): v is number => v != null);
+    return {
+      count: analysis.products.length,
+      avgMargin: margins.length ? margins.reduce((s, v) => s + v, 0) / margins.length : 0,
+      avgPrice: prices.length ? prices.reduce((s, v) => s + v, 0) / prices.length : 0,
+    };
+  }, [analysis.products]);
+
   return (
     <div className="space-y-4">
-      {/* Products detected */}
       {analysis.products.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Produtos Detectados ({analysis.products.length})
-            </CardTitle>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                {stats.count} produto{stats.count > 1 ? "s" : ""} detectado{stats.count > 1 ? "s" : ""}
+              </CardTitle>
+              {onImportAll && (
+                <Button size="sm" onClick={() => onImportAll(analysis.products)} className="gap-1.5 h-7 text-xs">
+                  <FileCheck className="h-3.5 w-3.5" /> Importar todos
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-3 text-[10px] text-muted-foreground mt-1">
+              <span>Margem média: <strong className="text-foreground">{stats.avgMargin.toFixed(1)}%</strong></span>
+              <span>Ticket médio: <strong className="text-foreground">{fmt(stats.avgPrice)}</strong></span>
+            </div>
+            <div className="flex gap-1 mt-2">
+              <Button size="sm" variant={sort === "name" ? "default" : "outline"} onClick={() => setSort("name")} className="h-6 text-[10px] px-2 gap-1">
+                <ArrowDownAZ className="h-3 w-3" /> Nome
+              </Button>
+              <Button size="sm" variant={sort === "margin" ? "default" : "outline"} onClick={() => setSort("margin")} className="h-6 text-[10px] px-2 gap-1">
+                <Percent className="h-3 w-3" /> Margem
+              </Button>
+              <Button size="sm" variant={sort === "price" ? "default" : "outline"} onClick={() => setSort("price")} className="h-6 text-[10px] px-2 gap-1">
+                <DollarSign className="h-3 w-3" /> Preço
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {analysis.products.map((product, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 p-2 rounded-md bg-muted/50 text-sm"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{product.name}</div>
-                  <div className="flex gap-2 text-xs text-muted-foreground mt-0.5">
-                    {product.detected_price != null && (
-                      <span>Preço: {fmt(product.detected_price)}</span>
-                    )}
-                    {product.margin_percent != null && (
-                      <Badge
-                        variant={product.margin_percent >= 20 ? "default" : "destructive"}
-                        className="text-[10px] px-1 py-0"
+            {sorted.map((product, i) => {
+              const margin = product.margin_percent;
+              const totalCost =
+                (product.estimated_cost ?? 0) +
+                (product.freight_estimate ?? 0) +
+                (product.packaging_estimate ?? 0);
+              return (
+                <div
+                  key={i}
+                  className="rounded-md border bg-card p-2.5 text-sm space-y-1.5"
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium leading-tight truncate">{product.name}</div>
+                      <div className="flex gap-2 flex-wrap text-[10px] text-muted-foreground mt-0.5">
+                        {product.category && <span>{product.category}</span>}
+                        {product.sku && <span>SKU: {product.sku}</span>}
+                      </div>
+                    </div>
+                    {onImportProduct && (
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-7 w-7 shrink-0"
+                        onClick={() => onImportProduct(product)}
+                        title="Importar este produto"
                       >
-                        {product.margin_percent.toFixed(0)}% margem
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Custo:</span>
+                      <span className="flex items-center gap-1">
+                        {fmt(product.estimated_cost)}
+                        {product.cost_source === "estimated" && <span title="Estimado" className="text-[9px]">🤖</span>}
+                        {product.cost_source === "detected" && <span title="Detectado" className="text-[9px]">📄</span>}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Frete:</span>
+                      <span className="flex items-center gap-1">
+                        {fmt(product.freight_estimate)}
+                        {product.freight_source === "estimated" && <span title="Estimado" className="text-[9px]">🤖</span>}
+                        {product.freight_source === "detected" && <span title="Detectado" className="text-[9px]">📄</span>}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Embalagem:</span>
+                      <span>{fmt(product.packaging_estimate)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total custo:</span>
+                      <span className="font-medium">{fmt(totalCost)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Preço atual:</span>
+                      <span>{fmt(product.detected_price)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Sugerido:</span>
+                      <span className="font-semibold text-primary">{fmt(product.suggested_price)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap pt-1">
+                    {margin != null && (
+                      <Badge
+                        variant={margin >= 30 ? "default" : margin >= 15 ? "secondary" : "destructive"}
+                        className="text-[10px] px-1.5 py-0"
+                      >
+                        Margem {margin.toFixed(0)}%
+                      </Badge>
+                    )}
+                    {product.expected_monthly_units != null && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        ~{product.expected_monthly_units} un/mês
                       </Badge>
                     )}
                   </div>
+
+                  {product.notes && (
+                    <p className="text-[10px] text-muted-foreground italic pt-0.5">{product.notes}</p>
+                  )}
                 </div>
-                {product.suggested_price != null && (
-                  <div className="text-right shrink-0">
-                    <div className="text-[10px] text-muted-foreground">Sugerido</div>
-                    <div className="text-xs font-semibold text-primary">
-                      {fmt(product.suggested_price)}
-                    </div>
-                  </div>
-                )}
-                {onImportProduct && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 shrink-0"
-                    onClick={() => onImportProduct(product)}
-                    title="Importar para calculadora"
-                  >
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}
 
-      {/* Insights */}
       {analysis.insights.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
@@ -108,7 +205,6 @@ export function CatalogAnalysisResult({ analysis, onImportProduct }: CatalogAnal
         </Card>
       )}
 
-      {/* Recommendations */}
       {analysis.pricing_recommendations.length > 0 && (
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="pb-2">
