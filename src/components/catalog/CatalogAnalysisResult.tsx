@@ -51,10 +51,19 @@ export function CatalogAnalysisResult({ analysis, onImportProduct, onImportAll }
   const stats = useMemo(() => {
     const margins = analysis.products.map(p => p.margin_percent).filter((v): v is number => v != null);
     const prices = analysis.products.map(p => p.suggested_price ?? p.detected_price).filter((v): v is number => v != null);
+    const sum = (key: keyof DetectedProduct) =>
+      analysis.products.reduce((s, p) => s + (Number(p[key]) || 0), 0);
+    const totalCost = sum("estimated_cost");
+    const totalFreight = sum("freight_estimate");
+    const totalPackaging = sum("packaging_estimate");
     return {
       count: analysis.products.length,
       avgMargin: margins.length ? margins.reduce((s, v) => s + v, 0) / margins.length : 0,
       avgPrice: prices.length ? prices.reduce((s, v) => s + v, 0) / prices.length : 0,
+      totalCost,
+      totalFreight,
+      totalPackaging,
+      totalDirectCosts: totalCost + totalFreight + totalPackaging,
     };
   }, [analysis.products]);
 
