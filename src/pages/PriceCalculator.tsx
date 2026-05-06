@@ -383,6 +383,11 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
       if (!response.ok) throw new Error("Erro na análise");
       const { analysis } = await response.json();
       setCatalogAnalysis(analysis);
+      try {
+        const serialized = JSON.stringify(analysis);
+        sessionStorage.setItem(CATALOG_STORAGE_KEY, serialized);
+        setSavedCatalogSnapshot(serialized);
+      } catch { /* ignore */ }
       toast.success(`Análise concluída! ${analysis.products?.length || 0} produto(s) detectado(s).`);
     } catch (err) {
       toast.error("Erro ao analisar catálogo");
