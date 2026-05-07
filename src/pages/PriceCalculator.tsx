@@ -1525,17 +1525,10 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
                 )}
               </Button>
               {svcCatalogAnalysis && (
-                <CatalogAnalysisResult
+                <ServiceImportReview
                   analysis={svcCatalogAnalysis}
-                  onImportProduct={handleImportSvcOne}
-                  onImportAll={handleImportSvcAll}
-                  onUpdateProduct={(idx, patch) =>
-                    setSvcCatalogAnalysis(prev =>
-                      prev
-                        ? { ...prev, products: prev.products.map((p, i) => (i === idx ? { ...p, ...patch } : p)) }
-                        : prev
-                    )
-                  }
+                  onCancel={() => setSvcCatalogDialogOpen(false)}
+                  onConfirm={(selected) => handleImportSvcAll(selected)}
                 />
               )}
             </div>
