@@ -1147,6 +1147,57 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
   const result = useMemo(() => calcServiceFull(active, effectiveFixed), [active, effectiveFixed]);
   const diagnosis = useMemo(() => diagnoseService(active, result), [active, result]);
 
+  // ── Validações por etapa ──
+  const validations = useMemo(() => {
+    const e1: string[] = [];
+    if (!active.name?.trim()) e1.push("Informe o nome do serviço.");
+    if (active.mode === "session") {
+      if (!active.pricePerSession || active.pricePerSession <= 0) e1.push("Informe o preço cobrado hoje.");
+      if (!active.sessionsPerMonth || active.sessionsPerMonth <= 0) e1.push("Informe a meta de atendimentos/mês.");
+      if (!active.durationMinutes || active.durationMinutes <= 0) e1.push("Informe a duração média em minutos.");
+    } else {
+      if (!active.hourlyRate || active.hourlyRate <= 0) e1.push("Informe o valor cobrado por hora.");
+      if (!active.hoursPerMonth || active.hoursPerMonth <= 0) e1.push("Informe quantas horas pretende trabalhar/mês.");
+    }
+
+    const e2: string[] = [];
+    if (!active.daysPerMonth || active.daysPerMonth <= 0 || active.daysPerMonth > 31) e2.push("Dias trabalhados deve ficar entre 1 e 31.");
+    if (!active.hoursPerDay || active.hoursPerDay <= 0 || active.hoursPerDay > 24) e2.push("Horas/dia deve ficar entre 1 e 24.");
+    if (!active.productivePercent || active.productivePercent <= 0 || active.productivePercent > 100) e2.push("% produtivo deve ficar entre 1 e 100.");
+    if (result.capacityVsGoal === "exceeds") e2.push(`Sua meta (${active.mode === "hourly" ? active.hoursPerMonth : active.sessionsPerMonth}) supera a capacidade (${result.capacityMonthly}).`);
+
+    const e3: string[] = [];
+    if (!fixedCostsFromMap && (!manualFixedCosts || manualFixedCosts <= 0)) e3.push("Informe os custos fixos ou ative o uso do Mapa Financeiro.");
+    if (fixedCostsFromMap && (!mapFixedCosts || mapFixedCosts <= 0)) e3.push("O Mapa Financeiro está vazio — preencha-o ou desligue esta opção.");
+    if (!active.proLabore || active.proLabore <= 0) e3.push("Informe quanto deseja retirar de pró-labore por mês.");
+
+    const e4: string[] = [];
+    if (active.productCost > 0 && (!active.productYield || active.productYield <= 0)) {
+      e4.push("Informe quantos atendimentos o produto rende.");
+    }
+    if (active.productCost > 0 && !active.productName?.trim()) {
+      e4.push("Dê um nome ao produto principal.");
+    }
+
+    const e5: string[] = [];
+    const sumFees = active.taxPercent + active.cardFeePercent + active.commissionPercent + active.desiredMargin;
+    if (sumFees >= 100) e5.push("Impostos + taxas + comissão + margem somam 100% ou mais. Reduza algum valor.");
+    if (active.desiredMargin <= 0) e5.push("Defina uma margem de lucro maior que 0%.");
+
+    const all = [...e1, ...e2, ...e3, ...e4, ...e5];
+    return { e1, e2, e3, e4, e5, all, isValid: all.length === 0 };
+  }, [active, effectiveFixed, fixedCostsFromMap, manualFixedCosts, mapFixedCosts, result.capacityMonthly, result.capacityVsGoal]);
+
+  const stageBadge = (errs: string[]) => errs.length === 0
+    ? <Badge variant="default" className="ml-2 text-[9px] bg-emerald-600 hover:bg-emerald-600">ok</Badge>
+    : <Badge variant="destructive" className="ml-2 text-[9px]">{errs.length} pendência{errs.length > 1 ? "s" : ""}</Badge>;
+
+  const StageErrors = ({ errs }: { errs: string[] }) => errs.length === 0 ? null : (
+    <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-[11px] text-destructive space-y-0.5">
+      {errs.map((e, i) => <div key={i} className="flex items-start gap-1"><AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /><span>{e}</span></div>)}
+    </div>
+  );
+
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(16);
