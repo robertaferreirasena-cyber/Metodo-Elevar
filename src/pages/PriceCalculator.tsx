@@ -1589,7 +1589,9 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
         </CardContent>
       </Card>
 
-      <Button onClick={exportPDF} className="w-full"><Download className="h-4 w-4 mr-2" /> Exportar PDF</Button>
+      <Button onClick={exportPDF} disabled={!validations.isValid} className="w-full">
+        <Download className="h-4 w-4 mr-2" /> {validations.isValid ? "Exportar PDF" : `Corrija ${validations.all.length} pendência${validations.all.length > 1 ? "s" : ""} para exportar`}
+      </Button>
     </div>
   );
 }
