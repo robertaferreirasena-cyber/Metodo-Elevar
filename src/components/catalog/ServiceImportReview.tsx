@@ -164,6 +164,7 @@ export function ServiceImportReview({ analysis, onConfirm, onApplyReplace, onCan
                       step={1}
                     />
                   </div>
+                  <DiffRow original={analysis.products[i]} current={s} />
                   {s.notes && (
                     <p className="text-[10px] text-muted-foreground italic">{s.notes}</p>
                   )}
