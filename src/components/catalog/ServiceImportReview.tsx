@@ -164,6 +164,7 @@ export function ServiceImportReview({ analysis, onConfirm, onApplyReplace, onCan
                       step={1}
                     />
                   </div>
+                  <DiffRow original={analysis.products[i]} current={s} />
                   {s.notes && (
                     <p className="text-[10px] text-muted-foreground italic">{s.notes}</p>
                   )}
@@ -235,6 +236,42 @@ function FieldEdit({
         }}
         className="h-7 text-[11px] px-2"
       />
+    </div>
+  );
+}
+
+function DiffRow({ original, current }: { original: DetectedProduct; current: DetectedProduct }) {
+  const fmt = (v: number | null | undefined, suffix = "") =>
+    v == null || (typeof v === "number" && isNaN(v)) ? "—" : `${v}${suffix}`;
+  const origPrice = original.detected_price ?? original.suggested_price ?? null;
+  const curPrice = current.detected_price ?? current.suggested_price ?? null;
+  const fields: { label: string; orig: number | null | undefined; cur: number | null | undefined; suffix?: string; origSrc: ServiceSourceTag }[] = [
+    { label: "Preço", orig: origPrice, cur: curPrice, suffix: "", origSrc: inferSource(origPrice, original.detected_price != null ? "detected" : (original.suggested_price != null ? "estimated" : null)) },
+    { label: "Custo", orig: original.estimated_cost, cur: current.estimated_cost, suffix: "", origSrc: inferSource(original.estimated_cost, original.cost_source) },
+    { label: "Atend./mês", orig: original.expected_monthly_units, cur: current.expected_monthly_units, suffix: "", origSrc: inferSource(original.expected_monthly_units, original.expected_monthly_units != null ? "detected" : null) },
+    { label: "Margem", orig: original.margin_percent, cur: current.margin_percent, suffix: "%", origSrc: inferSource(original.margin_percent, original.margin_percent != null ? "detected" : null) },
+  ];
+  const changed = fields.filter(f => (f.orig ?? null) !== (f.cur ?? null));
+  if (!changed.length) return null;
+  return (
+    <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2 py-1.5 mt-1">
+      <div className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1">
+        ✏️ {changed.length} alteraç{changed.length === 1 ? "ão" : "ões"} pendente{changed.length === 1 ? "" : "s"}
+      </div>
+      <div className="space-y-0.5">
+        {changed.map((f, idx) => (
+          <div key={idx} className="flex items-center gap-1.5 text-[10px] flex-wrap">
+            <span className="text-muted-foreground min-w-[60px]">{f.label}:</span>
+            <span className="line-through text-muted-foreground">{fmt(f.orig, f.suffix)}</span>
+            <SourceBadge source={f.origSrc} label={f.label} />
+            <span className="text-muted-foreground">→</span>
+            <span className="font-semibold text-foreground">{fmt(f.cur, f.suffix)}</span>
+            <Badge variant="default" className="text-[9px] px-1.5 py-0 gap-1 bg-emerald-600 hover:bg-emerald-600">
+              <Sparkles className="h-2.5 w-2.5" /> Editado
+            </Badge>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
