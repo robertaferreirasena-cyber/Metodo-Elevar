@@ -124,13 +124,29 @@ interface ProductRow {
   id: string;
   name: string;
   businessType: BusinessType;
+  // Custos do produto
   purchaseCost: number;
   freightPerUnit: number;
   extraPackaging: number;
   directCosts: CostItem[];
+  // Produção (apenas produtor)
+  productionTimePerUnit: number;   // minutos
+  hourlyLaborRate: number;         // R$/hora
+  includeLaborInCost: boolean;
+  wastePercent: number;            // % perdas
+  // Mercado
   quantityPerMonth: number;
   desiredMargin: number;
+  // Custos variáveis de venda (separados)
   taxPercent: number;
+  cardFeePercent: number;
+  marketplaceFeePercent: number;
+  commissionPercent: number;
+  avgDiscountPercent: number;
+  // Pró-labore (3 perguntas)
+  proLaboreDesired: number;
+  proLaboreCurrent: number;
+  proLaborePaidByBusiness: boolean;
 }
 
 interface ProductCalcSessionState {
@@ -151,9 +167,20 @@ const makeEmptyProduct = (): ProductRow => ({
     { id: "2", name: "Embalagem", value: 0 },
     { id: "3", name: "Mão de obra direta", value: 0 },
   ],
+  productionTimePerUnit: 0,
+  hourlyLaborRate: 25,
+  includeLaborInCost: true,
+  wastePercent: 0,
   quantityPerMonth: 10,
   desiredMargin: 30,
-  taxPercent: 10,
+  taxPercent: 6,
+  cardFeePercent: 3,
+  marketplaceFeePercent: 0,
+  commissionPercent: 0,
+  avgDiscountPercent: 0,
+  proLaboreDesired: 0,
+  proLaboreCurrent: 0,
+  proLaborePaidByBusiness: false,
 });
 
 const EMPTY_PRODUCT_CALC_STATE: ProductCalcSessionState = {
@@ -170,15 +197,17 @@ function migrateV1(): ProductCalcSessionState | null {
     const v1 = JSON.parse(v1Raw);
     if (!v1?.value) return null;
     const old = v1.value;
+    const base = makeEmptyProduct();
     return {
       products: [{
+        ...base,
         id: newId(),
         name: old.productName || "",
         businessType: old.businessType || "lojista",
         purchaseCost: old.purchaseCost || 0,
         freightPerUnit: old.freightPerUnit || 0,
         extraPackaging: old.extraPackaging || 0,
-        directCosts: old.directCosts || [],
+        directCosts: old.directCosts || base.directCosts,
         quantityPerMonth: old.quantityPerMonth || 10,
         desiredMargin: old.desiredMargin || 30,
         taxPercent: old.taxPercent || 10,
@@ -190,19 +219,45 @@ function migrateV1(): ProductCalcSessionState | null {
 }
 
 function calcProduct(p: ProductRow, fixedPerUnit: number) {
-  const directUnit = p.businessType === "lojista"
+  // Custo direto base
+  let directBase = p.businessType === "lojista"
     ? p.purchaseCost + p.freightPerUnit + p.extraPackaging
     : p.directCosts.reduce((s, c) => s + (c.value || 0), 0);
+
+  // Mão de obra (produtor)
+  const laborCost = p.businessType === "produtor" && p.includeLaborInCost
+    ? (p.productionTimePerUnit / 60) * p.hourlyLaborRate
+    : 0;
+
+  // Perdas
+  const wasteFactor = 1 + Math.max(0, p.wastePercent) / 100;
+  const directUnit = (directBase + laborCost) * wasteFactor;
+
   const unitCost = directUnit + fixedPerUnit;
   const safeMargin = Math.min(p.desiredMargin, 99);
-  const sellingPrice = safeMargin > 0 ? unitCost / (1 - safeMargin / 100) : unitCost;
-  const taxAmount = sellingPrice * (p.taxPercent / 100);
+
+  // Total de descontos sobre venda (impostos+cartão+marketplace+comissão+desconto+margem)
+  const variableDeductions = (p.taxPercent + p.cardFeePercent + p.marketplaceFeePercent + p.commissionPercent + p.avgDiscountPercent) / 100;
+  const totalDeductions = variableDeductions + safeMargin / 100;
+  const denom = Math.max(0.01, 1 - totalDeductions);
+  const sellingPrice = unitCost / denom;
+
+  const taxAmount = sellingPrice * variableDeductions;
   const unitProfit = sellingPrice - unitCost - taxAmount;
   const realMargin = sellingPrice > 0 ? (unitProfit / sellingPrice) * 100 : 0;
   const monthlyRevenue = sellingPrice * p.quantityPerMonth;
   const monthlyProfit = unitProfit * p.quantityPerMonth;
   const profitBeforeFixed = sellingPrice - directUnit - taxAmount;
-  return { directUnit, unitCost, sellingPrice, taxAmount, unitProfit, realMargin, monthlyRevenue, monthlyProfit, profitBeforeFixed };
+
+  // Capital de reposição
+  const restockCapital = directUnit * p.quantityPerMonth;
+
+  // Capacidade produtiva (produtor)
+  const productiveCapacityMonth = (p.businessType === "produtor" && p.productionTimePerUnit > 0)
+    ? Math.floor((22 * 8 * 60) / p.productionTimePerUnit) // 22 dias * 8h padrão
+    : Infinity;
+
+  return { directUnit, laborCost, unitCost, sellingPrice, taxAmount, unitProfit, realMargin, monthlyRevenue, monthlyProfit, profitBeforeFixed, restockCapital, productiveCapacityMonth };
 }
 
 function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
