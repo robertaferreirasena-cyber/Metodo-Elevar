@@ -1251,6 +1251,17 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
         )}
       </div>
 
+      {!validations.isValid && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="pt-3 pb-3 space-y-1">
+            <p className="text-xs font-semibold text-destructive flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5" /> Faltam {validations.all.length} informaç{validations.all.length === 1 ? "ão" : "ões"} para o cálculo ficar confiável
+            </p>
+            <p className="text-[11px] text-muted-foreground">Os campos com pendência estão sinalizados em cada etapa abaixo.</p>
+          </CardContent>
+        </Card>
+      )}
+
       <Accordion type="multiple" defaultValue={["s1", "s2", "s3", "s4", "s5"]} className="space-y-2">
         {/* Etapa 1 */}
         <AccordionItem value="s1" className="border rounded-md px-3">
