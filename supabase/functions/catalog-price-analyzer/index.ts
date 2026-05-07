@@ -174,6 +174,50 @@ Retorne APENAS JSON válido (sem markdown, sem texto extra):
   ];
 }
 
+/**
+ * Parse the AI's raw text response into an analysis object.
+ * Tolerant: strips markdown fences, recovers truncated arrays by
+ * cutting at last complete product object.
+ * Throws when nothing salvageable is found.
+ */
+export function parseAnalysisResponse(content: string, finishReason?: string): any {
+  let clean = content.replace(/```json\n?/gi, "").replace(/```\n?/g, "").trim();
+  const first = clean.indexOf("{");
+  const last = clean.lastIndexOf("}");
+  if (first !== -1 && last > first) clean = clean.slice(first, last + 1);
+  try {
+    return JSON.parse(clean);
+  } catch {
+    const productsIdx = clean.indexOf('"products"');
+    if (productsIdx !== -1) {
+      const arrStart = clean.indexOf("[", productsIdx);
+      let depth = 0, lastValidEnd = -1;
+      for (let i = arrStart; i < clean.length; i++) {
+        const ch = clean[i];
+        if (ch === "{") depth++;
+        else if (ch === "}") { depth--; if (depth === 0) lastValidEnd = i; }
+      }
+      if (lastValidEnd !== -1) {
+        const recovered = clean.slice(0, lastValidEnd + 1) + "]}";
+        return JSON.parse(recovered);
+      }
+    }
+    throw new Error(
+      finishReason === "length"
+        ? "A resposta da IA foi cortada por excesso de produtos. Tente enviar um catálogo menor."
+        : "Falha ao processar resposta da IA"
+    );
+  }
+}
+
+/**
+ * Lenient filter: keep any product with a non-empty name; null fields are allowed.
+ */
+export function filterValidProducts(products: any[]): any[] {
+  if (!Array.isArray(products)) return [];
+  return products.filter((p: any) => p && typeof p.name === "string" && p.name.trim().length > 0);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -277,44 +321,15 @@ Deno.serve(async (req) => {
     const finishReason = data.choices?.[0]?.finish_reason;
     let analysis;
     try {
-      let clean = content.replace(/```json\n?/gi, "").replace(/```\n?/g, "").trim();
-      // Extract from first { to last }
-      const first = clean.indexOf("{");
-      const last = clean.lastIndexOf("}");
-      if (first !== -1 && last > first) clean = clean.slice(first, last + 1);
-      try {
-        analysis = JSON.parse(clean);
-      } catch {
-        // Attempt recovery for truncated output: cut at last complete product object
-        const productsIdx = clean.indexOf('"products"');
-        if (productsIdx !== -1) {
-          const arrStart = clean.indexOf("[", productsIdx);
-          // Find last "}," or "}" followed by valid array close
-          let depth = 0, lastValidEnd = -1;
-          for (let i = arrStart; i < clean.length; i++) {
-            const ch = clean[i];
-            if (ch === "{") depth++;
-            else if (ch === "}") { depth--; if (depth === 0) lastValidEnd = i; }
-          }
-          if (lastValidEnd !== -1) {
-            const recovered = clean.slice(0, lastValidEnd + 1) + "]}";
-            analysis = JSON.parse(recovered);
-            console.warn("Recovered truncated AI response. finish_reason:", finishReason);
-          } else throw new Error("no recovery");
-        } else throw new Error("no products field");
-      }
+      analysis = parseAnalysisResponse(content, finishReason);
     } catch (parseErr) {
       console.error("Failed to parse. finish_reason:", finishReason, "content:", content?.slice(0, 500));
-      throw new Error(
-        finishReason === "length"
-          ? "A resposta da IA foi cortada por excesso de produtos. Tente enviar um catálogo menor."
-          : "Falha ao processar resposta da IA"
-      );
+      throw parseErr;
     }
 
     // Lenient: keep any product with a name; allow null fields
-    if (Array.isArray(analysis?.products)) {
-      analysis.products = analysis.products.filter((p: any) => p && typeof p.name === "string" && p.name.trim().length > 0);
+    if (analysis && Array.isArray(analysis.products)) {
+      analysis.products = filterValidProducts(analysis.products);
     }
 
     const tokensUsed = data.usage?.total_tokens || 2000;

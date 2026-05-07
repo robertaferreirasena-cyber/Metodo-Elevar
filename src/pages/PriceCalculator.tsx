@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
+import { scopedSession } from "@/lib/userScopedKey";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { Calculator, Download, Plus, Trash2, Copy, Package, Briefcase, BarChart3, HelpCircle, AlertTriangle, TrendingUp, TrendingDown, PieChart as PieChartIcon, Activity, Save, CloudDownload, SlidersHorizontal, Upload, Loader2, FileSearch, Target, Clock, Scissors } from "lucide-react";
+import { Calculator, Download, Plus, Trash2, Copy, Package, Briefcase, BarChart3, HelpCircle, AlertTriangle, TrendingUp, TrendingDown, PieChart as PieChartIcon, Activity, Save, CloudDownload, SlidersHorizontal, Upload, Loader2, FileSearch, Target, Clock, Scissors, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import FinishMissionButton from "@/components/learning/FinishMissionButton";
@@ -308,26 +309,39 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     setSessionState({ products, monthlyFixedCosts, fixedCostsFromMap, openItems });
   }, [products, monthlyFixedCosts, fixedCostsFromMap, openItems, setSessionState]);
 
-  // Catalog import state
+  // Catalog import state — user-scoped persistence so it survives reload + tab switch
   const CATALOG_STORAGE_KEY = "priceCalculator.catalogAnalysis";
-  const [catalogFiles, setCatalogFiles] = useState<string[]>([]);
+  const CATALOG_FILES_KEY = "priceCalculator.catalogFiles";
+  const [catalogFiles, setCatalogFiles] = useState<string[]>(() => {
+    try {
+      const raw = scopedSession.get(CATALOG_FILES_KEY);
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch { return []; }
+  });
   const [catalogAnalysis, setCatalogAnalysis] = useState<CatalogAnalysis | null>(() => {
     try {
-      const raw = sessionStorage.getItem(CATALOG_STORAGE_KEY);
+      const raw = scopedSession.get(CATALOG_STORAGE_KEY);
       return raw ? (JSON.parse(raw) as CatalogAnalysis) : null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   });
   const [savedCatalogSnapshot, setSavedCatalogSnapshot] = useState<string>(() => {
-    try {
-      return sessionStorage.getItem(CATALOG_STORAGE_KEY) || "";
-    } catch {
-      return "";
-    }
+    try { return scopedSession.get(CATALOG_STORAGE_KEY) || ""; } catch { return ""; }
   });
   const [analyzingCatalog, setAnalyzingCatalog] = useState(false);
   const [catalogDialogOpen, setCatalogDialogOpen] = useState(false);
+
+  // Auto-persist catalog analysis as it changes (preview survives reload)
+  useEffect(() => {
+    try {
+      if (catalogAnalysis) scopedSession.set(CATALOG_STORAGE_KEY, JSON.stringify(catalogAnalysis));
+      else scopedSession.remove(CATALOG_STORAGE_KEY);
+    } catch { /* ignore */ }
+  }, [catalogAnalysis]);
+
+  useEffect(() => {
+    try { scopedSession.set(CATALOG_FILES_KEY, JSON.stringify(catalogFiles)); } catch { /* ignore */ }
+  }, [catalogFiles]);
+
 
   const hasUnsavedCatalogEdits = useMemo(() => {
     if (!catalogAnalysis) return false;
@@ -338,7 +352,7 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     if (!catalogAnalysis) return;
     const serialized = JSON.stringify(catalogAnalysis);
     try {
-      sessionStorage.setItem(CATALOG_STORAGE_KEY, serialized);
+      scopedSession.set(CATALOG_STORAGE_KEY, serialized);
       setSavedCatalogSnapshot(serialized);
       toast.success("Edições de frete e embalagem salvas");
     } catch {
@@ -468,7 +482,7 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
       setCatalogAnalysis(analysis);
       try {
         const serialized = JSON.stringify(analysis);
-        sessionStorage.setItem(CATALOG_STORAGE_KEY, serialized);
+        scopedSession.set(CATALOG_STORAGE_KEY, serialized);
         setSavedCatalogSnapshot(serialized);
       } catch { /* ignore */ }
       toast.success(`Análise concluída! ${analysis.products?.length || 0} produto(s) detectado(s).`);
@@ -486,19 +500,26 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     return "lojista";
   };
 
-  const productFromDetected = (d: DetectedProduct): ProductRow => {
+  const productFromDetected = (d: DetectedProduct): { row: ProductRow; assumed: string[] } => {
     const bt = inferBusinessType(d.category);
     const detectedPrice = d.detected_price ?? d.suggested_price ?? null;
+    const assumed: string[] = [];
     const cost = d.estimated_cost ?? (detectedPrice ? +(detectedPrice * 0.5).toFixed(2) : 0);
+    if (d.estimated_cost == null) assumed.push("custo");
     const price = d.suggested_price ?? d.detected_price ?? (cost > 0 ? +(cost * 2).toFixed(2) : 0);
+    if (d.suggested_price == null && d.detected_price == null) assumed.push("preço");
     const freight = (d.freight_estimate && d.freight_estimate > 0)
       ? d.freight_estimate
       : (price > 0 ? Math.max(2, Math.round(price * 0.05 * 100) / 100) : 3);
+    if (!d.freight_estimate || d.freight_estimate <= 0) assumed.push("frete");
     const pkg = (d.packaging_estimate && d.packaging_estimate > 0) ? d.packaging_estimate : 2;
+    if (!d.packaging_estimate || d.packaging_estimate <= 0) assumed.push("embalagem");
     const qty = d.expected_monthly_units && d.expected_monthly_units > 0 ? d.expected_monthly_units : 10;
+    if (!d.expected_monthly_units || d.expected_monthly_units <= 0) assumed.push("vendas/mês");
     const margin = d.margin_percent && d.margin_percent > 0 ? d.margin_percent : 30;
+    if (!d.margin_percent || d.margin_percent <= 0) assumed.push("margem");
     const base = makeEmptyProduct();
-    return {
+    const row: ProductRow = {
       ...base,
       id: newId(),
       name: d.name || "Produto",
@@ -517,33 +538,48 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
       quantityPerMonth: qty,
       desiredMargin: margin,
     };
+    return { row, assumed };
   };
 
   const handleImportProduct = (d: DetectedProduct) => {
-    const row = productFromDetected(d);
+    const { row, assumed } = productFromDetected(d);
     setProducts(prev => {
-      // Replace empty first row if it exists
-      if (prev.length === 1 && !prev[0].name && prev[0].purchaseCost === 0) {
-        return [row];
-      }
+      if (prev.length === 1 && !prev[0].name && prev[0].purchaseCost === 0) return [row];
       return [...prev, row];
     });
     setOpenItems(prev => [...prev, row.id]);
-    toast.success(`"${d.name}" importado!`);
+    if (assumed.length) {
+      toast.success(`"${d.name}" importado`, {
+        description: `IA assumiu valores padrão para: ${assumed.join(", ")}. Ajuste antes de calcular.`,
+        duration: 6000,
+      });
+    } else {
+      toast.success(`"${d.name}" importado!`);
+    }
     setCatalogDialogOpen(false);
   };
 
   const handleImportAll = (list: DetectedProduct[]) => {
     if (!list.length) return;
-    const rows = list.map(productFromDetected);
+    const built = list.map(productFromDetected);
+    const rows = built.map(b => b.row);
+    const counts = new Map<string, number>();
+    built.forEach(b => b.assumed.forEach(f => counts.set(f, (counts.get(f) || 0) + 1)));
+    const withAssumptions = built.filter(b => b.assumed.length > 0).length;
     setProducts(prev => {
-      if (prev.length === 1 && !prev[0].name && prev[0].purchaseCost === 0) {
-        return rows;
-      }
+      if (prev.length === 1 && !prev[0].name && prev[0].purchaseCost === 0) return rows;
       return [...prev, ...rows];
     });
     setOpenItems(rows.map(r => r.id));
-    toast.success(`${rows.length} produtos importados! Revise quantidades vendidas/mês para break-even preciso.`);
+    if (withAssumptions > 0) {
+      const summary = Array.from(counts.entries()).map(([f, c]) => `${f} (${c})`).join(", ");
+      toast.success(`${rows.length} produtos importados`, {
+        description: `IA assumiu defaults em ${withAssumptions}/${rows.length} produtos. Campos: ${summary}. Revise antes de calcular.`,
+        duration: 8000,
+      });
+    } else {
+      toast.success(`${rows.length} produtos importados! Revise quantidades vendidas/mês para break-even preciso.`);
+    }
     setCatalogDialogOpen(false);
   };
 
@@ -574,9 +610,28 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     toast.success("PDF exportado!");
   };
 
+  const handleResetAll = () => {
+    if (!confirm("Reiniciar a Calculadora de Produtos do zero? Todos os produtos, custos fixos e a análise de catálogo serão removidos.")) return;
+    clearSession();
+    setProducts([makeEmptyProduct()]);
+    setMonthlyFixedCosts(0);
+    setFixedCostsFromMap(false);
+    setOpenItems([]);
+    setCatalogAnalysis(null);
+    setSavedCatalogSnapshot("");
+    try { scopedSession.remove(CATALOG_STORAGE_KEY); } catch { /* ignore */ }
+    setCatalogFiles([]);
+    toast.success("Calculadora de Produtos reiniciada");
+  };
+
   return (
     <div className="space-y-4">
-      <SessionIndicator show={hasRestoredSession} onClear={clearSession} />
+      <div className="flex items-center gap-2">
+        <SessionIndicator show={hasRestoredSession} onClear={clearSession} className="flex-1" />
+        <Button variant="outline" size="sm" onClick={handleResetAll} className="gap-1.5 h-9 shrink-0" title="Reiniciar do zero">
+          <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
+        </Button>
+      </div>
 
       {/* ── Custos Fixos globais ── */}
       <Card className="border-primary/20 bg-primary/5">
@@ -1260,9 +1315,26 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
   const currentPrice = active.mode === "hourly" ? active.hourlyRate : active.pricePerSession;
   const goal = active.mode === "hourly" ? active.hoursPerMonth : active.sessionsPerMonth;
 
+  const handleResetAll = () => {
+    if (!confirm("Reiniciar a Calculadora de Serviços do zero? Todos os serviços e etapas serão removidos.")) return;
+    clearSession();
+    const fresh = makeEmptyService();
+    setServices([fresh]);
+    setActiveId(fresh.id);
+    setFixedCostsFromMap(true);
+    setManualFixedCosts(0);
+    setOpenSteps(["s1", "s2", "s3", "s4", "s5"]);
+    toast.success("Calculadora de Serviços reiniciada");
+  };
+
   return (
     <div className="space-y-4">
-      <SessionIndicator show={hasRestoredSession} onClear={clearSession} />
+      <div className="flex items-center gap-2">
+        <SessionIndicator show={hasRestoredSession} onClear={clearSession} className="flex-1" />
+        <Button variant="outline" size="sm" onClick={handleResetAll} className="gap-1.5 h-9 shrink-0" title="Reiniciar do zero">
+          <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
+        </Button>
+      </div>
 
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="pt-3 pb-3">
