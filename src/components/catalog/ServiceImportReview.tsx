@@ -14,6 +14,7 @@ export type ServiceSourceTag = "detected" | "estimated" | "missing";
 interface Props {
   analysis: CatalogAnalysis;
   onConfirm: (selected: DetectedProduct[]) => void;
+  onApplyReplace?: (selected: DetectedProduct[]) => void;
   onCancel?: () => void;
 }
 
@@ -45,7 +46,7 @@ function SourceBadge({ source, label }: { source: ServiceSourceTag; label: strin
   );
 }
 
-export function ServiceImportReview({ analysis, onConfirm, onCancel }: Props) {
+export function ServiceImportReview({ analysis, onConfirm, onApplyReplace, onCancel }: Props) {
   // Local editable copy of all detected services
   const [items, setItems] = useState<DetectedProduct[]>(() =>
     analysis.products.map(p => ({ ...p }))
@@ -173,19 +174,32 @@ export function ServiceImportReview({ analysis, onConfirm, onCancel }: Props) {
         })}
       </div>
 
-      <div className="flex items-center justify-end gap-2 pt-1">
+      <div className="flex items-center justify-end gap-2 pt-1 flex-wrap">
         {onCancel && (
           <Button variant="ghost" size="sm" onClick={onCancel} className="h-8 text-xs">Cancelar</Button>
         )}
         <Button
           size="sm"
+          variant="outline"
           disabled={summary.count === 0}
           onClick={() => onConfirm(items.filter((_, i) => selected.has(i)))}
           className="h-8 text-xs gap-1.5"
         >
           <FileCheck className="h-3.5 w-3.5" />
-          Importar {summary.count > 0 ? `${summary.count} serviço${summary.count > 1 ? "s" : ""}` : "selecionados"}
+          Adicionar {summary.count > 0 ? `(${summary.count})` : ""}
         </Button>
+        {onApplyReplace && (
+          <Button
+            size="sm"
+            disabled={summary.count === 0}
+            onClick={() => onApplyReplace(items.filter((_, i) => selected.has(i)))}
+            className="h-8 text-xs gap-1.5"
+            title="Substitui sua lista atual e atualiza o resultado"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Aplicar e ver resultado
+          </Button>
+        )}
       </div>
     </div>
   );

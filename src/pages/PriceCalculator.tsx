@@ -1463,6 +1463,21 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
     setSvcCatalogDialogOpen(false);
   };
 
+  const handleApplySvcReplace = (list: DetectedProduct[]) => {
+    if (!list.length) return;
+    const built = list.map(serviceFromDetected);
+    const rows = built.map(b => b.row);
+    setServices(rows);
+    setActiveId(rows[0].id);
+    setSvcCatalogDialogOpen(false);
+    toast.success(`Aplicado: ${rows.length} serviço${rows.length > 1 ? "s" : ""} substituiu sua lista`, {
+      description: "Resultado atualizado com base nos valores editados.",
+    });
+    setTimeout(() => {
+      document.getElementById("svc-result-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -1530,6 +1545,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
                   analysis={svcCatalogAnalysis}
                   onCancel={() => setSvcCatalogDialogOpen(false)}
                   onConfirm={(selected) => handleImportSvcAll(selected)}
+                  onApplyReplace={(selected) => handleApplySvcReplace(selected)}
                 />
               )}
             </div>
@@ -1762,7 +1778,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
       </Accordion>
 
       {/* RESULTADO */}
-      <Card className="border-primary/30 bg-primary/5">
+      <Card id="svc-result-section" className="border-primary/30 bg-primary/5">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <Target className="h-4 w-4" /> Resultado para "{active.name || `Serviço ${services.indexOf(active) + 1}`}"
