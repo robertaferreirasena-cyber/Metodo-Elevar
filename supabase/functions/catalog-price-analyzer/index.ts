@@ -312,6 +312,11 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Lenient: keep any product with a name; allow null fields
+    if (Array.isArray(analysis?.products)) {
+      analysis.products = analysis.products.filter((p: any) => p && typeof p.name === "string" && p.name.trim().length > 0);
+    }
+
     const tokensUsed = data.usage?.total_tokens || 2000;
     await supabase.rpc("track_token_usage_admin", {
       p_user_id: user.id, p_feature: "catalog-analyzer", p_tokens: tokensUsed,
