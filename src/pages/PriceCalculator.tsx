@@ -33,16 +33,30 @@ interface ServiceItem {
   id: string;
   name: string;
   mode: ServiceMode;
-  // hourly
-  hoursPerMonth: number;
+  // Etapa 1 — Dados do serviço
+  pricePerSession: number;        // preço cobrado hoje
+  sessionsPerMonth: number;       // meta de atendimentos/mês
+  durationMinutes: number;        // duração média
+  hoursPerMonth: number;          // modo por hora
   hourlyRate: number;
-  // session
-  pricePerSession: number;
-  sessionsPerMonth: number;
-  durationMinutes: number;
-  // common
-  materialCostPerUnit: number;
+  // Etapa 2 — Capacidade de agenda
+  daysPerMonth: number;
+  hoursPerDay: number;
+  productivePercent: number;      // 0-100
+  // Etapa 3 — Custos fixos próprios do serviço (extras ao Mapa)
   fixedCosts: number;
+  proLabore: number;              // retirada desejada (este serviço)
+  // Etapa 4 — Custos diretos do procedimento
+  productName: string;
+  productCost: number;            // valor pago no produto
+  productYield: number;           // atendimentos que esse produto rende
+  disposablesPerSession: number;  // descartáveis por atendimento
+  otherVariablePerSession: number;
+  // Etapa 5 — Taxas e margem
+  taxPercent: number;             // impostos
+  cardFeePercent: number;         // taxa cartão/plataforma
+  commissionPercent: number;
+  desiredMargin: number;          // margem de lucro líquido desejada
 }
 
 interface FinancialData {
