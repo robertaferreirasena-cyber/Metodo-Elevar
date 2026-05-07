@@ -1545,6 +1545,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
                   analysis={svcCatalogAnalysis}
                   onCancel={() => setSvcCatalogDialogOpen(false)}
                   onConfirm={(selected) => handleImportSvcAll(selected)}
+                  onApplyReplace={(selected) => handleApplySvcReplace(selected)}
                 />
               )}
             </div>
