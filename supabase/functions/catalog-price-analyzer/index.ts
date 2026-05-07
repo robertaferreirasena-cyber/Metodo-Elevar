@@ -117,30 +117,49 @@ function buildMessages(files: ExtractedFile[], niche: string) {
     textContent = textFiles.map(f => `[${f.name}]:\n${f.content}`).join("\n\n").slice(0, 16000);
   }
 
+  const isService = /servi|estetic|massot|manic|cabelei|terapeut|nutric|advog|consultor|salao|salão|procedim/i.test(niche || "");
+
+  const productSchema = `Para cada PRODUTO retorne:
+- name (string, obrigatório)
+- sku (string opcional)
+- category (string ou null)
+- detected_price (number ou null)
+- suggested_price (number ou null) — sugestão para o nicho "${niche || 'geral'}"
+- estimated_cost (number ou null) — custo unitário (compra/produção)
+- cost_source ("detected" | "estimated" | "missing")
+- freight_estimate (number ou null) — frete unitário (5% do preço, mín R$2 quando estimar)
+- freight_source ("detected" | "estimated" | "missing")
+- packaging_estimate (number ou null) — embalagem unitária (R$1–3 quando estimar)
+- margin_percent (number ou null)
+- expected_monthly_units (number ou null) — vendas mensais estimadas (5–100)
+- notes (string opcional)`;
+
+  const serviceSchema = `Para cada SERVIÇO retorne (lembre: serviços NÃO têm frete nem embalagem — não invente esses campos):
+- name (string, obrigatório) — ex: "Limpeza de pele", "Massagem relaxante", "Manicure"
+- sku (string opcional)
+- category (string ou null) — ex: "Estética facial", "Massoterapia", "Cabelo", "Consultoria"
+- detected_price (number ou null) — preço cobrado por atendimento
+- suggested_price (number ou null) — preço sugerido para o nicho "${niche}"
+- estimated_cost (number ou null) — custo do INSUMO/produto usado por atendimento (cosmético, óleo, esmalte, descartáveis). Use null se não tiver indicação.
+- cost_source ("detected" | "estimated" | "missing")
+- expected_monthly_units (number ou null) — atendimentos por mês estimados (10–100)
+- margin_percent (number ou null) — margem de lucro líquida sugerida (padrão 25–40)
+- notes (string opcional) — duração média ou observação curta
+- freight_estimate: SEMPRE null
+- packaging_estimate: SEMPRE null
+- freight_source: SEMPRE "missing"`;
+
   parts.push({
     type: "text",
-    text: `Você é um especialista em precificação e análise de catálogos para pequenas empresas brasileiras (lojistas, esteticistas, cabeleireiras, artesãos, prestadoras de serviço).
+    text: `Você é um especialista em precificação para pequenas empresas brasileiras${isService ? " — agora foco em PRESTADORAS DE SERVIÇO (esteticistas, massoterapeutas, manicures, cabeleireiras, terapeutas, nutricionistas, advogadas, consultoras)" : " (lojistas, artesãos, revendedoras)"}.
 
-REGRA CRÍTICA: Extraia TODOS os produtos/serviços que aparecerem nos materiais, mesmo que estejam INCOMPLETOS. NUNCA pule um produto por falta de dados. Se faltar custo, preço, frete, embalagem ou margem, retorne null nesse campo específico — o usuário preencherá depois. O importante é não perder nenhum item do catálogo.
+REGRA CRÍTICA: Extraia TODOS os ${isService ? "serviços" : "produtos"} que aparecerem nos materiais, mesmo INCOMPLETOS. NUNCA pule um item por falta de dados — retorne null no campo faltante e mantenha o item na lista.
 
-Para cada produto retorne:
-- name (string, obrigatório — único campo realmente obrigatório)
-- sku (string, opcional)
-- category (string ou null — ex: "Esmalte", "Tintura", "Roupa", "Acessório", "Cosmético")
-- detected_price (number ou null) — preço encontrado no material
-- suggested_price (number ou null) — preço sugerido com base no nicho "${niche || 'geral'}"; se não souber, retorne null
-- estimated_cost (number ou null) — custo unitário (compra/produção); se não souber, retorne null
-- cost_source ("detected" se veio explícito, "estimated" se você inferiu, "missing" se nem inferiu)
-- freight_estimate (number ou null) — frete unitário. Estime quando possível (5% do preço, mín R$2). Use null se não tiver base alguma.
-- freight_source ("detected", "estimated" ou "missing")
-- packaging_estimate (number ou null) — embalagem unitária. Estime R$1–3 padrão. null se não fizer sentido.
-- margin_percent (number ou null) — margem percentual sugerida. Use 30 como padrão se não souber, ou null.
-- expected_monthly_units (number ou null) — estimativa de venda mensal (5–100). null se não tiver ideia.
-- notes (string opcional) — observação curta sobre o que faltou
+${isService ? serviceSchema : productSchema}
 
 ${textContent ? `\nCONTEÚDO TEXTUAL DOS MATERIAIS:\n${textContent}\n` : ""}
-${pdfFiles.length > 0 ? `\n${pdfFiles.length} PDF(s) ANEXADO(S) — leia cada página e extraia produtos das tabelas/listas de preços.\n` : ""}
-${imageFiles.length > 0 ? `\n${imageFiles.length} IMAGEM(NS) ANEXADA(S) — analise visualmente: nomes, preços em etiquetas/tabelas, descrições.\n` : ""}
+${pdfFiles.length > 0 ? `\n${pdfFiles.length} PDF(s) ANEXADO(S) — leia cada página e extraia ${isService ? "serviços/procedimentos" : "produtos"} das tabelas/listas.\n` : ""}
+${imageFiles.length > 0 ? `\n${imageFiles.length} IMAGEM(NS) ANEXADA(S) — analise visualmente: nomes, preços, descrições.\n` : ""}
 
 Retorne APENAS JSON válido (sem markdown, sem texto extra):
 {
@@ -167,8 +186,9 @@ Retorne APENAS JSON válido (sem markdown, sem texto extra):
   return [
     {
       role: "system",
-      content:
-        "Você é um analista de catálogos e precificação. Extraia TODOS os produtos visíveis (nada de limite arbitrário). Sempre preencha frete e embalagem (estimando se necessário). Retorne JSON válido apenas."
+      content: isService
+        ? "Você é um analista de precificação de SERVIÇOS. Serviços não têm frete nem embalagem. Extraia TODOS os procedimentos visíveis com nome, preço e (se houver) custo do insumo. Retorne JSON válido apenas."
+        : "Você é um analista de catálogos e precificação. Extraia TODOS os produtos visíveis. Sempre preencha frete e embalagem (estimando se necessário). Retorne JSON válido apenas."
     },
     { role: "user", content: parts },
   ];
