@@ -483,7 +483,9 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     const pkg = (d.packaging_estimate && d.packaging_estimate > 0)
       ? d.packaging_estimate
       : 2;
+    const base = makeEmptyProduct();
     return {
+      ...base,
       id: newId(),
       name: d.name || "Produto",
       businessType: bt,
@@ -497,10 +499,9 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
             { id: newId(), name: "Frete/envio", value: freight },
             { id: newId(), name: "Mão de obra direta", value: 0 },
           ]
-        : [{ id: "1", name: "Matéria-prima", value: 0 }, { id: "2", name: "Embalagem", value: 0 }, { id: "3", name: "Mão de obra direta", value: 0 }],
+        : base.directCosts,
       quantityPerMonth: d.expected_monthly_units ?? 10,
       desiredMargin: d.margin_percent ?? 30,
-      taxPercent: 10,
     };
   };
 
