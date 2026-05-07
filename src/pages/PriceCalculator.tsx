@@ -1496,6 +1496,51 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}
+        <Dialog open={svcCatalogDialogOpen} onOpenChange={setSvcCatalogDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 ml-auto">
+              <FileSearch className="h-3.5 w-3.5" /> Importar Catálogo
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Scissors className="h-5 w-5" /> Importar Catálogo de Serviços
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Envie tabela de preços, cardápio de procedimentos, PDF, planilha ou foto. A IA extrai cada serviço e preenche nome, preço e demais campos (faltantes recebem defaults para você revisar).
+              </p>
+              <CatalogUploader fileUrls={svcCatalogFiles} onFilesChange={setSvcCatalogFiles} />
+              <Button
+                onClick={analyzeSvcCatalog}
+                disabled={svcCatalogFiles.length === 0 || svcAnalyzing}
+                className="w-full"
+              >
+                {svcAnalyzing ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Analisando...</>
+                ) : (
+                  <><FileSearch className="h-4 w-4 mr-2" /> Analisar Catálogo</>
+                )}
+              </Button>
+              {svcCatalogAnalysis && (
+                <CatalogAnalysisResult
+                  analysis={svcCatalogAnalysis}
+                  onImportProduct={handleImportSvcOne}
+                  onImportAll={handleImportSvcAll}
+                  onUpdateProduct={(idx, patch) =>
+                    setSvcCatalogAnalysis(prev =>
+                      prev
+                        ? { ...prev, products: prev.products.map((p, i) => (i === idx ? { ...p, ...patch } : p)) }
+                        : prev
+                    )
+                  }
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {!validations.isValid && (
