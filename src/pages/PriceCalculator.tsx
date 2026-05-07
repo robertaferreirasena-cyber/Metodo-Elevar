@@ -1349,7 +1349,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
 
         {/* Etapa 3 */}
         <AccordionItem value="s3" className="border rounded-md px-3">
-          <AccordionTrigger className="text-sm py-3">3. Custos fixos mensais</AccordionTrigger>
+          <AccordionTrigger className="text-sm py-3"><span className="flex items-center">3. Custos fixos mensais {stageBadge(validations.e3)}</span></AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
             <div className="flex items-center justify-between p-2 rounded-md bg-primary/5 border border-primary/20">
               <div className="text-xs">
