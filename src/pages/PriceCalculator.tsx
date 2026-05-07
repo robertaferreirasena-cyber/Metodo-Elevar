@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CatalogUploader } from "@/components/catalog/CatalogUploader";
 import { CatalogAnalysisResult, type CatalogAnalysis, type DetectedProduct } from "@/components/catalog/CatalogAnalysisResult";
+import { ServiceImportReview } from "@/components/catalog/ServiceImportReview";
 
 // ─── Types ───
 interface CostItem { id: string; name: string; value: number; }
