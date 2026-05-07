@@ -742,13 +742,41 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                   </div>
                 )}
 
+                {/* Produção (apenas produtor) */}
+                {p.businessType === "produtor" && (
+                  <div className="rounded-md border border-primary/20 bg-primary/5 p-2.5 space-y-2">
+                    <Label className="text-xs font-semibold flex items-center gap-1"><Clock className="h-3 w-3" /> Produção e Mão de Obra</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <Label className="text-[10px]">Tempo/un (min)</Label>
+                        <Input type="number" min={0} value={p.productionTimePerUnit || ""} onChange={e => updateProduct(p.id, { productionTimePerUnit: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">R$/hora</Label>
+                        <Input type="number" min={0} value={p.hourlyLaborRate || ""} onChange={e => updateProduct(p.id, { hourlyLaborRate: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Perdas (%)</Label>
+                        <Input type="number" min={0} max={100} value={p.wastePercent || ""} onChange={e => updateProduct(p.id, { wastePercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-2 text-[11px]">
+                      <input type="checkbox" checked={p.includeLaborInCost} onChange={e => updateProduct(p.id, { includeLaborInCost: e.target.checked })} />
+                      Incluir minha mão de obra no custo (recomendado)
+                    </label>
+                    {p.includeLaborInCost && p.productionTimePerUnit > 0 && (
+                      <p className="text-[10px] text-muted-foreground">Mão de obra/un: <strong>{fmt(r.laborCost)}</strong> · Capacidade produtiva: <strong>{r.productiveCapacityMonth === Infinity ? "—" : `${r.productiveCapacityMonth}/mês`}</strong></p>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-3 gap-2">
                   <div>
                     <Label className="text-xs">Qtd/mês</Label>
                     <Input type="number" min={1} value={p.quantityPerMonth || ""} onChange={e => updateProduct(p.id, { quantityPerMonth: Math.max(1, parseInt(e.target.value) || 1) })} className="mt-1" />
                   </div>
                   <div>
-                    <Label className="text-xs">Margem %</Label>
+                    <Label className="text-xs">Margem desejada %</Label>
                     <Input type="number" min={0} max={99} value={p.desiredMargin} onChange={e => updateProduct(p.id, { desiredMargin: parseFloat(e.target.value) || 0 })} className="mt-1" />
                   </div>
                   <div>
@@ -757,9 +785,52 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                   </div>
                 </div>
 
+                {/* Custos variáveis de venda separados */}
+                <div className="rounded-md border bg-muted/20 p-2.5 space-y-2">
+                  <Label className="text-xs font-semibold">Custos variáveis da venda</Label>
+                  <p className="text-[10px] text-muted-foreground">Esses só aparecem quando você vende — entram no preço.</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    <div>
+                      <Label className="text-[10px]">Cartão %</Label>
+                      <Input type="number" min={0} value={p.cardFeePercent} onChange={e => updateProduct(p.id, { cardFeePercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Marketplace %</Label>
+                      <Input type="number" min={0} value={p.marketplaceFeePercent} onChange={e => updateProduct(p.id, { marketplaceFeePercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Comissão %</Label>
+                      <Input type="number" min={0} value={p.commissionPercent} onChange={e => updateProduct(p.id, { commissionPercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Desconto médio %</Label>
+                      <Input type="number" min={0} value={p.avgDiscountPercent} onChange={e => updateProduct(p.id, { avgDiscountPercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pró-labore (3 perguntas) */}
+                <div className="rounded-md border bg-muted/20 p-2.5 space-y-2">
+                  <Label className="text-xs font-semibold">Pró-labore (salário da dona)</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[10px]">Quanto deseja tirar/mês</Label>
+                      <Input type="number" min={0} value={p.proLaboreDesired || ""} onChange={e => updateProduct(p.id, { proLaboreDesired: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Quanto consegue tirar hoje</Label>
+                      <Input type="number" min={0} value={p.proLaboreCurrent || ""} onChange={e => updateProduct(p.id, { proLaboreCurrent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-[11px]">
+                    <input type="checkbox" checked={p.proLaborePaidByBusiness} onChange={e => updateProduct(p.id, { proLaborePaidByBusiness: e.target.checked })} />
+                    O negócio já paga esse valor hoje
+                  </label>
+                </div>
+
                 {/* Resultados da linha */}
                 <div className="rounded-md bg-muted/40 p-2.5 text-xs space-y-1">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Custo direto/un</span><span>{fmt(r.directUnit)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Custo direto/un{p.wastePercent > 0 ? ` (com ${p.wastePercent}% perdas)` : ""}</span><span>{fmt(r.directUnit)}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Rateio fixos/un</span><span>{fmt(r.fixedPerUnit)}</span></div>
                   <div className="flex justify-between font-medium"><span>Custo total/un</span><span>{fmt(r.unitCost)}</span></div>
                   <Separator />
@@ -769,29 +840,72 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                   <Separator />
                   <div className="flex justify-between"><span className="text-muted-foreground">Faturamento mês</span><span className="font-semibold">{fmt(r.monthlyRevenue)}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Lucro mês</span><span className="font-semibold text-primary">{fmt(r.monthlyProfit)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Capital p/ repor estoque</span><span className="font-semibold">{fmt(r.restockCapital)}</span></div>
                 </div>
 
-                {/* Break-even por produto */}
-                {monthlyFixedCosts > 0 && (
-                  <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-2.5 text-xs space-y-1">
-                    <p className="font-semibold flex items-center gap-1.5"><Target className="h-3.5 w-3.5 text-amber-600" /> Break-even deste produto</p>
-                    <p className="text-muted-foreground">
-                      Sua parte dos custos fixos: <strong className="text-foreground">{fmt(r.fixedAllocated)}</strong> ({(r.share * 100).toFixed(0)}% do total)
-                    </p>
-                    {r.breakEvenUnits !== Infinity ? (
-                      <p>
-                        Você precisa vender <strong className="text-foreground">{r.breakEvenUnits} un/mês</strong> para cobrir.
-                        {p.quantityPerMonth >= r.breakEvenUnits ? (
-                          <Badge variant="default" className="ml-2 text-[10px]">✅ ok</Badge>
-                        ) : (
-                          <Badge variant="destructive" className="ml-2 text-[10px]">⚠️ faltam {r.breakEvenUnits - p.quantityPerMonth}</Badge>
-                        )}
-                      </p>
-                    ) : (
-                      <p className="text-destructive">⚠️ Margem insuficiente para cobrir custos fixos. Aumente preço ou reduza custos.</p>
-                    )}
+                {/* Break-even + diagnóstico inteligente */}
+                {(() => {
+                  const contribution = r.sellingPrice - r.directUnit - r.taxAmount;
+                  const proLaboreNeed = p.proLaboreDesired;
+                  const beUnitsForProLabore = contribution > 0
+                    ? Math.ceil((r.fixedAllocated + proLaboreNeed) / contribution)
+                    : Infinity;
+                  const msgs: string[] = [];
+                  let tone: "ok" | "warn" | "danger" = "ok";
+                  if (r.unitProfit <= 0) { msgs.push("Esse produto não tem margem suficiente para sustentar o negócio."); tone = "danger"; }
+                  else if (r.monthlyProfit < proLaboreNeed && proLaboreNeed > 0) {
+                    msgs.push("O produto gera lucro, mas ainda não é suficiente para pagar você de forma saudável."); tone = "warn";
+                  } else if (r.realMargin >= 20) msgs.push("Esse produto tem boa margem e pode ser estratégico para o caixa.");
+                  if (r.realMargin < 10 && r.unitProfit > 0) { msgs.push("Sua margem está apertada — qualquer desconto pode comprometer o lucro."); tone = tone === "danger" ? "danger" : "warn"; }
+                  if (p.businessType === "produtor" && r.productiveCapacityMonth !== Infinity && beUnitsForProLabore > r.productiveCapacityMonth) {
+                    msgs.push(`Mesmo vendendo tudo que produz (${r.productiveCapacityMonth}/mês), esse preço não cobre custos + pró-labore.`); tone = "danger";
+                  }
+                  return (
+                    <div className={`rounded-md p-2.5 text-xs space-y-1 border ${
+                      tone === "danger" ? "bg-destructive/10 border-destructive/30 text-destructive" :
+                      tone === "warn" ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400" :
+                      "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+                    }`}>
+                      <p className="font-semibold flex items-center gap-1.5"><Target className="h-3.5 w-3.5" /> Diagnóstico</p>
+                      {r.breakEvenUnits !== Infinity ? (
+                        <p>Vender <strong>{r.breakEvenUnits} un/mês</strong> para empatar custos. {beUnitsForProLabore !== Infinity && proLaboreNeed > 0 && <>Para pagar pró-labore: <strong>{beUnitsForProLabore} un/mês</strong>.</>}</p>
+                      ) : (
+                        <p>Margem insuficiente para cobrir custos fixos.</p>
+                      )}
+                      {msgs.map((m, i) => <p key={i}>• {m}</p>)}
+                    </div>
+                  );
+                })()}
+
+                {/* Leitura simples */}
+                <div className="rounded-md p-2.5 text-xs space-y-1 bg-background border">
+                  <p className="font-semibold mb-1">Leitura simples do seu resultado</p>
+                  <p>Cada unidade ajuda a pagar <strong>{fmt(r.fixedPerUnit)}</strong> dos custos fixos.</p>
+                  <p>Vendendo {p.quantityPerMonth} un pelo preço atual, sua previsão é <strong>{fmt(r.monthlyProfit)}</strong> de lucro.</p>
+                  <p>Você precisará de <strong>{fmt(r.restockCapital)}</strong> em caixa para repor o estoque do mês.</p>
+                </div>
+
+                {/* Simulação */}
+                <details className="rounded-md border p-2.5 text-xs">
+                  <summary className="cursor-pointer font-semibold flex items-center gap-1.5"><SlidersHorizontal className="h-3.5 w-3.5" /> Simule antes de decidir</summary>
+                  <div className="space-y-2 mt-2">
+                    <div>
+                      <Label className="text-[10px]">Qtd/mês: <strong>{p.quantityPerMonth}</strong></Label>
+                      <Slider min={1} max={Math.max(p.quantityPerMonth * 3, 100)} step={1} value={[p.quantityPerMonth]}
+                        onValueChange={([v]) => updateProduct(p.id, { quantityPerMonth: v })} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Margem desejada: <strong>{p.desiredMargin}%</strong></Label>
+                      <Slider min={0} max={70} step={1} value={[p.desiredMargin]}
+                        onValueChange={([v]) => updateProduct(p.id, { desiredMargin: v })} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Pró-labore desejado: <strong>{fmt(p.proLaboreDesired)}</strong></Label>
+                      <Slider min={0} max={Math.max(p.proLaboreDesired * 2, 10000)} step={100} value={[p.proLaboreDesired]}
+                        onValueChange={([v]) => updateProduct(p.id, { proLaboreDesired: v })} />
+                    </div>
                   </div>
-                )}
+                </details>
 
                 <MarginAlert margin={r.realMargin} />
               </AccordionContent>
