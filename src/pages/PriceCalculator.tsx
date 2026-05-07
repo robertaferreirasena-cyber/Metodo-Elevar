@@ -1301,9 +1301,26 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
   const currentPrice = active.mode === "hourly" ? active.hourlyRate : active.pricePerSession;
   const goal = active.mode === "hourly" ? active.hoursPerMonth : active.sessionsPerMonth;
 
+  const handleResetAll = () => {
+    if (!confirm("Reiniciar a Calculadora de Serviços do zero? Todos os serviços e etapas serão removidos.")) return;
+    clearSession();
+    const fresh = makeEmptyService();
+    setServices([fresh]);
+    setActiveId(fresh.id);
+    setFixedCostsFromMap(true);
+    setManualFixedCosts(0);
+    setOpenSteps(["s1", "s2", "s3", "s4", "s5"]);
+    toast.success("Calculadora de Serviços reiniciada");
+  };
+
   return (
     <div className="space-y-4">
-      <SessionIndicator show={hasRestoredSession} onClear={clearSession} />
+      <div className="flex items-center gap-2">
+        <SessionIndicator show={hasRestoredSession} onClear={clearSession} className="flex-1" />
+        <Button variant="outline" size="sm" onClick={handleResetAll} className="gap-1.5 h-9 shrink-0" title="Reiniciar do zero">
+          <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
+        </Button>
+      </div>
 
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="pt-3 pb-3">
