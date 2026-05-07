@@ -1777,7 +1777,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
       </Accordion>
 
       {/* RESULTADO */}
-      <Card className="border-primary/30 bg-primary/5">
+      <Card id="svc-result-section" className="border-primary/30 bg-primary/5">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <Target className="h-4 w-4" /> Resultado para "{active.name || `Serviço ${services.indexOf(active) + 1}`}"
