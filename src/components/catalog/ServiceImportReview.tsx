@@ -92,7 +92,7 @@ export function ServiceImportReview({ analysis, onConfirm, onCancel }: Props) {
             Revisão da importação ({items.length} serviço{items.length === 1 ? "" : "s"} detectado{items.length === 1 ? "" : "s"})
           </CardTitle>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Marque os serviços que deseja importar. Os campos com selo <strong>Estimado</strong> ou <strong>Faltando</strong> precisam de revisão antes do cálculo.
+            Marque os serviços e edite os valores direto abaixo. Serviços <strong>não usam frete nem embalagem</strong> — só preço, custo do insumo (cosmético/óleo/descartável), atendimentos/mês e margem. Selos <strong>Estimado</strong>/<strong>Faltando</strong> indicam o que precisa de revisão.
           </p>
         </CardHeader>
         <CardContent className="pt-0 pb-3">
