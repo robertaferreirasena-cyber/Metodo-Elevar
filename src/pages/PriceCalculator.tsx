@@ -596,9 +596,28 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     toast.success("PDF exportado!");
   };
 
+  const handleResetAll = () => {
+    if (!confirm("Reiniciar a Calculadora de Produtos do zero? Todos os produtos, custos fixos e a análise de catálogo serão removidos.")) return;
+    clearSession();
+    setProducts([makeEmptyProduct()]);
+    setMonthlyFixedCosts(0);
+    setFixedCostsFromMap(false);
+    setOpenItems([]);
+    setCatalogAnalysis(null);
+    setSavedCatalogSnapshot("");
+    try { sessionStorage.removeItem(CATALOG_STORAGE_KEY); } catch { /* ignore */ }
+    setCatalogFiles([]);
+    toast.success("Calculadora de Produtos reiniciada");
+  };
+
   return (
     <div className="space-y-4">
-      <SessionIndicator show={hasRestoredSession} onClear={clearSession} />
+      <div className="flex items-center gap-2">
+        <SessionIndicator show={hasRestoredSession} onClear={clearSession} className="flex-1" />
+        <Button variant="outline" size="sm" onClick={handleResetAll} className="gap-1.5 h-9 shrink-0" title="Reiniciar do zero">
+          <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
+        </Button>
+      </div>
 
       {/* ── Custos Fixos globais ── */}
       <Card className="border-primary/20 bg-primary/5">
