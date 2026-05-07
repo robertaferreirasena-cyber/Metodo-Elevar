@@ -153,6 +153,7 @@ interface ProductCalcSessionState {
   products: ProductRow[];
   monthlyFixedCosts: number;
   fixedCostsFromMap: boolean;
+  openItems?: string[];
 }
 
 const makeEmptyProduct = (): ProductRow => ({
