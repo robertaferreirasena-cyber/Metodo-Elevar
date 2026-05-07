@@ -1968,7 +1968,7 @@ export default function PriceCalculator() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="product"><ProductCalculator mapFixedCosts={mapFixedCosts} /></TabsContent>
-        <TabsContent value="service"><ServiceCalculator /></TabsContent>
+        <TabsContent value="service"><ServiceCalculator mapFixedCosts={mapFixedCosts} /></TabsContent>
         <TabsContent value="financial">
           <FinancialMap 
             onDataChange={setFinancialData} 
