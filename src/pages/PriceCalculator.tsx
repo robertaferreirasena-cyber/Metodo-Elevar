@@ -1437,6 +1437,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
         <AccordionItem value="s5" className="border rounded-md px-3">
           <AccordionTrigger className="text-sm py-3"><span className="flex items-center">5. Taxas e margem {stageBadge(validations.e5)}</span></AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
+            <StageErrors errs={validations.e5} />
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-[10px]">Impostos (%)</Label>
