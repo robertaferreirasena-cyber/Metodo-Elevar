@@ -153,6 +153,7 @@ interface ProductCalcSessionState {
   products: ProductRow[];
   monthlyFixedCosts: number;
   fixedCostsFromMap: boolean;
+  openItems?: string[];
 }
 
 const makeEmptyProduct = (): ProductRow => ({
@@ -187,6 +188,7 @@ const EMPTY_PRODUCT_CALC_STATE: ProductCalcSessionState = {
   products: [makeEmptyProduct()],
   monthlyFixedCosts: 0,
   fixedCostsFromMap: false,
+  openItems: [],
 };
 
 // Migration from v1 single-product format
@@ -281,8 +283,20 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
   const [products, setProducts] = useState<ProductRow[]>(sessionState.products.length ? sessionState.products : [makeEmptyProduct()]);
   const [monthlyFixedCosts, setMonthlyFixedCosts] = useState(sessionState.monthlyFixedCosts);
   const [fixedCostsFromMap, setFixedCostsFromMap] = useState(sessionState.fixedCostsFromMap || false);
-  const [openItems, setOpenItems] = useState<string[]>(products[0] ? [products[0].id] : []);
+  const [openItems, setOpenItems] = useState<string[]>(
+    sessionState.openItems && sessionState.openItems.length
+      ? sessionState.openItems
+      : (products[0] ? [products[0].id] : [])
+  );
 
+  // Sync from Mapa Financeiro live when toggle is ON
+  useEffect(() => {
+    if (fixedCostsFromMap && mapFixedCosts !== undefined) {
+      setMonthlyFixedCosts(mapFixedCosts || 0);
+    }
+  }, [mapFixedCosts, fixedCostsFromMap]);
+
+  // First-time auto-link if user has Mapa filled and never edited
   useEffect(() => {
     if (mapFixedCosts && mapFixedCosts > 0 && !fixedCostsFromMap && monthlyFixedCosts === 0) {
       setMonthlyFixedCosts(mapFixedCosts);
@@ -291,8 +305,8 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
   }, [mapFixedCosts]); // eslint-disable-line
 
   useEffect(() => {
-    setSessionState({ products, monthlyFixedCosts, fixedCostsFromMap });
-  }, [products, monthlyFixedCosts, fixedCostsFromMap, setSessionState]);
+    setSessionState({ products, monthlyFixedCosts, fixedCostsFromMap, openItems });
+  }, [products, monthlyFixedCosts, fixedCostsFromMap, openItems, setSessionState]);
 
   // Catalog import state
   const CATALOG_STORAGE_KEY = "priceCalculator.catalogAnalysis";
@@ -474,15 +488,15 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
 
   const productFromDetected = (d: DetectedProduct): ProductRow => {
     const bt = inferBusinessType(d.category);
-    const cost = d.estimated_cost ?? 0;
-    const price = d.suggested_price ?? d.detected_price ?? 0;
-    // Garante frete e embalagem mesmo se a IA retornar 0/null
+    const detectedPrice = d.detected_price ?? d.suggested_price ?? null;
+    const cost = d.estimated_cost ?? (detectedPrice ? +(detectedPrice * 0.5).toFixed(2) : 0);
+    const price = d.suggested_price ?? d.detected_price ?? (cost > 0 ? +(cost * 2).toFixed(2) : 0);
     const freight = (d.freight_estimate && d.freight_estimate > 0)
       ? d.freight_estimate
       : (price > 0 ? Math.max(2, Math.round(price * 0.05 * 100) / 100) : 3);
-    const pkg = (d.packaging_estimate && d.packaging_estimate > 0)
-      ? d.packaging_estimate
-      : 2;
+    const pkg = (d.packaging_estimate && d.packaging_estimate > 0) ? d.packaging_estimate : 2;
+    const qty = d.expected_monthly_units && d.expected_monthly_units > 0 ? d.expected_monthly_units : 10;
+    const margin = d.margin_percent && d.margin_percent > 0 ? d.margin_percent : 30;
     const base = makeEmptyProduct();
     return {
       ...base,
@@ -500,8 +514,8 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
             { id: newId(), name: "Mão de obra direta", value: 0 },
           ]
         : base.directCosts,
-      quantityPerMonth: d.expected_monthly_units ?? 10,
-      desiredMargin: d.margin_percent ?? 30,
+      quantityPerMonth: qty,
+      desiredMargin: margin,
     };
   };
 
@@ -568,24 +582,37 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="pt-4 pb-3 space-y-2">
           <Label className="text-xs font-semibold">Custos Fixos Mensais (rateados entre todos os produtos)</Label>
-          <div className="flex items-end gap-2">
+          <div className="flex items-center justify-between p-2 rounded-md bg-background/60 border border-primary/20">
+            <div className="text-xs">
+              <div className="font-medium">Usar custos fixos do Mapa Financeiro</div>
+              <div className="text-muted-foreground">{mapFixedCosts && mapFixedCosts > 0 ? `${fmt(mapFixedCosts)} importado` : "Mapa ainda vazio"}</div>
+            </div>
+            <Button
+              size="sm"
+              variant={fixedCostsFromMap ? "default" : "outline"}
+              onClick={() => {
+                const next = !fixedCostsFromMap;
+                setFixedCostsFromMap(next);
+                if (next && mapFixedCosts !== undefined) setMonthlyFixedCosts(mapFixedCosts || 0);
+              }}
+              className="text-xs h-8"
+            >
+              {fixedCostsFromMap ? "Ligado" : "Desligado"}
+            </Button>
+          </div>
+          {!fixedCostsFromMap && (
             <Input
               type="number" min={0} placeholder="R$ 0,00"
               value={monthlyFixedCosts || ""}
-              onChange={e => { setMonthlyFixedCosts(parseFloat(e.target.value) || 0); setFixedCostsFromMap(false); }}
+              onChange={e => setMonthlyFixedCosts(parseFloat(e.target.value) || 0)}
               className="flex-1"
             />
-            {mapFixedCosts && mapFixedCosts > 0 && (
-              <Button variant="outline" size="sm" onClick={importFixedFromMap} className="text-xs">
-                Importar do Mapa
-              </Button>
-            )}
-          </div>
+          )}
           {fixedCostsFromMap && monthlyFixedCosts > 0 && (
-            <Badge variant="secondary" className="text-[9px]">📥 Importado do Mapa Financeiro</Badge>
+            <Badge variant="secondary" className="text-[9px]">📥 Sincronizado com o Mapa Financeiro</Badge>
           )}
           <p className="text-[10px] text-muted-foreground">
-            Aluguel, energia, internet, contador. Será dividido proporcionalmente ao faturamento de cada produto.
+            Aluguel, energia, internet, contador. Será dividido proporcionalmente ao faturamento de cada produto — vale para "Revendo" e "Eu produzo".
           </p>
         </CardContent>
       </Card>
@@ -969,6 +996,8 @@ interface ServiceSessionState {
   services: ServiceItem[];
   fixedCostsFromMap: boolean;
   manualFixedCosts: number;
+  activeId?: string;
+  openSteps?: string[];
 }
 
 const makeEmptyService = (): ServiceItem => ({
@@ -1007,6 +1036,8 @@ const EMPTY_SERVICE_STATE: ServiceSessionState = {
   services: [makeEmptyService()],
   fixedCostsFromMap: true,
   manualFixedCosts: 0,
+  activeId: undefined,
+  openSteps: ["s1", "s2", "s3", "s4", "s5"],
 };
 
 interface ServiceCalcResult {
@@ -1121,11 +1152,20 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
   const [services, setServices] = useState<ServiceItem[]>(sessionState.services?.length ? sessionState.services : [makeEmptyService()]);
   const [fixedCostsFromMap, setFixedCostsFromMap] = useState(sessionState.fixedCostsFromMap ?? true);
   const [manualFixedCosts, setManualFixedCosts] = useState(sessionState.manualFixedCosts ?? 0);
-  const [activeId, setActiveId] = useState<string>(services[0]?.id);
+  const [activeId, setActiveId] = useState<string>(
+    sessionState.activeId && services.find(s => s.id === sessionState.activeId)
+      ? sessionState.activeId
+      : services[0]?.id
+  );
+  const [openSteps, setOpenSteps] = useState<string[]>(
+    sessionState.openSteps && sessionState.openSteps.length
+      ? sessionState.openSteps
+      : ["s1", "s2", "s3", "s4", "s5"]
+  );
 
   useEffect(() => {
-    setSessionState({ services, fixedCostsFromMap, manualFixedCosts });
-  }, [services, fixedCostsFromMap, manualFixedCosts, setSessionState]);
+    setSessionState({ services, fixedCostsFromMap, manualFixedCosts, activeId, openSteps });
+  }, [services, fixedCostsFromMap, manualFixedCosts, activeId, openSteps, setSessionState]);
 
   const effectiveFixed = fixedCostsFromMap ? (mapFixedCosts || 0) : manualFixedCosts;
 
@@ -1262,7 +1302,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
         </Card>
       )}
 
-      <Accordion type="multiple" defaultValue={["s1", "s2", "s3", "s4", "s5"]} className="space-y-2">
+      <Accordion type="multiple" value={openSteps} onValueChange={setOpenSteps} className="space-y-2">
         {/* Etapa 1 */}
         <AccordionItem value="s1" className="border rounded-md px-3">
           <AccordionTrigger className="text-sm py-3"><span className="flex items-center">1. Dados do serviço {stageBadge(validations.e1)}</span></AccordionTrigger>

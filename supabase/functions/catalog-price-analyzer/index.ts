@@ -121,22 +121,22 @@ function buildMessages(files: ExtractedFile[], niche: string) {
     type: "text",
     text: `Você é um especialista em precificação e análise de catálogos para pequenas empresas brasileiras (lojistas, esteticistas, cabeleireiras, artesãos, prestadoras de serviço).
 
-Analise TODOS os materiais enviados e extraia TODOS os produtos/serviços mencionados (sem limite — se houver 30, 50, 100 produtos, extraia todos).
+REGRA CRÍTICA: Extraia TODOS os produtos/serviços que aparecerem nos materiais, mesmo que estejam INCOMPLETOS. NUNCA pule um produto por falta de dados. Se faltar custo, preço, frete, embalagem ou margem, retorne null nesse campo específico — o usuário preencherá depois. O importante é não perder nenhum item do catálogo.
 
 Para cada produto retorne:
-- name (string, obrigatório)
+- name (string, obrigatório — único campo realmente obrigatório)
 - sku (string, opcional)
-- category (string — ex: "Esmalte", "Tintura", "Roupa", "Acessório", "Cosmético")
+- category (string ou null — ex: "Esmalte", "Tintura", "Roupa", "Acessório", "Cosmético")
 - detected_price (number ou null) — preço encontrado no material
-- suggested_price (number ou null) — preço sugerido com base no nicho "${niche || 'geral'}"
-- estimated_cost (number ou null) — custo unitário (compra/produção)
-- cost_source ("detected" se veio explícito no material, "estimated" se você inferiu)
-- freight_estimate (number, OBRIGATÓRIO para produto físico — nunca null/0). Se não mencionado, estime: 5% do preço sugerido com piso de R$ 2,00 (produtos pequenos) ou R$ 8–15 (eletrônicos/grandes). Use 0 SOMENTE para serviços/digitais.
-- freight_source ("detected" ou "estimated")
-- packaging_estimate (number, OBRIGATÓRIO para produto físico — nunca null/0). Padrão R$ 1–3 (sacola/caixinha simples), R$ 4–8 (caixa + papel de seda + adesivos), 0 SOMENTE para digital/serviço.
-- margin_percent (number) — margem percentual sobre o preço sugerido
-- expected_monthly_units (number ou null) — estimativa razoável de quantas unidades/mês esse tipo de produto vende em pequeno negócio (5–100)
-- notes (string opcional) — observação curta
+- suggested_price (number ou null) — preço sugerido com base no nicho "${niche || 'geral'}"; se não souber, retorne null
+- estimated_cost (number ou null) — custo unitário (compra/produção); se não souber, retorne null
+- cost_source ("detected" se veio explícito, "estimated" se você inferiu, "missing" se nem inferiu)
+- freight_estimate (number ou null) — frete unitário. Estime quando possível (5% do preço, mín R$2). Use null se não tiver base alguma.
+- freight_source ("detected", "estimated" ou "missing")
+- packaging_estimate (number ou null) — embalagem unitária. Estime R$1–3 padrão. null se não fizer sentido.
+- margin_percent (number ou null) — margem percentual sugerida. Use 30 como padrão se não souber, ou null.
+- expected_monthly_units (number ou null) — estimativa de venda mensal (5–100). null se não tiver ideia.
+- notes (string opcional) — observação curta sobre o que faltou
 
 ${textContent ? `\nCONTEÚDO TEXTUAL DOS MATERIAIS:\n${textContent}\n` : ""}
 ${pdfFiles.length > 0 ? `\n${pdfFiles.length} PDF(s) ANEXADO(S) — leia cada página e extraia produtos das tabelas/listas de preços.\n` : ""}
@@ -310,6 +310,11 @@ Deno.serve(async (req) => {
           ? "A resposta da IA foi cortada por excesso de produtos. Tente enviar um catálogo menor."
           : "Falha ao processar resposta da IA"
       );
+    }
+
+    // Lenient: keep any product with a name; allow null fields
+    if (Array.isArray(analysis?.products)) {
+      analysis.products = analysis.products.filter((p: any) => p && typeof p.name === "string" && p.name.trim().length > 0);
     }
 
     const tokensUsed = data.usage?.total_tokens || 2000;
