@@ -488,15 +488,15 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
 
   const productFromDetected = (d: DetectedProduct): ProductRow => {
     const bt = inferBusinessType(d.category);
-    const cost = d.estimated_cost ?? 0;
-    const price = d.suggested_price ?? d.detected_price ?? 0;
-    // Garante frete e embalagem mesmo se a IA retornar 0/null
+    const detectedPrice = d.detected_price ?? d.suggested_price ?? null;
+    const cost = d.estimated_cost ?? (detectedPrice ? +(detectedPrice * 0.5).toFixed(2) : 0);
+    const price = d.suggested_price ?? d.detected_price ?? (cost > 0 ? +(cost * 2).toFixed(2) : 0);
     const freight = (d.freight_estimate && d.freight_estimate > 0)
       ? d.freight_estimate
       : (price > 0 ? Math.max(2, Math.round(price * 0.05 * 100) / 100) : 3);
-    const pkg = (d.packaging_estimate && d.packaging_estimate > 0)
-      ? d.packaging_estimate
-      : 2;
+    const pkg = (d.packaging_estimate && d.packaging_estimate > 0) ? d.packaging_estimate : 2;
+    const qty = d.expected_monthly_units && d.expected_monthly_units > 0 ? d.expected_monthly_units : 10;
+    const margin = d.margin_percent && d.margin_percent > 0 ? d.margin_percent : 30;
     const base = makeEmptyProduct();
     return {
       ...base,
@@ -514,8 +514,8 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
             { id: newId(), name: "Mão de obra direta", value: 0 },
           ]
         : base.directCosts,
-      quantityPerMonth: d.expected_monthly_units ?? 10,
-      desiredMargin: d.margin_percent ?? 30,
+      quantityPerMonth: qty,
+      desiredMargin: margin,
     };
   };
 
