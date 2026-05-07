@@ -486,17 +486,24 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     return "lojista";
   };
 
-  const productFromDetected = (d: DetectedProduct): ProductRow => {
+  const productFromDetected = (d: DetectedProduct): { row: ProductRow; assumed: string[] } => {
     const bt = inferBusinessType(d.category);
     const detectedPrice = d.detected_price ?? d.suggested_price ?? null;
+    const assumed: string[] = [];
     const cost = d.estimated_cost ?? (detectedPrice ? +(detectedPrice * 0.5).toFixed(2) : 0);
+    if (d.estimated_cost == null) assumed.push("custo");
     const price = d.suggested_price ?? d.detected_price ?? (cost > 0 ? +(cost * 2).toFixed(2) : 0);
+    if (d.suggested_price == null && d.detected_price == null) assumed.push("preço");
     const freight = (d.freight_estimate && d.freight_estimate > 0)
       ? d.freight_estimate
       : (price > 0 ? Math.max(2, Math.round(price * 0.05 * 100) / 100) : 3);
+    if (!d.freight_estimate || d.freight_estimate <= 0) assumed.push("frete");
     const pkg = (d.packaging_estimate && d.packaging_estimate > 0) ? d.packaging_estimate : 2;
+    if (!d.packaging_estimate || d.packaging_estimate <= 0) assumed.push("embalagem");
     const qty = d.expected_monthly_units && d.expected_monthly_units > 0 ? d.expected_monthly_units : 10;
+    if (!d.expected_monthly_units || d.expected_monthly_units <= 0) assumed.push("vendas/mês");
     const margin = d.margin_percent && d.margin_percent > 0 ? d.margin_percent : 30;
+    if (!d.margin_percent || d.margin_percent <= 0) assumed.push("margem");
     const base = makeEmptyProduct();
     return {
       ...base,
