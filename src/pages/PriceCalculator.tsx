@@ -1316,7 +1316,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
 
         {/* Etapa 2 */}
         <AccordionItem value="s2" className="border rounded-md px-3">
-          <AccordionTrigger className="text-sm py-3">2. Capacidade da agenda</AccordionTrigger>
+          <AccordionTrigger className="text-sm py-3"><span className="flex items-center">2. Capacidade da agenda {stageBadge(validations.e2)}</span></AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
             <div className="grid grid-cols-3 gap-2">
               <div>
