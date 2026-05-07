@@ -1302,7 +1302,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
         </Card>
       )}
 
-      <Accordion type="multiple" defaultValue={["s1", "s2", "s3", "s4", "s5"]} className="space-y-2">
+      <Accordion type="multiple" value={openSteps} onValueChange={setOpenSteps} className="space-y-2">
         {/* Etapa 1 */}
         <AccordionItem value="s1" className="border rounded-md px-3">
           <AccordionTrigger className="text-sm py-3"><span className="flex items-center">1. Dados do serviço {stageBadge(validations.e1)}</span></AccordionTrigger>
