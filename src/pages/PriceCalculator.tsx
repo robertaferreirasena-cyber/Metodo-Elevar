@@ -188,6 +188,7 @@ const EMPTY_PRODUCT_CALC_STATE: ProductCalcSessionState = {
   products: [makeEmptyProduct()],
   monthlyFixedCosts: 0,
   fixedCostsFromMap: false,
+  openItems: [],
 };
 
 // Migration from v1 single-product format
