@@ -996,6 +996,8 @@ interface ServiceSessionState {
   services: ServiceItem[];
   fixedCostsFromMap: boolean;
   manualFixedCosts: number;
+  activeId?: string;
+  openSteps?: string[];
 }
 
 const makeEmptyService = (): ServiceItem => ({
