@@ -1036,6 +1036,8 @@ const EMPTY_SERVICE_STATE: ServiceSessionState = {
   services: [makeEmptyService()],
   fixedCostsFromMap: true,
   manualFixedCosts: 0,
+  activeId: undefined,
+  openSteps: ["s1", "s2", "s3", "s4", "s5"],
 };
 
 interface ServiceCalcResult {
