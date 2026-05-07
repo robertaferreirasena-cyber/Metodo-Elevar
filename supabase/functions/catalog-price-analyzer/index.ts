@@ -174,6 +174,50 @@ Retorne APENAS JSON válido (sem markdown, sem texto extra):
   ];
 }
 
+/**
+ * Parse the AI's raw text response into an analysis object.
+ * Tolerant: strips markdown fences, recovers truncated arrays by
+ * cutting at last complete product object.
+ * Throws when nothing salvageable is found.
+ */
+export function parseAnalysisResponse(content: string, finishReason?: string): any {
+  let clean = content.replace(/```json\n?/gi, "").replace(/```\n?/g, "").trim();
+  const first = clean.indexOf("{");
+  const last = clean.lastIndexOf("}");
+  if (first !== -1 && last > first) clean = clean.slice(first, last + 1);
+  try {
+    return JSON.parse(clean);
+  } catch {
+    const productsIdx = clean.indexOf('"products"');
+    if (productsIdx !== -1) {
+      const arrStart = clean.indexOf("[", productsIdx);
+      let depth = 0, lastValidEnd = -1;
+      for (let i = arrStart; i < clean.length; i++) {
+        const ch = clean[i];
+        if (ch === "{") depth++;
+        else if (ch === "}") { depth--; if (depth === 0) lastValidEnd = i; }
+      }
+      if (lastValidEnd !== -1) {
+        const recovered = clean.slice(0, lastValidEnd + 1) + "]}";
+        return JSON.parse(recovered);
+      }
+    }
+    throw new Error(
+      finishReason === "length"
+        ? "A resposta da IA foi cortada por excesso de produtos. Tente enviar um catálogo menor."
+        : "Falha ao processar resposta da IA"
+    );
+  }
+}
+
+/**
+ * Lenient filter: keep any product with a non-empty name; null fields are allowed.
+ */
+export function filterValidProducts(products: any[]): any[] {
+  if (!Array.isArray(products)) return [];
+  return products.filter((p: any) => p && typeof p.name === "string" && p.name.trim().length > 0);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
