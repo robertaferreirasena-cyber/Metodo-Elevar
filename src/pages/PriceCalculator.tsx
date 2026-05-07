@@ -283,8 +283,20 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
   const [products, setProducts] = useState<ProductRow[]>(sessionState.products.length ? sessionState.products : [makeEmptyProduct()]);
   const [monthlyFixedCosts, setMonthlyFixedCosts] = useState(sessionState.monthlyFixedCosts);
   const [fixedCostsFromMap, setFixedCostsFromMap] = useState(sessionState.fixedCostsFromMap || false);
-  const [openItems, setOpenItems] = useState<string[]>(products[0] ? [products[0].id] : []);
+  const [openItems, setOpenItems] = useState<string[]>(
+    sessionState.openItems && sessionState.openItems.length
+      ? sessionState.openItems
+      : (products[0] ? [products[0].id] : [])
+  );
 
+  // Sync from Mapa Financeiro live when toggle is ON
+  useEffect(() => {
+    if (fixedCostsFromMap && mapFixedCosts !== undefined) {
+      setMonthlyFixedCosts(mapFixedCosts || 0);
+    }
+  }, [mapFixedCosts, fixedCostsFromMap]);
+
+  // First-time auto-link if user has Mapa filled and never edited
   useEffect(() => {
     if (mapFixedCosts && mapFixedCosts > 0 && !fixedCostsFromMap && monthlyFixedCosts === 0) {
       setMonthlyFixedCosts(mapFixedCosts);
@@ -293,8 +305,8 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
   }, [mapFixedCosts]); // eslint-disable-line
 
   useEffect(() => {
-    setSessionState({ products, monthlyFixedCosts, fixedCostsFromMap });
-  }, [products, monthlyFixedCosts, fixedCostsFromMap, setSessionState]);
+    setSessionState({ products, monthlyFixedCosts, fixedCostsFromMap, openItems });
+  }, [products, monthlyFixedCosts, fixedCostsFromMap, openItems, setSessionState]);
 
   // Catalog import state
   const CATALOG_STORAGE_KEY = "priceCalculator.catalogAnalysis";
