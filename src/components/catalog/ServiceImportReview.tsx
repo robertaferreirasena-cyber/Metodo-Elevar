@@ -14,6 +14,7 @@ export type ServiceSourceTag = "detected" | "estimated" | "missing";
 interface Props {
   analysis: CatalogAnalysis;
   onConfirm: (selected: DetectedProduct[]) => void;
+  onApplyReplace?: (selected: DetectedProduct[]) => void;
   onCancel?: () => void;
 }
 
