@@ -1463,6 +1463,21 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
     setSvcCatalogDialogOpen(false);
   };
 
+  const handleApplySvcReplace = (list: DetectedProduct[]) => {
+    if (!list.length) return;
+    const built = list.map(serviceFromDetected);
+    const rows = built.map(b => b.row);
+    setServices(rows);
+    setActiveId(rows[0].id);
+    setSvcCatalogDialogOpen(false);
+    toast.success(`Aplicado: ${rows.length} serviço${rows.length > 1 ? "s" : ""} substituiu sua lista`, {
+      description: "Resultado atualizado com base nos valores editados.",
+    });
+    setTimeout(() => {
+      document.getElementById("svc-result-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
