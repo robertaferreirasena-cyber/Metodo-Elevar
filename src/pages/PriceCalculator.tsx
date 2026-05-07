@@ -1394,6 +1394,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
         <AccordionItem value="s4" className="border rounded-md px-3">
           <AccordionTrigger className="text-sm py-3"><span className="flex items-center">4. Custos diretos do procedimento {stageBadge(validations.e4)}</span></AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
+            <StageErrors errs={validations.e4} />
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-3">
                 <Label className="text-[10px]">Nome do produto principal</Label>
