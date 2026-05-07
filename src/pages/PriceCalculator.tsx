@@ -309,26 +309,39 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     setSessionState({ products, monthlyFixedCosts, fixedCostsFromMap, openItems });
   }, [products, monthlyFixedCosts, fixedCostsFromMap, openItems, setSessionState]);
 
-  // Catalog import state
+  // Catalog import state — user-scoped persistence so it survives reload + tab switch
   const CATALOG_STORAGE_KEY = "priceCalculator.catalogAnalysis";
-  const [catalogFiles, setCatalogFiles] = useState<string[]>([]);
+  const CATALOG_FILES_KEY = "priceCalculator.catalogFiles";
+  const [catalogFiles, setCatalogFiles] = useState<string[]>(() => {
+    try {
+      const raw = scopedSession.get(CATALOG_FILES_KEY);
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch { return []; }
+  });
   const [catalogAnalysis, setCatalogAnalysis] = useState<CatalogAnalysis | null>(() => {
     try {
-      const raw = sessionStorage.getItem(CATALOG_STORAGE_KEY);
+      const raw = scopedSession.get(CATALOG_STORAGE_KEY);
       return raw ? (JSON.parse(raw) as CatalogAnalysis) : null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   });
   const [savedCatalogSnapshot, setSavedCatalogSnapshot] = useState<string>(() => {
-    try {
-      return sessionStorage.getItem(CATALOG_STORAGE_KEY) || "";
-    } catch {
-      return "";
-    }
+    try { return scopedSession.get(CATALOG_STORAGE_KEY) || ""; } catch { return ""; }
   });
   const [analyzingCatalog, setAnalyzingCatalog] = useState(false);
   const [catalogDialogOpen, setCatalogDialogOpen] = useState(false);
+
+  // Auto-persist catalog analysis as it changes (preview survives reload)
+  useEffect(() => {
+    try {
+      if (catalogAnalysis) scopedSession.set(CATALOG_STORAGE_KEY, JSON.stringify(catalogAnalysis));
+      else scopedSession.remove(CATALOG_STORAGE_KEY);
+    } catch { /* ignore */ }
+  }, [catalogAnalysis]);
+
+  useEffect(() => {
+    try { scopedSession.set(CATALOG_FILES_KEY, JSON.stringify(catalogFiles)); } catch { /* ignore */ }
+  }, [catalogFiles]);
+
 
   const hasUnsavedCatalogEdits = useMemo(() => {
     if (!catalogAnalysis) return false;
