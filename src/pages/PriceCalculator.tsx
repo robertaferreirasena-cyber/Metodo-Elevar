@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
+import { scopedSession } from "@/lib/userScopedKey";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
