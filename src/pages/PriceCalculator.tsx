@@ -582,24 +582,37 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="pt-4 pb-3 space-y-2">
           <Label className="text-xs font-semibold">Custos Fixos Mensais (rateados entre todos os produtos)</Label>
-          <div className="flex items-end gap-2">
+          <div className="flex items-center justify-between p-2 rounded-md bg-background/60 border border-primary/20">
+            <div className="text-xs">
+              <div className="font-medium">Usar custos fixos do Mapa Financeiro</div>
+              <div className="text-muted-foreground">{mapFixedCosts && mapFixedCosts > 0 ? `${fmt(mapFixedCosts)} importado` : "Mapa ainda vazio"}</div>
+            </div>
+            <Button
+              size="sm"
+              variant={fixedCostsFromMap ? "default" : "outline"}
+              onClick={() => {
+                const next = !fixedCostsFromMap;
+                setFixedCostsFromMap(next);
+                if (next && mapFixedCosts !== undefined) setMonthlyFixedCosts(mapFixedCosts || 0);
+              }}
+              className="text-xs h-8"
+            >
+              {fixedCostsFromMap ? "Ligado" : "Desligado"}
+            </Button>
+          </div>
+          {!fixedCostsFromMap && (
             <Input
               type="number" min={0} placeholder="R$ 0,00"
               value={monthlyFixedCosts || ""}
-              onChange={e => { setMonthlyFixedCosts(parseFloat(e.target.value) || 0); setFixedCostsFromMap(false); }}
+              onChange={e => setMonthlyFixedCosts(parseFloat(e.target.value) || 0)}
               className="flex-1"
             />
-            {mapFixedCosts && mapFixedCosts > 0 && (
-              <Button variant="outline" size="sm" onClick={importFixedFromMap} className="text-xs">
-                Importar do Mapa
-              </Button>
-            )}
-          </div>
+          )}
           {fixedCostsFromMap && monthlyFixedCosts > 0 && (
-            <Badge variant="secondary" className="text-[9px]">📥 Importado do Mapa Financeiro</Badge>
+            <Badge variant="secondary" className="text-[9px]">📥 Sincronizado com o Mapa Financeiro</Badge>
           )}
           <p className="text-[10px] text-muted-foreground">
-            Aluguel, energia, internet, contador. Será dividido proporcionalmente ao faturamento de cada produto.
+            Aluguel, energia, internet, contador. Será dividido proporcionalmente ao faturamento de cada produto — vale para "Revendo" e "Eu produzo".
           </p>
         </CardContent>
       </Card>
