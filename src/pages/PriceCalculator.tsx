@@ -33,16 +33,30 @@ interface ServiceItem {
   id: string;
   name: string;
   mode: ServiceMode;
-  // hourly
-  hoursPerMonth: number;
+  // Etapa 1 — Dados do serviço
+  pricePerSession: number;        // preço cobrado hoje
+  sessionsPerMonth: number;       // meta de atendimentos/mês
+  durationMinutes: number;        // duração média
+  hoursPerMonth: number;          // modo por hora
   hourlyRate: number;
-  // session
-  pricePerSession: number;
-  sessionsPerMonth: number;
-  durationMinutes: number;
-  // common
-  materialCostPerUnit: number;
+  // Etapa 2 — Capacidade de agenda
+  daysPerMonth: number;
+  hoursPerDay: number;
+  productivePercent: number;      // 0-100
+  // Etapa 3 — Custos fixos próprios do serviço (extras ao Mapa)
   fixedCosts: number;
+  proLabore: number;              // retirada desejada (este serviço)
+  // Etapa 4 — Custos diretos do procedimento
+  productName: string;
+  productCost: number;            // valor pago no produto
+  productYield: number;           // atendimentos que esse produto rende
+  disposablesPerSession: number;  // descartáveis por atendimento
+  otherVariablePerSession: number;
+  // Etapa 5 — Taxas e margem
+  taxPercent: number;             // impostos
+  cardFeePercent: number;         // taxa cartão/plataforma
+  commissionPercent: number;
+  desiredMargin: number;          // margem de lucro líquido desejada
 }
 
 interface FinancialData {
@@ -779,132 +793,211 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
 }
 
 // ═══════════════════════════════════════════
-// ABA 2 — SERVIÇOS (multi-serviço, 2 modos)
+// ABA 2 — SERVIÇOS (etapas guiadas, multi-serviço)
 // ═══════════════════════════════════════════
 interface ServiceSessionState {
   services: ServiceItem[];
-  proLabore: number;
-  profitPercent: number;
-  taxPercent: number;
+  fixedCostsFromMap: boolean;
+  manualFixedCosts: number;
 }
 
 const makeEmptyService = (): ServiceItem => ({
   id: newId(),
   name: "",
   mode: "session",
-  hoursPerMonth: 0,
-  hourlyRate: 0,
   pricePerSession: 0,
   sessionsPerMonth: 0,
   durationMinutes: 60,
-  materialCostPerUnit: 0,
+  hoursPerMonth: 0,
+  hourlyRate: 0,
+  daysPerMonth: 22,
+  hoursPerDay: 8,
+  productivePercent: 70,
   fixedCosts: 0,
+  proLabore: 3000,
+  productName: "",
+  productCost: 0,
+  productYield: 1,
+  disposablesPerSession: 0,
+  otherVariablePerSession: 0,
+  taxPercent: 6,
+  cardFeePercent: 3,
+  commissionPercent: 0,
+  desiredMargin: 25,
 });
 
 const SERVICE_TEMPLATES: { label: string; preset: Partial<ServiceItem> }[] = [
-  { label: "Atendimento estética (R$80, 60/mês)", preset: { name: "Atendimento estética", mode: "session", pricePerSession: 80, sessionsPerMonth: 60, materialCostPerUnit: 8, durationMinutes: 60 } },
-  { label: "Corte + escova (R$90, 80/mês)", preset: { name: "Corte + escova", mode: "session", pricePerSession: 90, sessionsPerMonth: 80, materialCostPerUnit: 5, durationMinutes: 75 } },
-  { label: "Manicure (R$45, 100/mês)", preset: { name: "Manicure", mode: "session", pricePerSession: 45, sessionsPerMonth: 100, materialCostPerUnit: 3, durationMinutes: 45 } },
-  { label: "Consultoria/hora (R$150, 20h)", preset: { name: "Consultoria", mode: "hourly", hourlyRate: 150, hoursPerMonth: 20 } },
+  { label: "Estética facial (R$120, 60/mês)", preset: { name: "Limpeza de pele", mode: "session", pricePerSession: 120, sessionsPerMonth: 60, durationMinutes: 60, productName: "Cosmético profissional", productCost: 180, productYield: 20, disposablesPerSession: 4 } },
+  { label: "Massagem (R$100, 50/mês)", preset: { name: "Massagem relaxante", mode: "session", pricePerSession: 100, sessionsPerMonth: 50, durationMinutes: 60, productName: "Óleo de massagem", productCost: 60, productYield: 30, disposablesPerSession: 2 } },
+  { label: "Manicure (R$45, 100/mês)", preset: { name: "Manicure", mode: "session", pricePerSession: 45, sessionsPerMonth: 100, durationMinutes: 45, productName: "Esmalte/base", productCost: 25, productYield: 15, disposablesPerSession: 1.5 } },
+  { label: "Consultoria/hora (R$200, 20h)", preset: { name: "Consultoria", mode: "hourly", hourlyRate: 200, hoursPerMonth: 20, durationMinutes: 60 } },
 ];
 
 const EMPTY_SERVICE_STATE: ServiceSessionState = {
   services: [makeEmptyService()],
-  proLabore: 0,
-  profitPercent: 30,
-  taxPercent: 10,
+  fixedCostsFromMap: true,
+  manualFixedCosts: 0,
 };
 
-function calcService(s: ServiceItem) {
-  const revenue = s.mode === "hourly"
-    ? s.hoursPerMonth * s.hourlyRate
-    : s.pricePerSession * s.sessionsPerMonth;
-  const units = s.mode === "hourly" ? s.hoursPerMonth : s.sessionsPerMonth;
-  const materialTotal = s.materialCostPerUnit * units;
-  const cost = materialTotal + s.fixedCosts;
-  return { revenue, units, materialTotal, cost };
+interface ServiceCalcResult {
+  // capacity
+  capacityMonthly: number;
+  capacityVsGoal: "ok" | "tight" | "exceeds";
+  // costs
+  productCostPerSession: number;
+  variableCostPerSession: number;
+  fixedAllocationPerSession: number;
+  // pricing
+  totalFeesPercent: number; // impostos+cartao+comissao+margem
+  feesExclMarginPercent: number; // impostos+cartao+comissao
+  idealPrice: number;
+  contributionMarginCurrent: number;
+  contributionMarginIdeal: number;
+  breakEvenSessions: number;
+  // monthly
+  currentMonthlyProfit: number;
+  idealMonthlyProfit: number;
+  // produtos
+  productsNeeded: number;
 }
 
-function ServiceCalculator() {
+function calcServiceFull(s: ServiceItem, fixedFromMap: number): ServiceCalcResult {
+  const goal = s.mode === "hourly" ? Math.max(s.hoursPerMonth, 0) : Math.max(s.sessionsPerMonth, 0);
+  const dur = Math.max(s.durationMinutes, 1);
+
+  // Capacidade mensal
+  const capacityMonthly = s.mode === "hourly"
+    ? (s.daysPerMonth * s.hoursPerDay * (s.productivePercent / 100))
+    : Math.floor((s.daysPerMonth * s.hoursPerDay * 60 * (s.productivePercent / 100)) / dur);
+  const capRatio = capacityMonthly > 0 ? goal / capacityMonthly : 0;
+  const capacityVsGoal: ServiceCalcResult["capacityVsGoal"] =
+    capRatio > 1 ? "exceeds" : capRatio > 0.85 ? "tight" : "ok";
+
+  // Custos
+  const productCostPerSession = s.productYield > 0 ? s.productCost / s.productYield : 0;
+  const variableCostPerSession = productCostPerSession + s.disposablesPerSession + s.otherVariablePerSession;
+  const totalFixedMonth = (fixedFromMap || 0) + s.fixedCosts + s.proLabore;
+  const fixedAllocationPerSession = goal > 0 ? totalFixedMonth / goal : 0;
+
+  // Taxas/margem
+  const fees = (s.taxPercent + s.cardFeePercent + s.commissionPercent) / 100;
+  const margin = s.desiredMargin / 100;
+  const totalFeesPercent = fees + margin;
+  const denom = Math.max(0.01, 1 - totalFeesPercent);
+  const idealPrice = (variableCostPerSession + fixedAllocationPerSession) / denom;
+
+  const currentPrice = s.mode === "hourly" ? s.hourlyRate : s.pricePerSession;
+  const contributionMarginCurrent = currentPrice * (1 - fees) - variableCostPerSession;
+  const contributionMarginIdeal = idealPrice * (1 - fees) - variableCostPerSession;
+
+  const breakEvenSessions = contributionMarginCurrent > 0
+    ? Math.ceil(totalFixedMonth / contributionMarginCurrent)
+    : Infinity;
+
+  const currentMonthlyProfit = contributionMarginCurrent * goal - totalFixedMonth;
+  const idealMonthlyProfit = contributionMarginIdeal * goal - totalFixedMonth;
+
+  const productsNeeded = s.productYield > 0 ? Math.ceil(goal / s.productYield) : 0;
+
+  return {
+    capacityMonthly, capacityVsGoal,
+    productCostPerSession, variableCostPerSession, fixedAllocationPerSession,
+    totalFeesPercent, feesExclMarginPercent: fees,
+    idealPrice, contributionMarginCurrent, contributionMarginIdeal,
+    breakEvenSessions, currentMonthlyProfit, idealMonthlyProfit,
+    productsNeeded,
+  };
+}
+
+function diagnoseService(s: ServiceItem, r: ServiceCalcResult): { tone: "ok" | "warn" | "danger"; messages: string[] } {
+  const msgs: string[] = [];
+  let worst: "ok" | "warn" | "danger" = "ok";
+  const currentPrice = s.mode === "hourly" ? s.hourlyRate : s.pricePerSession;
+  const goal = s.mode === "hourly" ? s.hoursPerMonth : s.sessionsPerMonth;
+
+  if (r.contributionMarginCurrent <= 0) {
+    msgs.push("Seu preço atual está abaixo do necessário — você pode estar atendendo, mas perdendo dinheiro.");
+    worst = "danger";
+  } else if (r.currentMonthlyProfit < 0) {
+    msgs.push("O preço cobre o custo de cada atendimento, mas não paga seus custos fixos + retirada no fim do mês.");
+    worst = (worst as string) === "danger" ? "danger" : "warn";
+  } else {
+    msgs.push("Esse serviço está com uma precificação saudável.");
+  }
+
+  if (r.idealPrice > currentPrice * 1.25 && currentPrice > 0) {
+    msgs.push(`O preço ideal (${fmt(r.idealPrice)}) está bem acima do atual. Reajuste aos poucos ou aumente a percepção de valor.`);
+    worst = worst === "ok" ? "warn" : worst;
+  }
+  if (r.capacityVsGoal === "exceeds") {
+    msgs.push(`Sua meta (${goal}) supera a capacidade da agenda (${r.capacityMonthly}). Ajuste meta, duração ou produtividade.`);
+    worst = "danger";
+  } else if (r.capacityVsGoal === "tight") {
+    msgs.push("Sua meta está perto do limite da agenda — pouca folga para imprevistos.");
+    worst = worst === "ok" ? "warn" : worst;
+  }
+  if (s.desiredMargin < 10) {
+    msgs.push("Sua margem está apertada. Qualquer desconto ou aumento de custo pode comprometer o lucro.");
+    worst = worst === "ok" ? "warn" : worst;
+  }
+  return { tone: worst, messages: msgs };
+}
+
+function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
   const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<ServiceSessionState>(
-    "session_service_calc_v2", EMPTY_SERVICE_STATE
+    "session_service_calc_v3", EMPTY_SERVICE_STATE
   );
 
-  const [services, setServices] = useState<ServiceItem[]>(sessionState.services.length ? sessionState.services : [makeEmptyService()]);
-  const [proLabore, setProLabore] = useState(sessionState.proLabore);
-  const [profitPercent, setProfitPercent] = useState(sessionState.profitPercent);
-  const [taxPercent, setTaxPercent] = useState(sessionState.taxPercent);
+  const [services, setServices] = useState<ServiceItem[]>(sessionState.services?.length ? sessionState.services : [makeEmptyService()]);
+  const [fixedCostsFromMap, setFixedCostsFromMap] = useState(sessionState.fixedCostsFromMap ?? true);
+  const [manualFixedCosts, setManualFixedCosts] = useState(sessionState.manualFixedCosts ?? 0);
+  const [activeId, setActiveId] = useState<string>(services[0]?.id);
 
   useEffect(() => {
-    setSessionState({ services, proLabore, profitPercent, taxPercent });
-  }, [services, proLabore, profitPercent, taxPercent, setSessionState]);
+    setSessionState({ services, fixedCostsFromMap, manualFixedCosts });
+  }, [services, fixedCostsFromMap, manualFixedCosts, setSessionState]);
+
+  const effectiveFixed = fixedCostsFromMap ? (mapFixedCosts || 0) : manualFixedCosts;
 
   const update = (id: string, patch: Partial<ServiceItem>) =>
     setServices(prev => prev.map(s => (s.id === id ? { ...s, ...patch } : s)));
-  const add = () => setServices(prev => [...prev, makeEmptyService()]);
+  const add = () => {
+    const ns = makeEmptyService();
+    setServices(prev => [...prev, ns]);
+    setActiveId(ns.id);
+  };
   const remove = (id: string) => {
     if (services.length <= 1) { toast.error("Mantenha pelo menos 1 serviço"); return; }
     setServices(prev => prev.filter(s => s.id !== id));
+    if (id === activeId) setActiveId(services.find(s => s.id !== id)!.id);
   };
-  const applyTemplate = (id: string, preset: Partial<ServiceItem>) =>
-    update(id, { ...preset });
+  const applyTemplate = (id: string, preset: Partial<ServiceItem>) => update(id, preset);
 
-  const results = useMemo(() => services.map(s => {
-    const c = calcService(s);
-    // share-allocate pró-labore proportionally to revenue
-    return { s, ...c };
-  }), [services]);
-
-  const totalRevenue = results.reduce((acc, r) => acc + r.revenue, 0);
-  const totalDirectCost = results.reduce((acc, r) => acc + r.cost, 0);
-  const totalCostBeforeTax = totalDirectCost + proLabore;
-  const profitAmount = totalCostBeforeTax * (profitPercent / 100);
-  const priceBeforeTax = totalCostBeforeTax + profitAmount;
-  const taxAmountTotal = priceBeforeTax * (taxPercent / 100);
-  const finalPrice = priceBeforeTax + taxAmountTotal;
-
-  // Break-even per service: how many sessions/hours to cover its share of (proLabore + tax)
-  const perServiceBreakeven = useMemo(() => {
-    const totalUnits = results.reduce((s, r) => s + r.units, 0);
-    return results.map(r => {
-      const share = totalRevenue > 0 ? r.revenue / totalRevenue : 1 / Math.max(results.length, 1);
-      const allocatedFixed = (proLabore + r.s.fixedCosts * 0) * share + r.s.fixedCosts;
-      const unitPrice = r.s.mode === "hourly" ? r.s.hourlyRate : r.s.pricePerSession;
-      const unitMaterial = r.s.materialCostPerUnit;
-      const contribution = unitPrice - unitMaterial;
-      const beUnits = contribution > 0 ? Math.ceil(allocatedFixed / contribution) : Infinity;
-      return { id: r.s.id, beUnits, allocatedFixed };
-    });
-  }, [results, totalRevenue, proLabore]);
+  const active = services.find(s => s.id === activeId) || services[0];
+  const result = useMemo(() => calcServiceFull(active, effectiveFixed), [active, effectiveFixed]);
+  const diagnosis = useMemo(() => diagnoseService(active, result), [active, result]);
 
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(16);
-    doc.text("Calculadora de Precos - Servicos", 20, 20);
+    doc.text("Calculadora de Servicos", 20, 20);
     doc.setFontSize(10);
     let y = 32;
     services.forEach((s, i) => {
-      const c = calcService(s);
-      const be = perServiceBreakeven.find(b => b.id === s.id);
+      const r = calcServiceFull(s, effectiveFixed);
       doc.text(`${i + 1}. ${s.name || "Sem nome"} (${s.mode === "hourly" ? "por hora" : "por atendimento"})`, 20, y); y += 5;
-      if (s.mode === "hourly") {
-        doc.text(`  ${s.hoursPerMonth}h/mes x R$${s.hourlyRate}/h = ${fmt(c.revenue)} | material ${fmt(c.materialTotal)} | fixos ${fmt(s.fixedCosts)}`, 20, y);
-      } else {
-        doc.text(`  ${s.sessionsPerMonth} atendimentos x R$${s.pricePerSession} = ${fmt(c.revenue)} | material ${fmt(c.materialTotal)} | fixos ${fmt(s.fixedCosts)}`, 20, y);
-      }
-      y += 5;
-      if (be && be.beUnits !== Infinity) { doc.text(`  Break-even: ${be.beUnits} ${s.mode === "hourly" ? "horas" : "atendimentos"}/mes`, 20, y); y += 5; }
-      y += 2;
+      doc.text(`  Preco atual: ${fmt(s.mode === "hourly" ? s.hourlyRate : s.pricePerSession)} | Preco ideal: ${fmt(r.idealPrice)}`, 20, y); y += 5;
+      doc.text(`  Custo direto/atend: ${fmt(r.variableCostPerSession)} | Rateio fixo: ${fmt(r.fixedAllocationPerSession)}`, 20, y); y += 5;
+      doc.text(`  Lucro mensal previsto: ${fmt(r.currentMonthlyProfit)} | Break-even: ${r.breakEvenSessions === Infinity ? "—" : r.breakEvenSessions}`, 20, y); y += 5;
+      doc.text(`  Capacidade: ${r.capacityMonthly} | Produtos p/ meta: ${r.productsNeeded}`, 20, y); y += 7;
       if (y > 260) { doc.addPage(); y = 20; }
     });
-    y += 4;
-    doc.text(`Pro-labore: ${fmt(proLabore)}`, 20, y); y += 5;
-    doc.text(`Custo total: ${fmt(totalCostBeforeTax)} | Lucro ${profitPercent}%: ${fmt(profitAmount)} | Imposto ${taxPercent}%: ${fmt(taxAmountTotal)}`, 20, y); y += 6;
-    doc.setFontSize(13);
-    doc.text(`Faturamento Mensal Necessario: ${fmt(finalPrice)}`, 20, y);
     doc.save("calculadora-servicos.pdf");
     toast.success("PDF exportado!");
   };
+
+  const currentPrice = active.mode === "hourly" ? active.hourlyRate : active.pricePerSession;
+  const goal = active.mode === "hourly" ? active.hoursPerMonth : active.sessionsPerMonth;
 
   return (
     <div className="space-y-4">
@@ -914,148 +1007,348 @@ function ServiceCalculator() {
         <CardContent className="pt-3 pb-3">
           <p className="text-xs text-muted-foreground">
             <Scissors className="h-3.5 w-3.5 inline mr-1" />
-            Para cabeleireiras, esteticistas, manicures, massagistas, terapeutas, consultoras e qualquer prestadora de serviço.
+            Para esteticistas, massoterapeutas, manicures, terapeutas, cabeleireiras, nutricionistas, advogadas e outras prestadoras de serviço.
           </p>
         </CardContent>
       </Card>
 
-      <div className="flex gap-2">
-        <Button onClick={add} size="sm" className="flex-1 gap-1.5">
-          <Plus className="h-3.5 w-3.5" /> Adicionar Serviço
+      {/* Seletor de serviços */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {services.map((s, i) => (
+          <Button key={s.id} size="sm" variant={s.id === activeId ? "default" : "outline"}
+            onClick={() => setActiveId(s.id)} className="text-xs h-8">
+            {s.name || `Serviço ${i + 1}`}
+          </Button>
+        ))}
+        <Button onClick={add} size="sm" variant="ghost" className="h-8 gap-1">
+          <Plus className="h-3.5 w-3.5" /> Novo
         </Button>
+        {services.length > 1 && (
+          <Button onClick={() => remove(activeId)} size="sm" variant="ghost" className="h-8 text-destructive">
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
 
-      {services.map((s, idx) => {
-        const c = calcService(s);
-        const be = perServiceBreakeven.find(b => b.id === s.id);
-        return (
-          <Card key={s.id} className="overflow-hidden">
-            <CardContent className="pt-3 space-y-3">
-              <div className="flex gap-2 items-center">
-                <Input className="flex-1 h-9" placeholder={`Serviço ${idx + 1} (ex: Manicure, Corte)`} value={s.name} onChange={e => update(s.id, { name: e.target.value })} />
-                <Button size="icon" variant="ghost" onClick={() => remove(s.id)} className="text-destructive h-8 w-8">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+      <Accordion type="multiple" defaultValue={["s1", "s2", "s3", "s4", "s5"]} className="space-y-2">
+        {/* Etapa 1 */}
+        <AccordionItem value="s1" className="border rounded-md px-3">
+          <AccordionTrigger className="text-sm py-3">1. Dados do serviço</AccordionTrigger>
+          <AccordionContent className="space-y-3 pb-3">
+            <Input placeholder="Nome do serviço (ex: Limpeza de pele)" value={active.name}
+              onChange={e => update(active.id, { name: e.target.value })} className="h-9" />
+            {!active.name && (
+              <div className="flex flex-wrap gap-1">
+                {SERVICE_TEMPLATES.map(t => (
+                  <Button key={t.label} size="sm" variant="outline" className="text-[10px] h-6 px-2"
+                    onClick={() => applyTemplate(active.id, t.preset)}>
+                    {t.label}
+                  </Button>
+                ))}
               </div>
-
-              {/* Templates */}
-              {!s.name && (
-                <div className="flex flex-wrap gap-1">
-                  {SERVICE_TEMPLATES.map(t => (
-                    <Button key={t.label} size="sm" variant="outline" className="text-[10px] h-6 px-2"
-                      onClick={() => applyTemplate(s.id, t.preset)}>
-                      {t.label}
-                    </Button>
-                  ))}
-                </div>
-              )}
-
-              {/* Mode */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant={s.mode === "session" ? "default" : "outline"} size="sm" onClick={() => update(s.id, { mode: "session" })} className="gap-1.5 text-xs">
-                  <Scissors className="h-3.5 w-3.5" /> Por Atendimento
-                </Button>
-                <Button variant={s.mode === "hourly" ? "default" : "outline"} size="sm" onClick={() => update(s.id, { mode: "hourly" })} className="gap-1.5 text-xs">
-                  <Clock className="h-3.5 w-3.5" /> Por Hora
-                </Button>
-              </div>
-
-              {/* Fields */}
-              {s.mode === "session" ? (
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <Label className="text-[10px]">Preço/atendimento</Label>
-                    <Input type="number" min={0} step={0.01} value={s.pricePerSession || ""} onChange={e => update(s.id, { pricePerSession: parseFloat(e.target.value) || 0 })} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-[10px]">Atendimentos/mês</Label>
-                    <Input type="number" min={0} value={s.sessionsPerMonth || ""} onChange={e => update(s.id, { sessionsPerMonth: parseInt(e.target.value) || 0 })} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-[10px]">Duração (min)</Label>
-                    <Input type="number" min={0} value={s.durationMinutes || ""} onChange={e => update(s.id, { durationMinutes: parseInt(e.target.value) || 0 })} className="mt-1" />
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-[10px]">R$/hora</Label>
-                    <Input type="number" min={0} step={0.01} value={s.hourlyRate || ""} onChange={e => update(s.id, { hourlyRate: parseFloat(e.target.value) || 0 })} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-[10px]">Horas/mês</Label>
-                    <Input type="number" min={0} value={s.hoursPerMonth || ""} onChange={e => update(s.id, { hoursPerMonth: parseFloat(e.target.value) || 0 })} className="mt-1" />
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2">
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button size="sm" variant={active.mode === "session" ? "default" : "outline"}
+                onClick={() => update(active.id, { mode: "session" })} className="gap-1.5 text-xs">
+                <Scissors className="h-3.5 w-3.5" /> Por atendimento
+              </Button>
+              <Button size="sm" variant={active.mode === "hourly" ? "default" : "outline"}
+                onClick={() => update(active.id, { mode: "hourly" })} className="gap-1.5 text-xs">
+                <Clock className="h-3.5 w-3.5" /> Por hora
+              </Button>
+            </div>
+            {active.mode === "session" ? (
+              <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <Label className="text-[10px]">Material/un (R$) <InfoTip text="Custo dos produtos usados em cada atendimento (esmalte, tintura, cera...)" /></Label>
-                  <Input type="number" min={0} step={0.01} value={s.materialCostPerUnit || ""} onChange={e => update(s.id, { materialCostPerUnit: parseFloat(e.target.value) || 0 })} className="mt-1" />
+                  <Label className="text-[10px]">Preço cobrado hoje (R$)</Label>
+                  <Input type="number" min={0} step={0.01} value={active.pricePerSession || ""}
+                    onChange={e => update(active.id, { pricePerSession: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
                 </div>
                 <div>
-                  <Label className="text-[10px]">Custo Fixo do Serviço (R$/mês) <InfoTip text="Custos específicos deste serviço por mês (aluguel de equipamento, etc)." /></Label>
-                  <Input type="number" min={0} step={0.01} value={s.fixedCosts || ""} onChange={e => update(s.id, { fixedCosts: parseFloat(e.target.value) || 0 })} className="mt-1" />
+                  <Label className="text-[10px]">Meta atendimentos/mês</Label>
+                  <Input type="number" min={0} value={active.sessionsPerMonth || ""}
+                    onChange={e => update(active.id, { sessionsPerMonth: parseInt(e.target.value) || 0 })} className="mt-1 h-9" />
+                </div>
+                <div>
+                  <Label className="text-[10px]">Duração (min)</Label>
+                  <Input type="number" min={1} value={active.durationMinutes || ""}
+                    onChange={e => update(active.id, { durationMinutes: parseInt(e.target.value) || 0 })} className="mt-1 h-9" />
                 </div>
               </div>
-
-              {/* Result for this service */}
-              <div className="rounded-md bg-muted/40 p-2.5 text-xs space-y-1">
-                <div className="flex justify-between"><span className="text-muted-foreground">Receita</span><span className="font-semibold">{fmt(c.revenue)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Custo materiais ({c.units} un)</span><span>{fmt(c.materialTotal)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Custos fixos do serviço</span><span>{fmt(s.fixedCosts)}</span></div>
-                <Separator />
-                <div className="flex justify-between font-medium"><span>Receita líquida</span><span className="text-primary">{fmt(c.revenue - c.cost)}</span></div>
-                {be && be.beUnits !== Infinity && (
-                  <div className="flex justify-between text-amber-600 pt-1">
-                    <span>Break-even (incl. pró-labore)</span>
-                    <span className="font-semibold">{be.beUnits} {s.mode === "hourly" ? "horas" : "atendimentos"}/mês</span>
-                  </div>
-                )}
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px]">R$/hora cobrado hoje</Label>
+                  <Input type="number" min={0} step={0.01} value={active.hourlyRate || ""}
+                    onChange={e => update(active.id, { hourlyRate: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+                </div>
+                <div>
+                  <Label className="text-[10px]">Meta de horas/mês</Label>
+                  <Input type="number" min={0} value={active.hoursPerMonth || ""}
+                    onChange={e => update(active.id, { hoursPerMonth: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+            )}
+            <p className="text-[10px] text-muted-foreground">Quanto você cobra hoje e quantos atendimentos pretende fazer no mês.</p>
+          </AccordionContent>
+        </AccordionItem>
 
-      {/* Globais */}
-      <Card>
+        {/* Etapa 2 */}
+        <AccordionItem value="s2" className="border rounded-md px-3">
+          <AccordionTrigger className="text-sm py-3">2. Capacidade da agenda</AccordionTrigger>
+          <AccordionContent className="space-y-3 pb-3">
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label className="text-[10px]">Dias trabalhados/mês</Label>
+                <Input type="number" min={0} max={31} value={active.daysPerMonth || ""}
+                  onChange={e => update(active.id, { daysPerMonth: parseInt(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Horas/dia</Label>
+                <Input type="number" min={0} max={24} value={active.hoursPerDay || ""}
+                  onChange={e => update(active.id, { hoursPerDay: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+              <div>
+                <Label className="text-[10px]">% tempo produtivo <InfoTip text="Geralmente 60-80%. Considera intervalos, faxina, no-shows." /></Label>
+                <Input type="number" min={0} max={100} value={active.productivePercent || ""}
+                  onChange={e => update(active.id, { productivePercent: parseInt(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+            </div>
+            <div className="rounded-md bg-muted/40 p-2 text-xs flex justify-between">
+              <span>Capacidade máxima do mês:</span>
+              <strong>{result.capacityMonthly} {active.mode === "hourly" ? "horas" : "atendimentos"}</strong>
+            </div>
+            {result.capacityVsGoal === "exceeds" && (
+              <div className="text-xs text-destructive flex items-center gap-1">
+                <AlertTriangle className="h-3.5 w-3.5" /> Sua meta ({goal}) supera a capacidade.
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Etapa 3 */}
+        <AccordionItem value="s3" className="border rounded-md px-3">
+          <AccordionTrigger className="text-sm py-3">3. Custos fixos mensais</AccordionTrigger>
+          <AccordionContent className="space-y-3 pb-3">
+            <div className="flex items-center justify-between p-2 rounded-md bg-primary/5 border border-primary/20">
+              <div className="text-xs">
+                <div className="font-medium">Usar custos fixos do Mapa Financeiro</div>
+                <div className="text-muted-foreground">{mapFixedCosts > 0 ? `${fmt(mapFixedCosts)} importado` : "Mapa ainda vazio"}</div>
+              </div>
+              <Button size="sm" variant={fixedCostsFromMap ? "default" : "outline"}
+                onClick={() => setFixedCostsFromMap(v => !v)} className="text-xs h-8">
+                {fixedCostsFromMap ? "Ligado" : "Desligado"}
+              </Button>
+            </div>
+            {!fixedCostsFromMap && (
+              <div>
+                <Label className="text-[10px]">Custos fixos totais (R$/mês) <InfoTip text="Aluguel + energia + internet + contabilidade + sistema + marketing + outros." /></Label>
+                <Input type="number" min={0} step={0.01} value={manualFixedCosts || ""}
+                  onChange={e => setManualFixedCosts(parseFloat(e.target.value) || 0)} className="mt-1 h-9" />
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[10px]">Custo fixo só deste serviço (R$/mês) <InfoTip text="Aluguel de equipamento exclusivo, software específico, etc." /></Label>
+                <Input type="number" min={0} step={0.01} value={active.fixedCosts || ""}
+                  onChange={e => update(active.id, { fixedCosts: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Retirada desejada (R$/mês) <InfoTip text="Pró-labore — quanto você quer tirar de salário todo mês." /></Label>
+                <Input type="number" min={0} step={0.01} value={active.proLabore || ""}
+                  onChange={e => update(active.id, { proLabore: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+            </div>
+            <div className="rounded-md bg-muted/40 p-2 text-xs flex justify-between">
+              <span>Custo fixo total considerado:</span>
+              <strong>{fmt(effectiveFixed + active.fixedCosts + active.proLabore)}</strong>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Etapa 4 */}
+        <AccordionItem value="s4" className="border rounded-md px-3">
+          <AccordionTrigger className="text-sm py-3">4. Custos diretos do procedimento</AccordionTrigger>
+          <AccordionContent className="space-y-3 pb-3">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-3">
+                <Label className="text-[10px]">Nome do produto principal</Label>
+                <Input value={active.productName}
+                  onChange={e => update(active.id, { productName: e.target.value })} className="mt-1 h-9" placeholder="Ex: ampola, óleo, esmalte..." />
+              </div>
+              <div>
+                <Label className="text-[10px]">Valor pago (R$)</Label>
+                <Input type="number" min={0} step={0.01} value={active.productCost || ""}
+                  onChange={e => update(active.id, { productCost: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Rendimento (atend.)</Label>
+                <Input type="number" min={1} value={active.productYield || ""}
+                  onChange={e => update(active.id, { productYield: parseInt(e.target.value) || 1 })} className="mt-1 h-9" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Custo/atend. <InfoTip text="Calculado: valor / rendimento." /></Label>
+                <div className="mt-1 h-9 flex items-center px-3 rounded-md bg-muted text-xs font-medium">{fmt(result.productCostPerSession)}</div>
+              </div>
+              <div>
+                <Label className="text-[10px]">Descartáveis/atend. (R$)</Label>
+                <Input type="number" min={0} step={0.01} value={active.disposablesPerSession || ""}
+                  onChange={e => update(active.id, { disposablesPerSession: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Outros/atend. (R$)</Label>
+                <Input type="number" min={0} step={0.01} value={active.otherVariablePerSession || ""}
+                  onChange={e => update(active.id, { otherVariablePerSession: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+            </div>
+            <div className="rounded-md bg-muted/40 p-2 text-xs flex justify-between">
+              <span>Custo variável total/atendimento:</span>
+              <strong>{fmt(result.variableCostPerSession)}</strong>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Etapa 5 */}
+        <AccordionItem value="s5" className="border rounded-md px-3">
+          <AccordionTrigger className="text-sm py-3">5. Taxas e margem</AccordionTrigger>
+          <AccordionContent className="space-y-3 pb-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[10px]">Impostos (%)</Label>
+                <Input type="number" min={0} value={active.taxPercent}
+                  onChange={e => update(active.id, { taxPercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Taxa cartão/plataforma (%)</Label>
+                <Input type="number" min={0} value={active.cardFeePercent}
+                  onChange={e => update(active.id, { cardFeePercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Comissão (%)</Label>
+                <Input type="number" min={0} value={active.commissionPercent}
+                  onChange={e => update(active.id, { commissionPercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+              <div>
+                <Label className="text-[10px]">Margem de lucro líquida desejada (%)</Label>
+                <Input type="number" min={0} value={active.desiredMargin}
+                  onChange={e => update(active.id, { desiredMargin: parseFloat(e.target.value) || 0 })} className="mt-1 h-9" />
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {/* RESULTADO */}
+      <Card className="border-primary/30 bg-primary/5">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Configurações Globais</CardTitle>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Target className="h-4 w-4" /> Resultado para "{active.name || `Serviço ${services.indexOf(active) + 1}`}"
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div>
-            <Label className="text-xs">Pró-labore Desejado (R$/mês) <InfoTip text="Quanto você quer tirar de salário todo mês." /></Label>
-            <Input type="number" min={0} value={proLabore || ""} onChange={e => setProLabore(parseFloat(e.target.value) || 0)} className="mt-1" />
-          </div>
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-xs">Margem de Lucro (%)</Label>
-              <Input type="number" min={0} value={profitPercent} onChange={e => setProfitPercent(parseFloat(e.target.value) || 0)} className="mt-1" />
+            <div className="rounded-md border bg-background p-2">
+              <div className="text-[10px] text-muted-foreground">Preço sugerido</div>
+              <div className="text-base font-bold text-primary">{fmt(result.idealPrice)}</div>
             </div>
-            <div>
-              <Label className="text-xs">Impostos (%)</Label>
-              <Input type="number" min={0} value={taxPercent} onChange={e => setTaxPercent(parseFloat(e.target.value) || 0)} className="mt-1" />
+            <div className="rounded-md border bg-background p-2">
+              <div className="text-[10px] text-muted-foreground">Preço atual</div>
+              <div className="text-base font-bold">{fmt(currentPrice)}</div>
             </div>
+            <div className="rounded-md border bg-background p-2">
+              <div className="text-[10px] text-muted-foreground">Custo direto/atend.</div>
+              <div className="text-sm font-semibold">{fmt(result.variableCostPerSession)}</div>
+            </div>
+            <div className="rounded-md border bg-background p-2">
+              <div className="text-[10px] text-muted-foreground">Custo fixo rateado/atend.</div>
+              <div className="text-sm font-semibold">{fmt(result.fixedAllocationPerSession)}</div>
+            </div>
+            <div className="rounded-md border bg-background p-2">
+              <div className="text-[10px] text-muted-foreground">Break-even (atendimentos)</div>
+              <div className="text-sm font-semibold">{result.breakEvenSessions === Infinity ? "—" : `${result.breakEvenSessions}/mês`}</div>
+            </div>
+            <div className="rounded-md border bg-background p-2">
+              <div className="text-[10px] text-muted-foreground">Lucro mensal previsto</div>
+              <div className={`text-sm font-semibold ${result.currentMonthlyProfit >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                {fmt(result.currentMonthlyProfit)}
+              </div>
+            </div>
+            <div className="rounded-md border bg-background p-2">
+              <div className="text-[10px] text-muted-foreground">Produtos p/ atingir a meta</div>
+              <div className="text-sm font-semibold">{result.productsNeeded} un</div>
+            </div>
+            <div className="rounded-md border bg-background p-2">
+              <div className="text-[10px] text-muted-foreground">Capacidade vs meta</div>
+              <div className={`text-sm font-semibold ${result.capacityVsGoal === "ok" ? "text-emerald-600" : result.capacityVsGoal === "tight" ? "text-amber-600" : "text-destructive"}`}>
+                {goal}/{result.capacityMonthly}
+              </div>
+            </div>
+          </div>
+
+          {/* Diagnóstico */}
+          <div className={`rounded-md p-3 text-xs space-y-1 border ${
+            diagnosis.tone === "danger" ? "bg-destructive/10 border-destructive/30 text-destructive" :
+            diagnosis.tone === "warn" ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400" :
+            "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+          }`}>
+            <div className="font-semibold flex items-center gap-1">
+              {diagnosis.tone === "danger" ? <AlertTriangle className="h-3.5 w-3.5" /> :
+               diagnosis.tone === "warn" ? <TrendingDown className="h-3.5 w-3.5" /> :
+               <TrendingUp className="h-3.5 w-3.5" />}
+              Diagnóstico
+            </div>
+            {diagnosis.messages.map((m, i) => <div key={i}>• {m}</div>)}
+          </div>
+
+          {/* Leitura simples */}
+          <div className="rounded-md p-3 text-xs space-y-1 bg-background border">
+            <div className="font-semibold mb-1">Leitura simples do seu resultado</div>
+            <p>Você precisa cobrar pelo menos <strong>{fmt(result.idealPrice)}</strong> por atendimento para ter margem real.</p>
+            {result.breakEvenSessions !== Infinity && (
+              <p>Para empatar custos + retirada, você precisa fazer <strong>{result.breakEvenSessions}</strong> atendimentos/mês.</p>
+            )}
+            <p>Sua agenda comporta no máximo <strong>{result.capacityMonthly}</strong> atendimentos/mês.</p>
+            {result.currentMonthlyProfit < 0
+              ? <p className="text-destructive">Com o preço atual, você pode estar perdendo <strong>{fmt(Math.abs(result.currentMonthlyProfit))}</strong> por mês.</p>
+              : <p className="text-emerald-700 dark:text-emerald-400">Com o preço atual, sua previsão é de <strong>{fmt(result.currentMonthlyProfit)}</strong> de lucro/mês.</p>}
+            {active.productCost > 0 && (
+              <p>Para atender sua meta você precisa de <strong>{result.productsNeeded}</strong> unidades de "{active.productName || "produto principal"}".</p>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="pt-4 space-y-1.5 text-sm">
-          <div className="flex justify-between"><span className="text-muted-foreground">Receita esperada</span><span>{fmt(totalRevenue)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Custos diretos (materiais + fixos do serviço)</span><span>{fmt(totalDirectCost)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Pró-labore</span><span>{fmt(proLabore)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Lucro ({profitPercent}%)</span><span>{fmt(profitAmount)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Impostos ({taxPercent}%)</span><span>{fmt(taxAmountTotal)}</span></div>
-          <Separator />
-          <div className="flex justify-between font-bold text-base"><span>Faturamento ideal</span><span className="text-primary">{fmt(finalPrice)}</span></div>
-          <p className="text-[10px] text-muted-foreground pt-1">
-            {totalRevenue >= finalPrice
-              ? `✅ Sua receita atual (${fmt(totalRevenue)}) cobre o ideal.`
-              : `⚠️ Faltam ${fmt(finalPrice - totalRevenue)} por mês. Aumente preço, atendimentos ou reduza custos.`}
-          </p>
+      {/* SIMULAÇÃO */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4" /> Simule antes de decidir
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-xs">
+          <p className="text-muted-foreground">Mexa nos números abaixo e veja o impacto em tempo real.</p>
+          <div>
+            <Label className="text-[10px]">Preço cobrado: <strong>{fmt(currentPrice)}</strong></Label>
+            <Slider min={0} max={Math.max(result.idealPrice * 1.5, currentPrice * 2, 100)} step={1}
+              value={[currentPrice]}
+              onValueChange={([v]) => update(active.id, active.mode === "hourly" ? { hourlyRate: v } : { pricePerSession: v })} />
+          </div>
+          <div>
+            <Label className="text-[10px]">Meta de atendimentos: <strong>{goal}</strong></Label>
+            <Slider min={0} max={Math.max(result.capacityMonthly * 1.2, goal * 2, 30)} step={1}
+              value={[goal]}
+              onValueChange={([v]) => update(active.id, active.mode === "hourly" ? { hoursPerMonth: v } : { sessionsPerMonth: v })} />
+          </div>
+          <div>
+            <Label className="text-[10px]">Margem desejada: <strong>{active.desiredMargin}%</strong></Label>
+            <Slider min={0} max={70} step={1} value={[active.desiredMargin]}
+              onValueChange={([v]) => update(active.id, { desiredMargin: v })} />
+          </div>
+          <div>
+            <Label className="text-[10px]">Retirada desejada: <strong>{fmt(active.proLabore)}</strong></Label>
+            <Slider min={0} max={Math.max(active.proLabore * 2, 10000)} step={100} value={[active.proLabore]}
+              onValueChange={([v]) => update(active.id, { proLabore: v })} />
+          </div>
         </CardContent>
       </Card>
 
@@ -1954,7 +2247,7 @@ export default function PriceCalculator() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="product"><ProductCalculator mapFixedCosts={mapFixedCosts} /></TabsContent>
-        <TabsContent value="service"><ServiceCalculator /></TabsContent>
+        <TabsContent value="service"><ServiceCalculator mapFixedCosts={mapFixedCosts} /></TabsContent>
         <TabsContent value="financial">
           <FinancialMap 
             onDataChange={setFinancialData} 
