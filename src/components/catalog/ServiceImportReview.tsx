@@ -46,7 +46,7 @@ function SourceBadge({ source, label }: { source: ServiceSourceTag; label: strin
   );
 }
 
-export function ServiceImportReview({ analysis, onConfirm, onCancel }: Props) {
+export function ServiceImportReview({ analysis, onConfirm, onApplyReplace, onCancel }: Props) {
   // Local editable copy of all detected services
   const [items, setItems] = useState<DetectedProduct[]>(() =>
     analysis.products.map(p => ({ ...p }))
