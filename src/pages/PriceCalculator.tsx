@@ -920,7 +920,7 @@ function diagnoseService(s: ServiceItem, r: ServiceCalcResult): { tone: "ok" | "
     worst = "danger";
   } else if (r.currentMonthlyProfit < 0) {
     msgs.push("O preço cobre o custo de cada atendimento, mas não paga seus custos fixos + retirada no fim do mês.");
-    worst = worst === "danger" ? "danger" : "warn";
+    worst = (worst as string) === "danger" ? "danger" : "warn";
   } else {
     msgs.push("Esse serviço está com uma precificação saudável.");
   }
