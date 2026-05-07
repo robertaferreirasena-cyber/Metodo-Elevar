@@ -1152,11 +1152,20 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
   const [services, setServices] = useState<ServiceItem[]>(sessionState.services?.length ? sessionState.services : [makeEmptyService()]);
   const [fixedCostsFromMap, setFixedCostsFromMap] = useState(sessionState.fixedCostsFromMap ?? true);
   const [manualFixedCosts, setManualFixedCosts] = useState(sessionState.manualFixedCosts ?? 0);
-  const [activeId, setActiveId] = useState<string>(services[0]?.id);
+  const [activeId, setActiveId] = useState<string>(
+    sessionState.activeId && services.find(s => s.id === sessionState.activeId)
+      ? sessionState.activeId
+      : services[0]?.id
+  );
+  const [openSteps, setOpenSteps] = useState<string[]>(
+    sessionState.openSteps && sessionState.openSteps.length
+      ? sessionState.openSteps
+      : ["s1", "s2", "s3", "s4", "s5"]
+  );
 
   useEffect(() => {
-    setSessionState({ services, fixedCostsFromMap, manualFixedCosts });
-  }, [services, fixedCostsFromMap, manualFixedCosts, setSessionState]);
+    setSessionState({ services, fixedCostsFromMap, manualFixedCosts, activeId, openSteps });
+  }, [services, fixedCostsFromMap, manualFixedCosts, activeId, openSteps, setSessionState]);
 
   const effectiveFixed = fixedCostsFromMap ? (mapFixedCosts || 0) : manualFixedCosts;
 
