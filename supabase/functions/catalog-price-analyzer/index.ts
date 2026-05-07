@@ -247,9 +247,10 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model,
-        max_tokens: 8000,
+        max_tokens: 16000,
         messages,
         temperature: 0.4,
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -273,13 +274,42 @@ Deno.serve(async (req) => {
     const content = data.choices?.[0]?.message?.content;
     if (!content) throw new Error("No content in AI response");
 
+    const finishReason = data.choices?.[0]?.finish_reason;
     let analysis;
     try {
-      const clean = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      analysis = JSON.parse(clean);
-    } catch {
-      console.error("Failed to parse:", content);
-      throw new Error("Falha ao processar resposta da IA");
+      let clean = content.replace(/```json\n?/gi, "").replace(/```\n?/g, "").trim();
+      // Extract from first { to last }
+      const first = clean.indexOf("{");
+      const last = clean.lastIndexOf("}");
+      if (first !== -1 && last > first) clean = clean.slice(first, last + 1);
+      try {
+        analysis = JSON.parse(clean);
+      } catch {
+        // Attempt recovery for truncated output: cut at last complete product object
+        const productsIdx = clean.indexOf('"products"');
+        if (productsIdx !== -1) {
+          const arrStart = clean.indexOf("[", productsIdx);
+          // Find last "}," or "}" followed by valid array close
+          let depth = 0, lastValidEnd = -1;
+          for (let i = arrStart; i < clean.length; i++) {
+            const ch = clean[i];
+            if (ch === "{") depth++;
+            else if (ch === "}") { depth--; if (depth === 0) lastValidEnd = i; }
+          }
+          if (lastValidEnd !== -1) {
+            const recovered = clean.slice(0, lastValidEnd + 1) + "]}";
+            analysis = JSON.parse(recovered);
+            console.warn("Recovered truncated AI response. finish_reason:", finishReason);
+          } else throw new Error("no recovery");
+        } else throw new Error("no products field");
+      }
+    } catch (parseErr) {
+      console.error("Failed to parse. finish_reason:", finishReason, "content:", content?.slice(0, 500));
+      throw new Error(
+        finishReason === "length"
+          ? "A resposta da IA foi cortada por excesso de produtos. Tente enviar um catálogo menor."
+          : "Falha ao processar resposta da IA"
+      );
     }
 
     const tokensUsed = data.usage?.total_tokens || 2000;
