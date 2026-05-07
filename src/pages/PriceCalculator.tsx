@@ -505,7 +505,7 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     const margin = d.margin_percent && d.margin_percent > 0 ? d.margin_percent : 30;
     if (!d.margin_percent || d.margin_percent <= 0) assumed.push("margem");
     const base = makeEmptyProduct();
-    return {
+    const row: ProductRow = {
       ...base,
       id: newId(),
       name: d.name || "Produto",
@@ -524,33 +524,48 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
       quantityPerMonth: qty,
       desiredMargin: margin,
     };
+    return { row, assumed };
   };
 
   const handleImportProduct = (d: DetectedProduct) => {
-    const row = productFromDetected(d);
+    const { row, assumed } = productFromDetected(d);
     setProducts(prev => {
-      // Replace empty first row if it exists
-      if (prev.length === 1 && !prev[0].name && prev[0].purchaseCost === 0) {
-        return [row];
-      }
+      if (prev.length === 1 && !prev[0].name && prev[0].purchaseCost === 0) return [row];
       return [...prev, row];
     });
     setOpenItems(prev => [...prev, row.id]);
-    toast.success(`"${d.name}" importado!`);
+    if (assumed.length) {
+      toast.success(`"${d.name}" importado`, {
+        description: `IA assumiu valores padrão para: ${assumed.join(", ")}. Ajuste antes de calcular.`,
+        duration: 6000,
+      });
+    } else {
+      toast.success(`"${d.name}" importado!`);
+    }
     setCatalogDialogOpen(false);
   };
 
   const handleImportAll = (list: DetectedProduct[]) => {
     if (!list.length) return;
-    const rows = list.map(productFromDetected);
+    const built = list.map(productFromDetected);
+    const rows = built.map(b => b.row);
+    const counts = new Map<string, number>();
+    built.forEach(b => b.assumed.forEach(f => counts.set(f, (counts.get(f) || 0) + 1)));
+    const withAssumptions = built.filter(b => b.assumed.length > 0).length;
     setProducts(prev => {
-      if (prev.length === 1 && !prev[0].name && prev[0].purchaseCost === 0) {
-        return rows;
-      }
+      if (prev.length === 1 && !prev[0].name && prev[0].purchaseCost === 0) return rows;
       return [...prev, ...rows];
     });
     setOpenItems(rows.map(r => r.id));
-    toast.success(`${rows.length} produtos importados! Revise quantidades vendidas/mês para break-even preciso.`);
+    if (withAssumptions > 0) {
+      const summary = Array.from(counts.entries()).map(([f, c]) => `${f} (${c})`).join(", ");
+      toast.success(`${rows.length} produtos importados`, {
+        description: `IA assumiu defaults em ${withAssumptions}/${rows.length} produtos. Campos: ${summary}. Revise antes de calcular.`,
+        duration: 8000,
+      });
+    } else {
+      toast.success(`${rows.length} produtos importados! Revise quantidades vendidas/mês para break-even preciso.`);
+    }
     setCatalogDialogOpen(false);
   };
 
