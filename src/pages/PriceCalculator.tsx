@@ -1324,7 +1324,142 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
     setFixedCostsFromMap(true);
     setManualFixedCosts(0);
     setOpenSteps(["s1", "s2", "s3", "s4", "s5"]);
+    try {
+      scopedSession.remove(SVC_CATALOG_KEY);
+      scopedSession.remove(SVC_CATALOG_FILES_KEY);
+    } catch { /* ignore */ }
+    setSvcCatalogAnalysis(null);
+    setSvcCatalogFiles([]);
     toast.success("Calculadora de Serviços reiniciada");
+  };
+
+  // ── Catálogo de Serviços ──
+  const SVC_CATALOG_KEY = "priceCalculator.serviceCatalogAnalysis";
+  const SVC_CATALOG_FILES_KEY = "priceCalculator.serviceCatalogFiles";
+  const [svcCatalogFiles, setSvcCatalogFiles] = useState<string[]>(() => {
+    try {
+      const raw = scopedSession.get(SVC_CATALOG_FILES_KEY);
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch { return []; }
+  });
+  const [svcCatalogAnalysis, setSvcCatalogAnalysis] = useState<CatalogAnalysis | null>(() => {
+    try {
+      const raw = scopedSession.get(SVC_CATALOG_KEY);
+      return raw ? (JSON.parse(raw) as CatalogAnalysis) : null;
+    } catch { return null; }
+  });
+  const [svcAnalyzing, setSvcAnalyzing] = useState(false);
+  const [svcCatalogDialogOpen, setSvcCatalogDialogOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (svcCatalogAnalysis) scopedSession.set(SVC_CATALOG_KEY, JSON.stringify(svcCatalogAnalysis));
+      else scopedSession.remove(SVC_CATALOG_KEY);
+    } catch { /* ignore */ }
+  }, [svcCatalogAnalysis]);
+
+  useEffect(() => {
+    try { scopedSession.set(SVC_CATALOG_FILES_KEY, JSON.stringify(svcCatalogFiles)); } catch { /* ignore */ }
+  }, [svcCatalogFiles]);
+
+  const analyzeSvcCatalog = async () => {
+    if (svcCatalogFiles.length === 0) {
+      toast.error("Envie pelo menos um arquivo");
+      return;
+    }
+    setSvcAnalyzing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/catalog-price-analyzer`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ filePaths: svcCatalogFiles, niche: "serviços" }),
+        }
+      );
+      if (response.status === 429) { toast.error("Limite de requisições excedido"); return; }
+      if (response.status === 402) { toast.error("Créditos esgotados"); return; }
+      if (!response.ok) throw new Error("Erro na análise");
+      const { analysis } = await response.json();
+      setSvcCatalogAnalysis(analysis);
+      toast.success(`Análise concluída! ${analysis.products?.length || 0} serviço(s) detectado(s).`);
+    } catch (err) {
+      toast.error("Erro ao analisar catálogo");
+    } finally {
+      setSvcAnalyzing(false);
+    }
+  };
+
+  const serviceFromDetected = (d: DetectedProduct): { row: ServiceItem; assumed: string[] } => {
+    const base = makeEmptyService();
+    const assumed: string[] = [];
+    const price = d.detected_price ?? d.suggested_price ?? 0;
+    if (!d.detected_price && !d.suggested_price) assumed.push("preço");
+    const productCost = d.estimated_cost ?? 0;
+    if (d.estimated_cost == null) assumed.push("custo do produto");
+    const monthly = d.expected_monthly_units && d.expected_monthly_units > 0 ? d.expected_monthly_units : 20;
+    if (!d.expected_monthly_units || d.expected_monthly_units <= 0) assumed.push("atendimentos/mês");
+    const margin = d.margin_percent && d.margin_percent > 0 ? d.margin_percent : base.desiredMargin;
+    if (!d.margin_percent || d.margin_percent <= 0) assumed.push("margem");
+    const row: ServiceItem = {
+      ...base,
+      id: newId(),
+      name: d.name || "Serviço",
+      mode: "session",
+      pricePerSession: price,
+      sessionsPerMonth: monthly,
+      productName: productCost > 0 ? (d.category || "Insumo principal") : "",
+      productCost,
+      productYield: productCost > 0 ? 20 : 1,
+      desiredMargin: margin,
+    };
+    return { row, assumed };
+  };
+
+  const handleImportSvcOne = (d: DetectedProduct) => {
+    const { row, assumed } = serviceFromDetected(d);
+    setServices(prev => {
+      if (prev.length === 1 && !prev[0].name && prev[0].pricePerSession === 0 && prev[0].hourlyRate === 0) return [row];
+      return [...prev, row];
+    });
+    setActiveId(row.id);
+    if (assumed.length) {
+      toast.success(`"${d.name}" importado`, {
+        description: `IA assumiu defaults para: ${assumed.join(", ")}. Revise antes de calcular.`,
+        duration: 6000,
+      });
+    } else {
+      toast.success(`"${d.name}" importado!`);
+    }
+    setSvcCatalogDialogOpen(false);
+  };
+
+  const handleImportSvcAll = (list: DetectedProduct[]) => {
+    if (!list.length) return;
+    const built = list.map(serviceFromDetected);
+    const rows = built.map(b => b.row);
+    const counts = new Map<string, number>();
+    built.forEach(b => b.assumed.forEach(f => counts.set(f, (counts.get(f) || 0) + 1)));
+    const withAssumptions = built.filter(b => b.assumed.length > 0).length;
+    setServices(prev => {
+      if (prev.length === 1 && !prev[0].name && prev[0].pricePerSession === 0 && prev[0].hourlyRate === 0) return rows;
+      return [...prev, ...rows];
+    });
+    setActiveId(rows[0].id);
+    if (withAssumptions > 0) {
+      const summary = Array.from(counts.entries()).map(([f, c]) => `${f} (${c})`).join(", ");
+      toast.success(`${rows.length} serviços importados`, {
+        description: `IA assumiu defaults em ${withAssumptions}/${rows.length}. Campos: ${summary}. Revise antes de calcular.`,
+        duration: 8000,
+      });
+    } else {
+      toast.success(`${rows.length} serviços importados!`);
+    }
+    setSvcCatalogDialogOpen(false);
   };
 
   return (
