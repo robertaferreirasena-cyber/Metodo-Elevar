@@ -352,7 +352,7 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     if (!catalogAnalysis) return;
     const serialized = JSON.stringify(catalogAnalysis);
     try {
-      sessionStorage.setItem(CATALOG_STORAGE_KEY, serialized);
+      scopedSession.set(CATALOG_STORAGE_KEY, serialized);
       setSavedCatalogSnapshot(serialized);
       toast.success("Edições de frete e embalagem salvas");
     } catch {
@@ -482,7 +482,7 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
       setCatalogAnalysis(analysis);
       try {
         const serialized = JSON.stringify(analysis);
-        sessionStorage.setItem(CATALOG_STORAGE_KEY, serialized);
+        scopedSession.set(CATALOG_STORAGE_KEY, serialized);
         setSavedCatalogSnapshot(serialized);
       } catch { /* ignore */ }
       toast.success(`Análise concluída! ${analysis.products?.length || 0} produto(s) detectado(s).`);
@@ -619,7 +619,7 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     setOpenItems([]);
     setCatalogAnalysis(null);
     setSavedCatalogSnapshot("");
-    try { sessionStorage.removeItem(CATALOG_STORAGE_KEY); } catch { /* ignore */ }
+    try { scopedSession.remove(CATALOG_STORAGE_KEY); } catch { /* ignore */ }
     setCatalogFiles([]);
     toast.success("Calculadora de Produtos reiniciada");
   };
