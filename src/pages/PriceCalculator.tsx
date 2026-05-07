@@ -124,13 +124,29 @@ interface ProductRow {
   id: string;
   name: string;
   businessType: BusinessType;
+  // Custos do produto
   purchaseCost: number;
   freightPerUnit: number;
   extraPackaging: number;
   directCosts: CostItem[];
+  // Produção (apenas produtor)
+  productionTimePerUnit: number;   // minutos
+  hourlyLaborRate: number;         // R$/hora
+  includeLaborInCost: boolean;
+  wastePercent: number;            // % perdas
+  // Mercado
   quantityPerMonth: number;
   desiredMargin: number;
+  // Custos variáveis de venda (separados)
   taxPercent: number;
+  cardFeePercent: number;
+  marketplaceFeePercent: number;
+  commissionPercent: number;
+  avgDiscountPercent: number;
+  // Pró-labore (3 perguntas)
+  proLaboreDesired: number;
+  proLaboreCurrent: number;
+  proLaborePaidByBusiness: boolean;
 }
 
 interface ProductCalcSessionState {
@@ -151,9 +167,20 @@ const makeEmptyProduct = (): ProductRow => ({
     { id: "2", name: "Embalagem", value: 0 },
     { id: "3", name: "Mão de obra direta", value: 0 },
   ],
+  productionTimePerUnit: 0,
+  hourlyLaborRate: 25,
+  includeLaborInCost: true,
+  wastePercent: 0,
   quantityPerMonth: 10,
   desiredMargin: 30,
-  taxPercent: 10,
+  taxPercent: 6,
+  cardFeePercent: 3,
+  marketplaceFeePercent: 0,
+  commissionPercent: 0,
+  avgDiscountPercent: 0,
+  proLaboreDesired: 0,
+  proLaboreCurrent: 0,
+  proLaborePaidByBusiness: false,
 });
 
 const EMPTY_PRODUCT_CALC_STATE: ProductCalcSessionState = {
@@ -170,15 +197,17 @@ function migrateV1(): ProductCalcSessionState | null {
     const v1 = JSON.parse(v1Raw);
     if (!v1?.value) return null;
     const old = v1.value;
+    const base = makeEmptyProduct();
     return {
       products: [{
+        ...base,
         id: newId(),
         name: old.productName || "",
         businessType: old.businessType || "lojista",
         purchaseCost: old.purchaseCost || 0,
         freightPerUnit: old.freightPerUnit || 0,
         extraPackaging: old.extraPackaging || 0,
-        directCosts: old.directCosts || [],
+        directCosts: old.directCosts || base.directCosts,
         quantityPerMonth: old.quantityPerMonth || 10,
         desiredMargin: old.desiredMargin || 30,
         taxPercent: old.taxPercent || 10,
@@ -190,19 +219,45 @@ function migrateV1(): ProductCalcSessionState | null {
 }
 
 function calcProduct(p: ProductRow, fixedPerUnit: number) {
-  const directUnit = p.businessType === "lojista"
+  // Custo direto base
+  let directBase = p.businessType === "lojista"
     ? p.purchaseCost + p.freightPerUnit + p.extraPackaging
     : p.directCosts.reduce((s, c) => s + (c.value || 0), 0);
+
+  // Mão de obra (produtor)
+  const laborCost = p.businessType === "produtor" && p.includeLaborInCost
+    ? (p.productionTimePerUnit / 60) * p.hourlyLaborRate
+    : 0;
+
+  // Perdas
+  const wasteFactor = 1 + Math.max(0, p.wastePercent) / 100;
+  const directUnit = (directBase + laborCost) * wasteFactor;
+
   const unitCost = directUnit + fixedPerUnit;
   const safeMargin = Math.min(p.desiredMargin, 99);
-  const sellingPrice = safeMargin > 0 ? unitCost / (1 - safeMargin / 100) : unitCost;
-  const taxAmount = sellingPrice * (p.taxPercent / 100);
+
+  // Total de descontos sobre venda (impostos+cartão+marketplace+comissão+desconto+margem)
+  const variableDeductions = (p.taxPercent + p.cardFeePercent + p.marketplaceFeePercent + p.commissionPercent + p.avgDiscountPercent) / 100;
+  const totalDeductions = variableDeductions + safeMargin / 100;
+  const denom = Math.max(0.01, 1 - totalDeductions);
+  const sellingPrice = unitCost / denom;
+
+  const taxAmount = sellingPrice * variableDeductions;
   const unitProfit = sellingPrice - unitCost - taxAmount;
   const realMargin = sellingPrice > 0 ? (unitProfit / sellingPrice) * 100 : 0;
   const monthlyRevenue = sellingPrice * p.quantityPerMonth;
   const monthlyProfit = unitProfit * p.quantityPerMonth;
   const profitBeforeFixed = sellingPrice - directUnit - taxAmount;
-  return { directUnit, unitCost, sellingPrice, taxAmount, unitProfit, realMargin, monthlyRevenue, monthlyProfit, profitBeforeFixed };
+
+  // Capital de reposição
+  const restockCapital = directUnit * p.quantityPerMonth;
+
+  // Capacidade produtiva (produtor)
+  const productiveCapacityMonth = (p.businessType === "produtor" && p.productionTimePerUnit > 0)
+    ? Math.floor((22 * 8 * 60) / p.productionTimePerUnit) // 22 dias * 8h padrão
+    : Infinity;
+
+  return { directUnit, laborCost, unitCost, sellingPrice, taxAmount, unitProfit, realMargin, monthlyRevenue, monthlyProfit, profitBeforeFixed, restockCapital, productiveCapacityMonth };
 }
 
 function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
@@ -428,7 +483,9 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
     const pkg = (d.packaging_estimate && d.packaging_estimate > 0)
       ? d.packaging_estimate
       : 2;
+    const base = makeEmptyProduct();
     return {
+      ...base,
       id: newId(),
       name: d.name || "Produto",
       businessType: bt,
@@ -442,10 +499,9 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
             { id: newId(), name: "Frete/envio", value: freight },
             { id: newId(), name: "Mão de obra direta", value: 0 },
           ]
-        : [{ id: "1", name: "Matéria-prima", value: 0 }, { id: "2", name: "Embalagem", value: 0 }, { id: "3", name: "Mão de obra direta", value: 0 }],
+        : base.directCosts,
       quantityPerMonth: d.expected_monthly_units ?? 10,
       desiredMargin: d.margin_percent ?? 30,
-      taxPercent: 10,
     };
   };
 
@@ -686,13 +742,41 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                   </div>
                 )}
 
+                {/* Produção (apenas produtor) */}
+                {p.businessType === "produtor" && (
+                  <div className="rounded-md border border-primary/20 bg-primary/5 p-2.5 space-y-2">
+                    <Label className="text-xs font-semibold flex items-center gap-1"><Clock className="h-3 w-3" /> Produção e Mão de Obra</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <Label className="text-[10px]">Tempo/un (min)</Label>
+                        <Input type="number" min={0} value={p.productionTimePerUnit || ""} onChange={e => updateProduct(p.id, { productionTimePerUnit: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">R$/hora</Label>
+                        <Input type="number" min={0} value={p.hourlyLaborRate || ""} onChange={e => updateProduct(p.id, { hourlyLaborRate: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Perdas (%)</Label>
+                        <Input type="number" min={0} max={100} value={p.wastePercent || ""} onChange={e => updateProduct(p.id, { wastePercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-2 text-[11px]">
+                      <input type="checkbox" checked={p.includeLaborInCost} onChange={e => updateProduct(p.id, { includeLaborInCost: e.target.checked })} />
+                      Incluir minha mão de obra no custo (recomendado)
+                    </label>
+                    {p.includeLaborInCost && p.productionTimePerUnit > 0 && (
+                      <p className="text-[10px] text-muted-foreground">Mão de obra/un: <strong>{fmt(r.laborCost)}</strong> · Capacidade produtiva: <strong>{r.productiveCapacityMonth === Infinity ? "—" : `${r.productiveCapacityMonth}/mês`}</strong></p>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-3 gap-2">
                   <div>
                     <Label className="text-xs">Qtd/mês</Label>
                     <Input type="number" min={1} value={p.quantityPerMonth || ""} onChange={e => updateProduct(p.id, { quantityPerMonth: Math.max(1, parseInt(e.target.value) || 1) })} className="mt-1" />
                   </div>
                   <div>
-                    <Label className="text-xs">Margem %</Label>
+                    <Label className="text-xs">Margem desejada %</Label>
                     <Input type="number" min={0} max={99} value={p.desiredMargin} onChange={e => updateProduct(p.id, { desiredMargin: parseFloat(e.target.value) || 0 })} className="mt-1" />
                   </div>
                   <div>
@@ -701,9 +785,52 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                   </div>
                 </div>
 
+                {/* Custos variáveis de venda separados */}
+                <div className="rounded-md border bg-muted/20 p-2.5 space-y-2">
+                  <Label className="text-xs font-semibold">Custos variáveis da venda</Label>
+                  <p className="text-[10px] text-muted-foreground">Esses só aparecem quando você vende — entram no preço.</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    <div>
+                      <Label className="text-[10px]">Cartão %</Label>
+                      <Input type="number" min={0} value={p.cardFeePercent} onChange={e => updateProduct(p.id, { cardFeePercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Marketplace %</Label>
+                      <Input type="number" min={0} value={p.marketplaceFeePercent} onChange={e => updateProduct(p.id, { marketplaceFeePercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Comissão %</Label>
+                      <Input type="number" min={0} value={p.commissionPercent} onChange={e => updateProduct(p.id, { commissionPercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Desconto médio %</Label>
+                      <Input type="number" min={0} value={p.avgDiscountPercent} onChange={e => updateProduct(p.id, { avgDiscountPercent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pró-labore (3 perguntas) */}
+                <div className="rounded-md border bg-muted/20 p-2.5 space-y-2">
+                  <Label className="text-xs font-semibold">Pró-labore (salário da dona)</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[10px]">Quanto deseja tirar/mês</Label>
+                      <Input type="number" min={0} value={p.proLaboreDesired || ""} onChange={e => updateProduct(p.id, { proLaboreDesired: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Quanto consegue tirar hoje</Label>
+                      <Input type="number" min={0} value={p.proLaboreCurrent || ""} onChange={e => updateProduct(p.id, { proLaboreCurrent: parseFloat(e.target.value) || 0 })} className="mt-1 h-8 text-xs" />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-[11px]">
+                    <input type="checkbox" checked={p.proLaborePaidByBusiness} onChange={e => updateProduct(p.id, { proLaborePaidByBusiness: e.target.checked })} />
+                    O negócio já paga esse valor hoje
+                  </label>
+                </div>
+
                 {/* Resultados da linha */}
                 <div className="rounded-md bg-muted/40 p-2.5 text-xs space-y-1">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Custo direto/un</span><span>{fmt(r.directUnit)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Custo direto/un{p.wastePercent > 0 ? ` (com ${p.wastePercent}% perdas)` : ""}</span><span>{fmt(r.directUnit)}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Rateio fixos/un</span><span>{fmt(r.fixedPerUnit)}</span></div>
                   <div className="flex justify-between font-medium"><span>Custo total/un</span><span>{fmt(r.unitCost)}</span></div>
                   <Separator />
@@ -713,29 +840,72 @@ function ProductCalculator({ mapFixedCosts }: { mapFixedCosts?: number }) {
                   <Separator />
                   <div className="flex justify-between"><span className="text-muted-foreground">Faturamento mês</span><span className="font-semibold">{fmt(r.monthlyRevenue)}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Lucro mês</span><span className="font-semibold text-primary">{fmt(r.monthlyProfit)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Capital p/ repor estoque</span><span className="font-semibold">{fmt(r.restockCapital)}</span></div>
                 </div>
 
-                {/* Break-even por produto */}
-                {monthlyFixedCosts > 0 && (
-                  <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-2.5 text-xs space-y-1">
-                    <p className="font-semibold flex items-center gap-1.5"><Target className="h-3.5 w-3.5 text-amber-600" /> Break-even deste produto</p>
-                    <p className="text-muted-foreground">
-                      Sua parte dos custos fixos: <strong className="text-foreground">{fmt(r.fixedAllocated)}</strong> ({(r.share * 100).toFixed(0)}% do total)
-                    </p>
-                    {r.breakEvenUnits !== Infinity ? (
-                      <p>
-                        Você precisa vender <strong className="text-foreground">{r.breakEvenUnits} un/mês</strong> para cobrir.
-                        {p.quantityPerMonth >= r.breakEvenUnits ? (
-                          <Badge variant="default" className="ml-2 text-[10px]">✅ ok</Badge>
-                        ) : (
-                          <Badge variant="destructive" className="ml-2 text-[10px]">⚠️ faltam {r.breakEvenUnits - p.quantityPerMonth}</Badge>
-                        )}
-                      </p>
-                    ) : (
-                      <p className="text-destructive">⚠️ Margem insuficiente para cobrir custos fixos. Aumente preço ou reduza custos.</p>
-                    )}
+                {/* Break-even + diagnóstico inteligente */}
+                {(() => {
+                  const contribution = r.sellingPrice - r.directUnit - r.taxAmount;
+                  const proLaboreNeed = p.proLaboreDesired;
+                  const beUnitsForProLabore = contribution > 0
+                    ? Math.ceil((r.fixedAllocated + proLaboreNeed) / contribution)
+                    : Infinity;
+                  const msgs: string[] = [];
+                  let tone: "ok" | "warn" | "danger" = "ok";
+                  if (r.unitProfit <= 0) { msgs.push("Esse produto não tem margem suficiente para sustentar o negócio."); tone = "danger"; }
+                  else if (r.monthlyProfit < proLaboreNeed && proLaboreNeed > 0) {
+                    msgs.push("O produto gera lucro, mas ainda não é suficiente para pagar você de forma saudável."); tone = "warn";
+                  } else if (r.realMargin >= 20) msgs.push("Esse produto tem boa margem e pode ser estratégico para o caixa.");
+                  if (r.realMargin < 10 && r.unitProfit > 0) { msgs.push("Sua margem está apertada — qualquer desconto pode comprometer o lucro."); tone = tone === "danger" ? "danger" : "warn"; }
+                  if (p.businessType === "produtor" && r.productiveCapacityMonth !== Infinity && beUnitsForProLabore > r.productiveCapacityMonth) {
+                    msgs.push(`Mesmo vendendo tudo que produz (${r.productiveCapacityMonth}/mês), esse preço não cobre custos + pró-labore.`); tone = "danger";
+                  }
+                  return (
+                    <div className={`rounded-md p-2.5 text-xs space-y-1 border ${
+                      tone === "danger" ? "bg-destructive/10 border-destructive/30 text-destructive" :
+                      tone === "warn" ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400" :
+                      "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+                    }`}>
+                      <p className="font-semibold flex items-center gap-1.5"><Target className="h-3.5 w-3.5" /> Diagnóstico</p>
+                      {r.breakEvenUnits !== Infinity ? (
+                        <p>Vender <strong>{r.breakEvenUnits} un/mês</strong> para empatar custos. {beUnitsForProLabore !== Infinity && proLaboreNeed > 0 && <>Para pagar pró-labore: <strong>{beUnitsForProLabore} un/mês</strong>.</>}</p>
+                      ) : (
+                        <p>Margem insuficiente para cobrir custos fixos.</p>
+                      )}
+                      {msgs.map((m, i) => <p key={i}>• {m}</p>)}
+                    </div>
+                  );
+                })()}
+
+                {/* Leitura simples */}
+                <div className="rounded-md p-2.5 text-xs space-y-1 bg-background border">
+                  <p className="font-semibold mb-1">Leitura simples do seu resultado</p>
+                  <p>Cada unidade ajuda a pagar <strong>{fmt(r.fixedPerUnit)}</strong> dos custos fixos.</p>
+                  <p>Vendendo {p.quantityPerMonth} un pelo preço atual, sua previsão é <strong>{fmt(r.monthlyProfit)}</strong> de lucro.</p>
+                  <p>Você precisará de <strong>{fmt(r.restockCapital)}</strong> em caixa para repor o estoque do mês.</p>
+                </div>
+
+                {/* Simulação */}
+                <details className="rounded-md border p-2.5 text-xs">
+                  <summary className="cursor-pointer font-semibold flex items-center gap-1.5"><SlidersHorizontal className="h-3.5 w-3.5" /> Simule antes de decidir</summary>
+                  <div className="space-y-2 mt-2">
+                    <div>
+                      <Label className="text-[10px]">Qtd/mês: <strong>{p.quantityPerMonth}</strong></Label>
+                      <Slider min={1} max={Math.max(p.quantityPerMonth * 3, 100)} step={1} value={[p.quantityPerMonth]}
+                        onValueChange={([v]) => updateProduct(p.id, { quantityPerMonth: v })} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Margem desejada: <strong>{p.desiredMargin}%</strong></Label>
+                      <Slider min={0} max={70} step={1} value={[p.desiredMargin]}
+                        onValueChange={([v]) => updateProduct(p.id, { desiredMargin: v })} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Pró-labore desejado: <strong>{fmt(p.proLaboreDesired)}</strong></Label>
+                      <Slider min={0} max={Math.max(p.proLaboreDesired * 2, 10000)} step={100} value={[p.proLaboreDesired]}
+                        onValueChange={([v]) => updateProduct(p.id, { proLaboreDesired: v })} />
+                    </div>
                   </div>
-                )}
+                </details>
 
                 <MarginAlert margin={r.realMargin} />
               </AccordionContent>
@@ -977,6 +1147,57 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
   const result = useMemo(() => calcServiceFull(active, effectiveFixed), [active, effectiveFixed]);
   const diagnosis = useMemo(() => diagnoseService(active, result), [active, result]);
 
+  // ── Validações por etapa ──
+  const validations = useMemo(() => {
+    const e1: string[] = [];
+    if (!active.name?.trim()) e1.push("Informe o nome do serviço.");
+    if (active.mode === "session") {
+      if (!active.pricePerSession || active.pricePerSession <= 0) e1.push("Informe o preço cobrado hoje.");
+      if (!active.sessionsPerMonth || active.sessionsPerMonth <= 0) e1.push("Informe a meta de atendimentos/mês.");
+      if (!active.durationMinutes || active.durationMinutes <= 0) e1.push("Informe a duração média em minutos.");
+    } else {
+      if (!active.hourlyRate || active.hourlyRate <= 0) e1.push("Informe o valor cobrado por hora.");
+      if (!active.hoursPerMonth || active.hoursPerMonth <= 0) e1.push("Informe quantas horas pretende trabalhar/mês.");
+    }
+
+    const e2: string[] = [];
+    if (!active.daysPerMonth || active.daysPerMonth <= 0 || active.daysPerMonth > 31) e2.push("Dias trabalhados deve ficar entre 1 e 31.");
+    if (!active.hoursPerDay || active.hoursPerDay <= 0 || active.hoursPerDay > 24) e2.push("Horas/dia deve ficar entre 1 e 24.");
+    if (!active.productivePercent || active.productivePercent <= 0 || active.productivePercent > 100) e2.push("% produtivo deve ficar entre 1 e 100.");
+    if (result.capacityVsGoal === "exceeds") e2.push(`Sua meta (${active.mode === "hourly" ? active.hoursPerMonth : active.sessionsPerMonth}) supera a capacidade (${result.capacityMonthly}).`);
+
+    const e3: string[] = [];
+    if (!fixedCostsFromMap && (!manualFixedCosts || manualFixedCosts <= 0)) e3.push("Informe os custos fixos ou ative o uso do Mapa Financeiro.");
+    if (fixedCostsFromMap && (!mapFixedCosts || mapFixedCosts <= 0)) e3.push("O Mapa Financeiro está vazio — preencha-o ou desligue esta opção.");
+    if (!active.proLabore || active.proLabore <= 0) e3.push("Informe quanto deseja retirar de pró-labore por mês.");
+
+    const e4: string[] = [];
+    if (active.productCost > 0 && (!active.productYield || active.productYield <= 0)) {
+      e4.push("Informe quantos atendimentos o produto rende.");
+    }
+    if (active.productCost > 0 && !active.productName?.trim()) {
+      e4.push("Dê um nome ao produto principal.");
+    }
+
+    const e5: string[] = [];
+    const sumFees = active.taxPercent + active.cardFeePercent + active.commissionPercent + active.desiredMargin;
+    if (sumFees >= 100) e5.push("Impostos + taxas + comissão + margem somam 100% ou mais. Reduza algum valor.");
+    if (active.desiredMargin <= 0) e5.push("Defina uma margem de lucro maior que 0%.");
+
+    const all = [...e1, ...e2, ...e3, ...e4, ...e5];
+    return { e1, e2, e3, e4, e5, all, isValid: all.length === 0 };
+  }, [active, effectiveFixed, fixedCostsFromMap, manualFixedCosts, mapFixedCosts, result.capacityMonthly, result.capacityVsGoal]);
+
+  const stageBadge = (errs: string[]) => errs.length === 0
+    ? <Badge variant="default" className="ml-2 text-[9px] bg-emerald-600 hover:bg-emerald-600">ok</Badge>
+    : <Badge variant="destructive" className="ml-2 text-[9px]">{errs.length} pendência{errs.length > 1 ? "s" : ""}</Badge>;
+
+  const StageErrors = ({ errs }: { errs: string[] }) => errs.length === 0 ? null : (
+    <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-[11px] text-destructive space-y-0.5">
+      {errs.map((e, i) => <div key={i} className="flex items-start gap-1"><AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /><span>{e}</span></div>)}
+    </div>
+  );
+
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(16);
@@ -1030,11 +1251,23 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
         )}
       </div>
 
+      {!validations.isValid && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="pt-3 pb-3 space-y-1">
+            <p className="text-xs font-semibold text-destructive flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5" /> Faltam {validations.all.length} informaç{validations.all.length === 1 ? "ão" : "ões"} para o cálculo ficar confiável
+            </p>
+            <p className="text-[11px] text-muted-foreground">Os campos com pendência estão sinalizados em cada etapa abaixo.</p>
+          </CardContent>
+        </Card>
+      )}
+
       <Accordion type="multiple" defaultValue={["s1", "s2", "s3", "s4", "s5"]} className="space-y-2">
         {/* Etapa 1 */}
         <AccordionItem value="s1" className="border rounded-md px-3">
-          <AccordionTrigger className="text-sm py-3">1. Dados do serviço</AccordionTrigger>
+          <AccordionTrigger className="text-sm py-3"><span className="flex items-center">1. Dados do serviço {stageBadge(validations.e1)}</span></AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
+            <StageErrors errs={validations.e1} />
             <Input placeholder="Nome do serviço (ex: Limpeza de pele)" value={active.name}
               onChange={e => update(active.id, { name: e.target.value })} className="h-9" />
             {!active.name && (
@@ -1095,8 +1328,9 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
 
         {/* Etapa 2 */}
         <AccordionItem value="s2" className="border rounded-md px-3">
-          <AccordionTrigger className="text-sm py-3">2. Capacidade da agenda</AccordionTrigger>
+          <AccordionTrigger className="text-sm py-3"><span className="flex items-center">2. Capacidade da agenda {stageBadge(validations.e2)}</span></AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
+            <StageErrors errs={validations.e2} />
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <Label className="text-[10px]">Dias trabalhados/mês</Label>
@@ -1128,8 +1362,9 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
 
         {/* Etapa 3 */}
         <AccordionItem value="s3" className="border rounded-md px-3">
-          <AccordionTrigger className="text-sm py-3">3. Custos fixos mensais</AccordionTrigger>
+          <AccordionTrigger className="text-sm py-3"><span className="flex items-center">3. Custos fixos mensais {stageBadge(validations.e3)}</span></AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
+            <StageErrors errs={validations.e3} />
             <div className="flex items-center justify-between p-2 rounded-md bg-primary/5 border border-primary/20">
               <div className="text-xs">
                 <div className="font-medium">Usar custos fixos do Mapa Financeiro</div>
@@ -1168,8 +1403,9 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
 
         {/* Etapa 4 */}
         <AccordionItem value="s4" className="border rounded-md px-3">
-          <AccordionTrigger className="text-sm py-3">4. Custos diretos do procedimento</AccordionTrigger>
+          <AccordionTrigger className="text-sm py-3"><span className="flex items-center">4. Custos diretos do procedimento {stageBadge(validations.e4)}</span></AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
+            <StageErrors errs={validations.e4} />
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-3">
                 <Label className="text-[10px]">Nome do produto principal</Label>
@@ -1210,8 +1446,9 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
 
         {/* Etapa 5 */}
         <AccordionItem value="s5" className="border rounded-md px-3">
-          <AccordionTrigger className="text-sm py-3">5. Taxas e margem</AccordionTrigger>
+          <AccordionTrigger className="text-sm py-3"><span className="flex items-center">5. Taxas e margem {stageBadge(validations.e5)}</span></AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
+            <StageErrors errs={validations.e5} />
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-[10px]">Impostos (%)</Label>
@@ -1352,7 +1589,9 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
         </CardContent>
       </Card>
 
-      <Button onClick={exportPDF} className="w-full"><Download className="h-4 w-4 mr-2" /> Exportar PDF</Button>
+      <Button onClick={exportPDF} disabled={!validations.isValid} className="w-full">
+        <Download className="h-4 w-4 mr-2" /> {validations.isValid ? "Exportar PDF" : `Corrija ${validations.all.length} pendência${validations.all.length > 1 ? "s" : ""} para exportar`}
+      </Button>
     </div>
   );
 }
