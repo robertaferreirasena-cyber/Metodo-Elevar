@@ -1256,6 +1256,7 @@ function ServiceCalculator({ mapFixedCosts = 0 }: { mapFixedCosts?: number }) {
         <AccordionItem value="s1" className="border rounded-md px-3">
           <AccordionTrigger className="text-sm py-3"><span className="flex items-center">1. Dados do serviço {stageBadge(validations.e1)}</span></AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
+            <StageErrors errs={validations.e1} />
             <Input placeholder="Nome do serviço (ex: Limpeza de pele)" value={active.name}
               onChange={e => update(active.id, { name: e.target.value })} className="h-9" />
             {!active.name && (
