@@ -1,84 +1,68 @@
-
 ## Objetivo
 
-Três melhorias coordenadas em `src/pages/PriceCalculator.tsx` e na edge function `catalog-price-analyzer`:
+Fazer com que a Central Financeira e todos os ajustes recentes (importação seletiva de catálogo, badges de origem, tela de revisão, edição inline, aplicar na Calculadora, diff visual) cheguem a 100% dos usuários — antigos e novos — assim que a versão for publicada na Vercel/Lovable, sem que sessões antigas restauradas no `sessionStorage` "congelem" a UI numa versão desatualizada.
 
-1. **Importação resiliente de catálogo** — extrair todos os produtos mesmo com dados faltando, preencher defaults inteligentes e organizar dentro da Calculadora de Produtos.
-2. **Custos fixos do Mapa Financeiro nos dois modos do Produto** (Revendo / Eu produzo), com mesma UX da Calculadora de Serviços.
-3. **Persistência completa das 5 etapas** (incluindo passo ativo) tanto em Produtos quanto em Serviços.
+## Diagnóstico
 
----
+A mensagem **"Sessão anterior restaurada"** vem do `useSessionPersistence`, que guarda o estado de formulários no `sessionStorage` por usuário (`u:<userId>::<chave>`). Isso está correto para preservar dados digitados, mas hoje:
 
-## 1. Importação tolerante de catálogos incompletos
+1. Não há **versionamento de schema** das chaves — se mudamos a forma de um objeto (ex.: novos campos da revisão de serviços), o estado antigo restaurado pode não bater com o novo componente.
+2. O Service Worker / cache do navegador pode segurar bundles antigos do Vite após deploy, fazendo o usuário continuar na versão anterior até dar hard-refresh.
+3. Não existe um sinal de "nova versão disponível" para forçar reload suave.
 
-### Edge function `catalog-price-analyzer`
-- Reforçar prompt: instruir a IA a **sempre retornar todos os produtos detectados**, mesmo quando faltarem preço, custo, frete ou margem. Para campos faltantes deve devolver `null` em vez de pular o produto.
-- Garantir `cost_source: "estimated"` quando a IA não encontrar custo no documento (já existe parcialmente).
-- Aumentar tolerância no parser: se algum produto vier com campos ausentes mas tiver `name`, mantém na lista.
+A visibilidade de publicação já está pública (passo anterior). O que falta é garantir **frescor da build** e **compatibilidade do estado persistido**.
 
-### Front (`productFromDetected` em `PriceCalculator.tsx`)
-Hoje só preenche frete/embalagem com fallback. Expandir para defaults inteligentes em todos os campos quando faltarem:
+## Mudanças
 
-| Campo faltando | Default aplicado |
-|---|---|
-| `estimated_cost` | 50% do `detected_price` (margem padrão de revenda) |
-| `suggested_price`/`detected_price` | `cost * 2` (markup 100%) ou 0 se nada |
-| `freight_estimate` | já tem fallback (5% do preço, mín R$2) |
-| `packaging_estimate` | já tem fallback (R$2) |
-| `expected_monthly_units` | 10 |
-| `margin_percent` | 30 |
-| `category` → tipo | infere lojista/produtor (já existe) |
+### 1. Versionar as chaves de sessão (`useSessionPersistence`)
+- Adicionar uma constante `SESSION_SCHEMA_VERSION` (ex.: `"v2"`) embutida no nome da chave: `scopedKey(`${key}::${SESSION_SCHEMA_VERSION}`)`.
+- Ao bootar, varrer chaves antigas (sem o sufixo de versão atual) e removê-las silenciosamente.
+- Resultado: quando publicarmos qualquer mudança estrutural, basta bumpar a versão e nenhum usuário vê estado quebrado — formulários começam limpos, mas todos os **dados de banco** (Calculadora salva, catálogos, persona, etc.) continuam intactos.
 
-- Adicionar flag visual (badge "estimado") por produto quando algum campo veio de fallback, para o usuário saber o que revisar.
-- Acumular contagem de "campos preenchidos automaticamente" e mostrar toast: *"X produtos importados. Revise os campos marcados como estimados."*
+### 2. Versão da app + detector de "nova versão publicada"
+- Gerar `APP_VERSION` em build time via `vite.config.ts` (`define: { __APP_VERSION__: JSON.stringify(Date.now().toString()) }`).
+- Servir `/version.json` estático com a mesma versão.
+- Hook `useAppVersionCheck` que faz `fetch('/version.json', { cache: 'no-store' })` a cada 5 min e quando a aba volta ao foco; se a versão mudou, mostra um toast discreto: *"Nova versão disponível. Atualizar agora."* com botão que faz `location.reload()`.
+- Isso resolve o caso clássico Vercel: usuário com aba aberta há horas continua na build velha.
 
-### Resultado
-O usuário pode importar qualquer catálogo (mesmo só com nomes e preços) e o sistema cria os cards prontos para edição, sem travar a importação por dados faltantes.
+### 3. Cache-busting de assets
+- Confirmar no `index.html` que não há `<meta http-equiv="Cache-Control">` agressivo.
+- Adicionar `<meta name="version" content="__APP_VERSION__">` para inspeção rápida.
+- Garantir headers corretos no deploy (Vercel já faz hash dos assets do Vite — o ponto crítico é o `index.html`, que deve ser `no-cache`). Adicionar `vercel.json` (se ainda não existir) com:
 
----
+```text
+headers:
+  /index.html  → Cache-Control: no-cache, must-revalidate
+  /version.json → Cache-Control: no-cache, must-revalidate
+  /assets/*    → Cache-Control: public, max-age=31536000, immutable
+```
 
-## 2. Custos fixos do Mapa nos dois modos do Produto
+### 4. Indicador de sessão restaurada com opção de "começar do zero"
+- O `SessionIndicator` já tem botão de limpar — apenas reforçar o copy: *"Sessão anterior restaurada. Limpar para usar a versão mais nova."*
+- Nenhuma mudança de lógica de dados; só UX.
 
-A Calculadora de Produtos **já recebe** `mapFixedCosts` e tem botão "Importar do Mapa", mas:
-- O auto-preenchimento ocorre apenas se `monthlyFixedCosts === 0`.
-- Não há paridade visual com Serviços (que tem switch *"Usar Mapa Financeiro"*, badge "Sincronizado" e desativa edição manual).
+### 5. Verificação pós-deploy
+- Após publicar, abrir o preview público em janela anônima e validar:
+  - Central Financeira carrega com todos os campos novos.
+  - Importação de catálogo de serviços abre a tela de revisão com edição inline e diff.
+  - Botão "Aplicar na Calculadora" funciona.
+  - Toast de "nova versão" aparece se eu mantiver duas abas e republicar.
 
-### Mudanças
-- Replicar a UX da Calculadora de Serviços na seção de custos fixos do Produto:
-  - Switch **"Usar Mapa Financeiro"** que vincula `monthlyFixedCosts` ao valor atual de `mapFixedCosts` em tempo real.
-  - Badge mostrando o valor sincronizado e link para Mapa Financeiro caso esteja vazio.
-  - Quando ligado, campo manual fica desabilitado.
-- Aplicar o rateio de fixos por produto **independente do `businessType`** (lojista/produtor) — a lógica atual já é unificada (`productResults` usa `monthlyFixedCosts` para todos), só precisamos garantir que o rateio aparece no breakdown de custos de produtor também.
-- Persistir `fixedCostsFromMap` no sessionStorage (já está em `session_product_calc_v2`).
+## Detalhes técnicos
 
----
+- Arquivos editados:
+  - `src/hooks/useSessionPersistence.ts` — adiciona `SESSION_SCHEMA_VERSION` e limpeza de chaves órfãs.
+  - `src/hooks/useAppVersionCheck.ts` *(novo)* — polling de `/version.json`.
+  - `src/components/AppVersionToast.tsx` *(novo)* — UI do toast.
+  - `src/App.tsx` — monta `useAppVersionCheck` no root.
+  - `vite.config.ts` — `define: __APP_VERSION__` + plugin que escreve `public/version.json` no build.
+  - `vercel.json` *(novo, se faltar)* — headers de cache.
+  - `src/components/SessionIndicator.tsx` — pequeno ajuste de copy.
 
-## 3. Persistência completa das 5 etapas
+- Sem alterações de schema do banco, sem mudanças em RLS, sem mexer em Edge Functions. Nada que afete dados já salvos por usuários antigos.
 
-### Estado atual
-- `session_service_calc_v3` salva valores dos serviços, mas **não salva** o accordion ativo (passo atual do wizard).
-- `session_product_calc_v2` salva produtos, mas **não salva** quais cards estão expandidos nem o passo do wizard interno.
+## Fora do escopo
 
-### Mudanças
-- Adicionar ao `ServiceSessionState`: `activeStep: string` (ex.: `"step-1"`).
-- Adicionar ao `ProductCalcSessionState`: `openItems: string[]` (cards expandidos) e, se houver wizard interno por produto, o passo ativo.
-- Atualizar os `useEffect` de sincronização para incluir esses campos.
-- Garantir restauração: ao voltar à página, abrir exatamente o passo/card onde o usuário parou.
-- Persistência via `useSessionPersistence` com debounce 500ms (já é o padrão).
-
----
-
-## Arquivos afetados
-
-- `supabase/functions/catalog-price-analyzer/index.ts` — prompt mais tolerante, validação leniente.
-- `src/pages/PriceCalculator.tsx`:
-  - `productFromDetected`: defaults expandidos + flag de estimativa.
-  - `ProductCalculator`: switch "Usar Mapa Financeiro" + persistência de `openItems`.
-  - `ServiceCalculator`: persistência do `activeStep`.
-  - Tipos `ProductCalcSessionState` e `ServiceSessionState`: novos campos.
-- `src/components/catalog/CatalogAnalysisResult.tsx`: badge "estimado" por campo (opcional, leve).
-
-## Notas
-
-- Sem migrations de banco; tudo é cliente + edge function.
-- Mantém compatibilidade com sessions v2/v3 existentes (campos novos opcionais com defaults).
+- Não vamos invalidar cache de dados do React Query além do que já é feito na troca de usuário.
+- Não vamos forçar logout de ninguém.
+- Não mudaremos a visibilidade de publicação (já está pública).
