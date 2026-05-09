@@ -70,6 +70,29 @@ export function ServiceImportReview({ analysis, onConfirm, onApplyReplace, onCan
   const update = (i: number, patch: Partial<DetectedProduct>) =>
     setItems(prev => prev.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
 
+  const hasChanges = (i: number) => {
+    const o = analysis.products[i];
+    const c = items[i];
+    if (!o || !c) return false;
+    const op = o.detected_price ?? o.suggested_price ?? null;
+    const cp = c.detected_price ?? c.suggested_price ?? null;
+    return (
+      o.name !== c.name ||
+      op !== cp ||
+      (o.estimated_cost ?? null) !== (c.estimated_cost ?? null) ||
+      (o.expected_monthly_units ?? null) !== (c.expected_monthly_units ?? null) ||
+      (o.margin_percent ?? null) !== (c.margin_percent ?? null)
+    );
+  };
+
+  const changedIndexes = useMemo(
+    () => items.map((_, i) => i).filter(i => hasChanges(i)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items]
+  );
+
+  const selectOnlyChanged = () => setSelected(new Set(changedIndexes));
+
   const summary = useMemo(() => {
     const sel = items.filter((_, i) => selected.has(i));
     let assumedFields = 0;
