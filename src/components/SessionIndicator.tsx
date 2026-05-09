@@ -13,7 +13,7 @@ export function SessionIndicator({
   show, 
   onClear, 
   className,
-  message = "Sessão anterior restaurada" 
+  message = "Sessão anterior restaurada — limpe para usar a versão mais nova",
 }: SessionIndicatorProps) {
   if (!show) return null;
 

@@ -1,8 +1,31 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { scopedSession, scopedKey } from "@/lib/userScopedKey";
 
-const SESSION_METADATA_BASE = "session_metadata";
+/**
+ * Bump this whenever the shape of any persisted session payload changes.
+ * Old (un-suffixed or older-suffix) keys are purged on boot, so users never
+ * see stale state shaped for a previous version of the UI.
+ */
+const SESSION_SCHEMA_VERSION = "v2";
+const versionedKey = (key: string) => `${key}@${SESSION_SCHEMA_VERSION}`;
+
+const SESSION_METADATA_BASE = `session_metadata@${SESSION_SCHEMA_VERSION}`;
 const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** Remove every scoped session entry that does NOT carry the current schema suffix. */
+function purgeStaleSchemaSessions() {
+  try {
+    const keys = scopedSession.listKeysForCurrentUser();
+    const suffix = `@${SESSION_SCHEMA_VERSION}`;
+    for (const k of keys) {
+      // k looks like `u:<id>::<base>` — keep only those whose <base> ends with the current suffix.
+      const sepIdx = k.indexOf("::");
+      const base = sepIdx >= 0 ? k.slice(sepIdx + 2) : k;
+      if (!base.endsWith(suffix)) scopedSession.removeRaw(k);
+    }
+  } catch { /* ignore */ }
+}
+purgeStaleSchemaSessions();
 
 interface SessionMetadata {
   [key: string]: number;
@@ -65,21 +88,22 @@ export function useSessionPersistence<T>(
   initialState: T,
   debounceMs: number = 500
 ): [T, (value: T | ((prev: T) => T)) => void, () => void, boolean] {
+  const vKey = versionedKey(key);
   const [state, setState] = useState<T>(() => {
     try {
-      const stored = scopedSession.get(key);
+      const stored = scopedSession.get(vKey);
       if (stored) {
-        updateSessionMetadata(scopedKey(key));
+        updateSessionMetadata(scopedKey(vKey));
         return JSON.parse(stored) as T;
       }
     } catch (error) {
-      console.warn(`Failed to restore session for ${key}:`, error);
+      console.warn(`Failed to restore session for ${vKey}:`, error);
     }
     return initialState;
   });
 
   const [hasRestoredSession, setHasRestoredSession] = useState(() => {
-    try { return scopedSession.get(key) !== null; } catch { return false; }
+    try { return scopedSession.get(vKey) !== null; } catch { return false; }
   });
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -93,27 +117,27 @@ export function useSessionPersistence<T>(
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       try {
-        scopedSession.set(key, JSON.stringify(state));
-        updateSessionMetadata(scopedKey(key));
+        scopedSession.set(vKey, JSON.stringify(state));
+        updateSessionMetadata(scopedKey(vKey));
       } catch (error) {
-        console.warn(`Failed to save session for ${key}:`, error);
+        console.warn(`Failed to save session for ${vKey}:`, error);
       }
     }, debounceMs);
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [state, key, debounceMs]);
+  }, [state, vKey, debounceMs]);
 
   const clearSession = useCallback(() => {
     try {
-      scopedSession.remove(key);
-      removeSessionMetadata(scopedKey(key));
+      scopedSession.remove(vKey);
+      removeSessionMetadata(scopedKey(vKey));
       setState(initialState);
       setHasRestoredSession(false);
     } catch (error) {
-      console.warn(`Failed to clear session for ${key}:`, error);
+      console.warn(`Failed to clear session for ${vKey}:`, error);
     }
-  }, [key, initialState]);
+  }, [vKey, initialState]);
 
   return [state, setState, clearSession, hasRestoredSession];
 }

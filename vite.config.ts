@@ -4,8 +4,28 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
+const APP_VERSION = String(Date.now());
+
+// Tiny plugin: emits /version.json into the build so the running app can poll it.
+function emitVersionJson() {
+  return {
+    name: "emit-version-json",
+    apply: "build" as const,
+    generateBundle(this: any) {
+      this.emitFile({
+        type: "asset",
+        fileName: "version.json",
+        source: JSON.stringify({ version: APP_VERSION, builtAt: new Date().toISOString() }),
+      });
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+  },
   server: {
     host: "::",
     port: 8080,
@@ -15,6 +35,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    emitVersionJson(),
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
