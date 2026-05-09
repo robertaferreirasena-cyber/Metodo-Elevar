@@ -121,9 +121,22 @@ export function ServiceImportReview({ analysis, onConfirm, onApplyReplace, onCan
         </CardHeader>
         <CardContent className="pt-0 pb-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <Button size="sm" variant="outline" onClick={toggleAll} className="h-7 text-[11px]">
-              {allSelected ? "Desmarcar todos" : "Selecionar todos"}
-            </Button>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Button size="sm" variant="outline" onClick={toggleAll} className="h-7 text-[11px]">
+                {allSelected ? "Desmarcar todos" : "Selecionar todos"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={selectOnlyChanged}
+                disabled={changedIndexes.length === 0}
+                className="h-7 text-[11px] gap-1"
+                title="Marca apenas serviços com campos editados em relação ao detectado"
+              >
+                <Sparkles className="h-3 w-3" />
+                Só alterados ({changedIndexes.length})
+              </Button>
+            </div>
             <span className="text-[11px] text-muted-foreground">
               {summary.count} selecionado{summary.count === 1 ? "" : "s"} · {summary.assumedFields} campo{summary.assumedFields === 1 ? "" : "s"} assumido{summary.assumedFields === 1 ? "" : "s"}
             </span>
