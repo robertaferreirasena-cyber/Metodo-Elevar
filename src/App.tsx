@@ -54,7 +54,11 @@ import ManyChatFlows from "./pages/ManyChatFlows";
 import FormalizeCommitment from "./pages/FormalizeCommitment";
 import InstagramHub from "./pages/InstagramHub";
 
+import { useAppVersionCheck } from "@/hooks/useAppVersionCheck";
+
 function GlobalErrorHandler({ children }: { children: React.ReactNode }) {
+  useAppVersionCheck();
+
   useEffect(() => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error("Unhandled promise rejection:", event.reason);
