@@ -14,6 +14,8 @@ export function SessionIndicator({
   onClear, 
   className,
   message = "Sessão anterior restaurada — limpe para usar a versão mais nova",
+}: SessionIndicatorProps) {
+  if (!show) return null;
 
   return (
     <div 
