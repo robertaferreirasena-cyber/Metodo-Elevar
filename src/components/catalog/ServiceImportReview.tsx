@@ -70,6 +70,29 @@ export function ServiceImportReview({ analysis, onConfirm, onApplyReplace, onCan
   const update = (i: number, patch: Partial<DetectedProduct>) =>
     setItems(prev => prev.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
 
+  const hasChanges = (i: number) => {
+    const o = analysis.products[i];
+    const c = items[i];
+    if (!o || !c) return false;
+    const op = o.detected_price ?? o.suggested_price ?? null;
+    const cp = c.detected_price ?? c.suggested_price ?? null;
+    return (
+      o.name !== c.name ||
+      op !== cp ||
+      (o.estimated_cost ?? null) !== (c.estimated_cost ?? null) ||
+      (o.expected_monthly_units ?? null) !== (c.expected_monthly_units ?? null) ||
+      (o.margin_percent ?? null) !== (c.margin_percent ?? null)
+    );
+  };
+
+  const changedIndexes = useMemo(
+    () => items.map((_, i) => i).filter(i => hasChanges(i)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items]
+  );
+
+  const selectOnlyChanged = () => setSelected(new Set(changedIndexes));
+
   const summary = useMemo(() => {
     const sel = items.filter((_, i) => selected.has(i));
     let assumedFields = 0;
@@ -98,9 +121,22 @@ export function ServiceImportReview({ analysis, onConfirm, onApplyReplace, onCan
         </CardHeader>
         <CardContent className="pt-0 pb-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <Button size="sm" variant="outline" onClick={toggleAll} className="h-7 text-[11px]">
-              {allSelected ? "Desmarcar todos" : "Selecionar todos"}
-            </Button>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Button size="sm" variant="outline" onClick={toggleAll} className="h-7 text-[11px]">
+                {allSelected ? "Desmarcar todos" : "Selecionar todos"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={selectOnlyChanged}
+                disabled={changedIndexes.length === 0}
+                className="h-7 text-[11px] gap-1"
+                title="Marca apenas serviços com campos editados em relação ao detectado"
+              >
+                <Sparkles className="h-3 w-3" />
+                Só alterados ({changedIndexes.length})
+              </Button>
+            </div>
             <span className="text-[11px] text-muted-foreground">
               {summary.count} selecionado{summary.count === 1 ? "" : "s"} · {summary.assumedFields} campo{summary.assumedFields === 1 ? "" : "s"} assumido{summary.assumedFields === 1 ? "" : "s"}
             </span>
