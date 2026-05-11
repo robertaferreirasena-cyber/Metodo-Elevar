@@ -61,6 +61,7 @@ export default function Dashboard() {
   const { modules, lessons, progress, loading: learningLoading, totalProgress, getModuleProgress } = useLearning();
   const navigate = useNavigate();
   useSalesReminder(user?.id);
+  const { count: newMaterialsCount, latest: latestMaterial } = useCommunityNewMaterials();
 
   const [xpData, setXpData] = useState<{ total_xp: number; level: number; streak_days: number } | null>(null);
 
