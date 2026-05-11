@@ -51,14 +51,6 @@ const financeItems = [
   { title: "Relatório Mensal", url: "/relatorio-financeiro", icon: FileText },
 ];
 
-const moreItems = [
-  { title: "Ideias", url: "/ideias", icon: Lightbulb },
-  { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera },
-  { title: "Comunidade", url: "/comunidade", icon: MessageSquare },
-  { title: "Favoritos", url: "/favoritos", icon: Heart },
-  { title: "Histórico", url: "/historico", icon: Clock },
-  { title: "Instalar App", url: "/instalar", icon: Download },
-];
 
 export function AppSidebar() {
   const location = useLocation();
