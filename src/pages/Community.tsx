@@ -1,5 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useCommunity, CommunityMessage } from '@/hooks/useCommunity';
+import { VimeoPlayer, isVimeoUrl } from '@/components/community/VimeoPlayer';
+import { useCommunityNewMaterials } from '@/hooks/useCommunityNewMaterials';
+import { PlayCircle, Video } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -66,6 +70,27 @@ export default function Community() {
   
   // Poll dialog state
   const [pollDialogOpen, setPollDialogOpen] = useState(false);
+
+  // Vimeo player dialog
+  const [vimeoMaterial, setVimeoMaterial] = useState<{ url: string; title: string } | null>(null);
+
+  // Tab via query string + mark materials seen
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'materials' ? 'materials' : 'chat';
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const { markAllSeen } = useCommunityNewMaterials();
+
+  useEffect(() => {
+    if (activeTab === 'materials') {
+      markAllSeen();
+    }
+  }, [activeTab, markAllSeen]);
+
+  // Auto-detect Vimeo URL in the add-material dialog
+  const detectedVimeo = useMemo(() => isVimeoUrl(materialUrl), [materialUrl]);
+  useEffect(() => {
+    if (detectedVimeo && materialType !== 'vimeo') setMaterialType('vimeo');
+  }, [detectedVimeo]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -336,7 +361,7 @@ export default function Community() {
         )}
       </div>
 
-      <Tabs defaultValue="chat" className="flex-1 flex flex-col min-h-0">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams(v === 'materials' ? { tab: 'materials' } : {}, { replace: true }); }} className="flex-1 flex flex-col min-h-0">
         <TabsList className="shrink-0">
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="materials">Materiais ({materials.length})</TabsTrigger>
@@ -608,8 +633,13 @@ export default function Community() {
                         <Input
                           value={materialUrl}
                           onChange={(e) => setMaterialUrl(e.target.value)}
-                          placeholder="https://..."
+                          placeholder="Cole o link (Vimeo, PDF, drive...)"
                         />
+                        {detectedVimeo && (
+                          <p className="text-xs text-primary mt-1 flex items-center gap-1">
+                            <Video className="h-3 w-3" /> Vídeo Vimeo detectado — será reproduzido dentro do app.
+                          </p>
+                        )}
                       </div>
                       <div>
                         <Label>Tipo</Label>
@@ -620,9 +650,15 @@ export default function Community() {
                         >
                           <option value="link">Link</option>
                           <option value="pdf">PDF</option>
-                          <option value="video">Vídeo</option>
+                          <option value="vimeo">Vídeo Vimeo (player embutido)</option>
+                          <option value="video">Vídeo (link externo)</option>
                           <option value="image">Imagem</option>
                         </select>
+                        {materialType === 'vimeo' && (
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            Para vídeos privados, cole a URL com o hash (ex.: vimeo.com/123/abc) ou autorize o domínio do app no painel do Vimeo.
+                          </p>
+                        )}
                       </div>
                       <Button onClick={handleAddMaterial} className="w-full">
                         Adicionar
@@ -640,22 +676,31 @@ export default function Community() {
                 </div>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {materials.map((material) => (
+                  {materials.map((material) => {
+                    const isVimeo = material.file_type === 'vimeo' || isVimeoUrl(material.file_url);
+                    return (
                     <Card key={material.id} className="overflow-hidden">
                       <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              {material.file_type === 'pdf' ? (
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-3 min-w-0">
+                            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                              {isVimeo ? (
+                                <Video className="h-5 w-5 text-primary" />
+                              ) : material.file_type === 'pdf' ? (
                                 <FileText className="h-5 w-5 text-primary" />
                               ) : material.file_type === 'video' ? (
-                                <FileText className="h-5 w-5 text-primary" />
+                                <Video className="h-5 w-5 text-primary" />
                               ) : (
                                 <LinkIcon className="h-5 w-5 text-primary" />
                               )}
                             </div>
-                            <div>
-                              <h4 className="font-medium">{material.title}</h4>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-medium truncate">{material.title}</h4>
+                                {isVimeo && (
+                                  <Badge variant="secondary" className="text-[10px]">Vimeo</Badge>
+                                )}
+                              </div>
                               {material.description && (
                                 <p className="text-sm text-muted-foreground mt-1">
                                   {material.description}
@@ -666,14 +711,26 @@ export default function Community() {
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => window.open(material.file_url, '_blank')}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                          <div className="flex gap-1 shrink-0">
+                            {isVimeo ? (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="gap-1"
+                                onClick={() => setVimeoMaterial({ url: material.file_url, title: material.title })}
+                              >
+                                <PlayCircle className="h-4 w-4" />
+                                Assistir
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => window.open(material.file_url, '_blank')}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
                             {isAdmin && (
                               <Button
                                 variant="ghost"
@@ -688,7 +745,8 @@ export default function Community() {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -716,6 +774,21 @@ export default function Community() {
               />
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Vimeo Player Dialog */}
+      <Dialog open={!!vimeoMaterial} onOpenChange={(open) => !open && setVimeoMaterial(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Video className="h-4 w-4 text-primary" />
+              {vimeoMaterial?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {vimeoMaterial && (
+            <VimeoPlayer url={vimeoMaterial.url} title={vimeoMaterial.title} />
+          )}
         </DialogContent>
       </Dialog>
     </div>

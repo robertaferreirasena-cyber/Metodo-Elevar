@@ -1,4 +1,5 @@
-import { Home, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target, FileText, CheckCircle2, AlertCircle, Megaphone, Bot } from "lucide-react";
+import { Home, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target, FileText, CheckCircle2, AlertCircle, Megaphone, Bot, Users } from "lucide-react";
+import { useCommunityNewMaterials } from "@/hooks/useCommunityNewMaterials";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,11 +29,20 @@ import { useState } from "react";
 const mainItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Mentora Gi", url: "/mentora-hub", icon: BotMessageSquare },
+  { title: "Comunidade", url: "/comunidade", icon: Users, highlight: true },
   { title: "Tráfego Pago", url: "/trafego-pago", icon: Megaphone },
   { title: "Central Instagram", url: "/instagram", icon: Bot },
   { title: "Persona", url: "/persona", icon: Brain },
   { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap },
   { title: "Conquistas", url: "/conquistas", icon: Trophy },
+];
+
+const moreItems = [
+  { title: "Ideias", url: "/ideias", icon: Lightbulb },
+  { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera },
+  { title: "Favoritos", url: "/favoritos", icon: Heart },
+  { title: "Histórico", url: "/historico", icon: Clock },
+  { title: "Instalar App", url: "/instalar", icon: Download },
 ];
 
 const financeItems = [
@@ -41,14 +51,6 @@ const financeItems = [
   { title: "Relatório Mensal", url: "/relatorio-financeiro", icon: FileText },
 ];
 
-const moreItems = [
-  { title: "Ideias", url: "/ideias", icon: Lightbulb },
-  { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera },
-  { title: "Comunidade", url: "/comunidade", icon: MessageSquare },
-  { title: "Favoritos", url: "/favoritos", icon: Heart },
-  { title: "Histórico", url: "/historico", icon: Clock },
-  { title: "Instalar App", url: "/instalar", icon: Download },
-];
 
 export function AppSidebar() {
   const location = useLocation();
@@ -57,6 +59,7 @@ export function AppSidebar() {
   const { isAdmin } = useAdmin();
   const { hasRaioX, hasProfile, loading: personaLoading } = usePersonaProfile();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { count: newMaterialsCount } = useCommunityNewMaterials();
 
   const isActive = (path: string) => {
     if (path === "/") return currentPath === "/";
@@ -113,11 +116,16 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="hover:bg-muted/50 flex items-center w-full py-1"
+                      className={`hover:bg-muted/50 flex items-center w-full py-1 ${(item as any).highlight ? 'bg-primary/5 ring-1 ring-primary/30 rounded-md' : ''}`}
                       activeClassName="bg-muted text-primary font-medium"
                     >
-                      <item.icon className="mr-2 h-3.5 w-3.5" />
-                      <span className="text-xs">{item.title}</span>
+                      <item.icon className={`mr-2 h-3.5 w-3.5 ${(item as any).highlight ? 'text-primary' : ''}`} />
+                      <span className={`text-xs ${(item as any).highlight ? 'font-semibold' : ''}`}>{item.title}</span>
+                      {item.title === "Comunidade" && newMaterialsCount > 0 && (
+                        <Badge variant="destructive" className="ml-auto h-4 min-w-4 px-1 text-[9px]">
+                          {newMaterialsCount}
+                        </Badge>
+                      )}
                       {item.title === "Persona" && !personaLoading && (
                         hasRaioX ? (
                           <CheckCircle2 className="ml-auto h-3.5 w-3.5 text-green-500" />
