@@ -361,7 +361,7 @@ export default function Community() {
         )}
       </div>
 
-      <Tabs defaultValue="chat" className="flex-1 flex flex-col min-h-0">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams(v === 'materials' ? { tab: 'materials' } : {}, { replace: true }); }} className="flex-1 flex flex-col min-h-0">
         <TabsList className="shrink-0">
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="materials">Materiais ({materials.length})</TabsTrigger>
