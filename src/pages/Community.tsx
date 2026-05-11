@@ -665,22 +665,31 @@ export default function Community() {
                 </div>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {materials.map((material) => (
+                  {materials.map((material) => {
+                    const isVimeo = material.file_type === 'vimeo' || isVimeoUrl(material.file_url);
+                    return (
                     <Card key={material.id} className="overflow-hidden">
                       <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              {material.file_type === 'pdf' ? (
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-3 min-w-0">
+                            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                              {isVimeo ? (
+                                <Video className="h-5 w-5 text-primary" />
+                              ) : material.file_type === 'pdf' ? (
                                 <FileText className="h-5 w-5 text-primary" />
                               ) : material.file_type === 'video' ? (
-                                <FileText className="h-5 w-5 text-primary" />
+                                <Video className="h-5 w-5 text-primary" />
                               ) : (
                                 <LinkIcon className="h-5 w-5 text-primary" />
                               )}
                             </div>
-                            <div>
-                              <h4 className="font-medium">{material.title}</h4>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-medium truncate">{material.title}</h4>
+                                {isVimeo && (
+                                  <Badge variant="secondary" className="text-[10px]">Vimeo</Badge>
+                                )}
+                              </div>
                               {material.description && (
                                 <p className="text-sm text-muted-foreground mt-1">
                                   {material.description}
@@ -691,14 +700,26 @@ export default function Community() {
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => window.open(material.file_url, '_blank')}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                          <div className="flex gap-1 shrink-0">
+                            {isVimeo ? (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="gap-1"
+                                onClick={() => setVimeoMaterial({ url: material.file_url, title: material.title })}
+                              >
+                                <PlayCircle className="h-4 w-4" />
+                                Assistir
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => window.open(material.file_url, '_blank')}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
                             {isAdmin && (
                               <Button
                                 variant="ghost"
@@ -713,7 +734,8 @@ export default function Community() {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
