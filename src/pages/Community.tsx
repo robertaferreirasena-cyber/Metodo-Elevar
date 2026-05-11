@@ -633,8 +633,13 @@ export default function Community() {
                         <Input
                           value={materialUrl}
                           onChange={(e) => setMaterialUrl(e.target.value)}
-                          placeholder="https://..."
+                          placeholder="Cole o link (Vimeo, PDF, drive...)"
                         />
+                        {detectedVimeo && (
+                          <p className="text-xs text-primary mt-1 flex items-center gap-1">
+                            <Video className="h-3 w-3" /> Vídeo Vimeo detectado — será reproduzido dentro do app.
+                          </p>
+                        )}
                       </div>
                       <div>
                         <Label>Tipo</Label>
@@ -645,9 +650,15 @@ export default function Community() {
                         >
                           <option value="link">Link</option>
                           <option value="pdf">PDF</option>
-                          <option value="video">Vídeo</option>
+                          <option value="vimeo">Vídeo Vimeo (player embutido)</option>
+                          <option value="video">Vídeo (link externo)</option>
                           <option value="image">Imagem</option>
                         </select>
+                        {materialType === 'vimeo' && (
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            Para vídeos privados, cole a URL com o hash (ex.: vimeo.com/123/abc) ou autorize o domínio do app no painel do Vimeo.
+                          </p>
+                        )}
                       </div>
                       <Button onClick={handleAddMaterial} className="w-full">
                         Adicionar
