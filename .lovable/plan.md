@@ -1,84 +1,76 @@
-
 ## Objetivo
 
-Três melhorias coordenadas em `src/pages/PriceCalculator.tsx` e na edge function `catalog-price-analyzer`:
+Três melhorias coordenadas na seção **Comunidade**:
 
-1. **Importação resiliente de catálogo** — extrair todos os produtos mesmo com dados faltando, preencher defaults inteligentes e organizar dentro da Calculadora de Produtos.
-2. **Custos fixos do Mapa Financeiro nos dois modos do Produto** (Revendo / Eu produzo), com mesma UX da Calculadora de Serviços.
-3. **Persistência completa das 5 etapas** (incluindo passo ativo) tanto em Produtos quanto em Serviços.
-
----
-
-## 1. Importação tolerante de catálogos incompletos
-
-### Edge function `catalog-price-analyzer`
-- Reforçar prompt: instruir a IA a **sempre retornar todos os produtos detectados**, mesmo quando faltarem preço, custo, frete ou margem. Para campos faltantes deve devolver `null` em vez de pular o produto.
-- Garantir `cost_source: "estimated"` quando a IA não encontrar custo no documento (já existe parcialmente).
-- Aumentar tolerância no parser: se algum produto vier com campos ausentes mas tiver `name`, mantém na lista.
-
-### Front (`productFromDetected` em `PriceCalculator.tsx`)
-Hoje só preenche frete/embalagem com fallback. Expandir para defaults inteligentes em todos os campos quando faltarem:
-
-| Campo faltando | Default aplicado |
-|---|---|
-| `estimated_cost` | 50% do `detected_price` (margem padrão de revenda) |
-| `suggested_price`/`detected_price` | `cost * 2` (markup 100%) ou 0 se nada |
-| `freight_estimate` | já tem fallback (5% do preço, mín R$2) |
-| `packaging_estimate` | já tem fallback (R$2) |
-| `expected_monthly_units` | 10 |
-| `margin_percent` | 30 |
-| `category` → tipo | infere lojista/produtor (já existe) |
-
-- Adicionar flag visual (badge "estimado") por produto quando algum campo veio de fallback, para o usuário saber o que revisar.
-- Acumular contagem de "campos preenchidos automaticamente" e mostrar toast: *"X produtos importados. Revise os campos marcados como estimados."*
-
-### Resultado
-O usuário pode importar qualquer catálogo (mesmo só com nomes e preços) e o sistema cria os cards prontos para edição, sem travar a importação por dados faltantes.
+1. **Player Vimeo embutido** — quando o admin colar uma URL do Vimeo em "Materiais", o usuário assiste dentro do app (sem abrir aba externa).
+2. **Aviso de "novidades"** no Dashboard inicial sempre que houver materiais ainda não vistos.
+3. **Destaque da Comunidade** — atalho rápido no Dashboard e item promovido no menu lateral (sair do submenu "Mais").
 
 ---
 
-## 2. Custos fixos do Mapa nos dois modos do Produto
+## 1. Player Vimeo embutido em Materiais
 
-A Calculadora de Produtos **já recebe** `mapFixedCosts` e tem botão "Importar do Mapa", mas:
-- O auto-preenchimento ocorre apenas se `monthlyFixedCosts === 0`.
-- Não há paridade visual com Serviços (que tem switch *"Usar Mapa Financeiro"*, badge "Sincronizado" e desativa edição manual).
+### Detecção e ingest
+- No diálogo "Adicionar Material" (`src/pages/Community.tsx`), detectar automaticamente URLs do Vimeo (`vimeo.com/<id>`, `player.vimeo.com/video/<id>`, links privados `vimeo.com/<id>/<hash>`).
+- Quando detectado, definir `file_type = 'vimeo'` automaticamente (substituindo o select manual nesse caso) e exibir badge "Vídeo Vimeo" no preview do diálogo antes de salvar.
+- Guardar a URL original em `file_url` (sem alterar schema).
 
-### Mudanças
-- Replicar a UX da Calculadora de Serviços na seção de custos fixos do Produto:
-  - Switch **"Usar Mapa Financeiro"** que vincula `monthlyFixedCosts` ao valor atual de `mapFixedCosts` em tempo real.
-  - Badge mostrando o valor sincronizado e link para Mapa Financeiro caso esteja vazio.
-  - Quando ligado, campo manual fica desabilitado.
-- Aplicar o rateio de fixos por produto **independente do `businessType`** (lojista/produtor) — a lógica atual já é unificada (`productResults` usa `monthlyFixedCosts` para todos), só precisamos garantir que o rateio aparece no breakdown de custos de produtor também.
-- Persistir `fixedCostsFromMap` no sessionStorage (já está em `session_product_calc_v2`).
+### Reprodução in-app
+- Criar `src/components/community/VimeoPlayer.tsx` que recebe a URL, extrai o ID + hash e renderiza um `<iframe>` responsivo (`src="https://player.vimeo.com/video/{id}?h={hash}&dnt=1"`) com `allow="autoplay; fullscreen; picture-in-picture"` e wrapper `aspect-video`.
+- Em `Community.tsx`, na lista de materiais, quando `file_type === 'vimeo'`:
+  - Substituir o botão "Abrir" por **"Assistir aqui"** que abre um `Dialog` com o `VimeoPlayer` em tela larga.
+  - Mostrar miniatura/ícone de vídeo no card.
+- Manter comportamento atual (`window.open`) para `pdf` / `link` / outros tipos.
+
+### Marcar como visto
+- Ao abrir o player, registrar localmente que o material foi visto (ver seção 2).
 
 ---
 
-## 3. Persistência completa das 5 etapas
+## 2. Aviso de novidades no Dashboard
 
-### Estado atual
-- `session_service_calc_v3` salva valores dos serviços, mas **não salva** o accordion ativo (passo atual do wizard).
-- `session_product_calc_v2` salva produtos, mas **não salva** quais cards estão expandidos nem o passo do wizard interno.
+### Estado de "visto" (sem migration)
+- Persistir em `localStorage` com chave por usuário (`useUserScopedKey`) o timestamp da última visita à aba **Materiais** da Comunidade — `community_materials_last_seen_at`.
+- Atualizar esse timestamp quando o usuário entra em `/comunidade` e seleciona a tab "Materiais" (ou abre um material).
 
-### Mudanças
-- Adicionar ao `ServiceSessionState`: `activeStep: string` (ex.: `"step-1"`).
-- Adicionar ao `ProductCalcSessionState`: `openItems: string[]` (cards expandidos) e, se houver wizard interno por produto, o passo ativo.
-- Atualizar os `useEffect` de sincronização para incluir esses campos.
-- Garantir restauração: ao voltar à página, abrir exatamente o passo/card onde o usuário parou.
-- Persistência via `useSessionPersistence` com debounce 500ms (já é o padrão).
+### Hook `useCommunityNewMaterials`
+- Novo hook em `src/hooks/useCommunityNewMaterials.ts`:
+  - Busca `community_materials` ordenados por `created_at desc` (limite 20).
+  - Compara com `last_seen_at` e devolve `{ count, latest }`.
+  - Realtime opcional via canal Supabase em `community_materials` para refletir novos itens sem refresh.
+
+### UI no Dashboard (`src/pages/Dashboard.tsx`)
+- Banner discreto no topo (estilo destaque) quando `count > 0`:
+  - Texto: *"Novidades na Comunidade — N novo(s) material(is)"* + botão **"Ver agora"** que navega para `/comunidade?tab=materials`.
+- Adicionar suporte a query string `?tab=` em `Community.tsx` para pré-selecionar a tab.
+- Badge numérico no atalho rápido da Comunidade (ver seção 3).
+
+---
+
+## 3. Destaque da Comunidade
+
+### Sidebar (`src/components/layout/AppSidebar.tsx`)
+- Mover **"Comunidade"** do submenu "Mais" para o grupo **principal** (logo abaixo de "Conquistas" ou "Aprendizado").
+- Usar ícone `MessageSquare` mantido, com badge vermelho mostrando número de novos materiais (vindo do hook acima).
+- Remover do array `moreItems` para evitar duplicação.
+
+### Atalho rápido no Dashboard
+- Adicionar um `FeatureCard` destacado "Comunidade" na grade principal do Dashboard com:
+  - Ícone, título, descrição curta ("Conversa, materiais e aulas novas").
+  - Badge "Novidade" quando `count > 0`.
+  - Click → `/comunidade`.
 
 ---
 
 ## Arquivos afetados
 
-- `supabase/functions/catalog-price-analyzer/index.ts` — prompt mais tolerante, validação leniente.
-- `src/pages/PriceCalculator.tsx`:
-  - `productFromDetected`: defaults expandidos + flag de estimativa.
-  - `ProductCalculator`: switch "Usar Mapa Financeiro" + persistência de `openItems`.
-  - `ServiceCalculator`: persistência do `activeStep`.
-  - Tipos `ProductCalcSessionState` e `ServiceSessionState`: novos campos.
-- `src/components/catalog/CatalogAnalysisResult.tsx`: badge "estimado" por campo (opcional, leve).
+- `src/components/community/VimeoPlayer.tsx` — **novo**, iframe responsivo.
+- `src/pages/Community.tsx` — detecção Vimeo, dialog player, leitura de `?tab=`, registro de "visto".
+- `src/hooks/useCommunityNewMaterials.ts` — **novo**, contagem de materiais não vistos.
+- `src/pages/Dashboard.tsx` — banner de novidades + FeatureCard de atalho.
+- `src/components/layout/AppSidebar.tsx` — promover Comunidade para o grupo principal + badge.
 
 ## Notas
 
-- Sem migrations de banco; tudo é cliente + edge function.
-- Mantém compatibilidade com sessions v2/v3 existentes (campos novos opcionais com defaults).
+- Sem migrations: tipo `'vimeo'` cabe em `file_type` (text). "Visto" fica em `localStorage` por usuário — simples e suficiente para o caso.
+- Vídeos privados do Vimeo precisam que o admin cole a URL com hash (`vimeo.com/123456/abc123`) ou tenham domínio do app autorizado nas permissões do vídeo no painel do Vimeo. Vou incluir uma nota visual no diálogo de upload sobre isso.
