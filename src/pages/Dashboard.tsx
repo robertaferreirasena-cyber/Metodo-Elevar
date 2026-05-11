@@ -146,6 +146,30 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
+      {/* New Community Materials Banner */}
+      {newMaterialsCount > 0 && (
+        <Card className="border-primary/40 bg-gradient-to-r from-primary/10 to-primary/5">
+          <CardContent className="py-3 px-4 flex items-center gap-3">
+            <div className="p-2 rounded-full bg-primary/20">
+              <Bell className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">
+                {newMaterialsCount === 1 ? 'Nova aula/material na Comunidade!' : `${newMaterialsCount} novidades na Comunidade!`}
+              </p>
+              {latestMaterial && (
+                <p className="text-xs text-muted-foreground truncate">
+                  Mais recente: {latestMaterial.title}
+                </p>
+              )}
+            </div>
+            <Button size="sm" onClick={() => navigate('/comunidade?tab=materials')} className="shrink-0 gap-1">
+              Ver agora <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ELEVAR Method Tracker Card */}
       {!learningLoading && modules.length > 0 && (() => {
         const currentMod = modules.find(m => {
