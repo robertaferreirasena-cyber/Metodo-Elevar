@@ -116,11 +116,16 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="hover:bg-muted/50 flex items-center w-full py-1"
+                      className={`hover:bg-muted/50 flex items-center w-full py-1 ${(item as any).highlight ? 'bg-primary/5 ring-1 ring-primary/30 rounded-md' : ''}`}
                       activeClassName="bg-muted text-primary font-medium"
                     >
-                      <item.icon className="mr-2 h-3.5 w-3.5" />
-                      <span className="text-xs">{item.title}</span>
+                      <item.icon className={`mr-2 h-3.5 w-3.5 ${(item as any).highlight ? 'text-primary' : ''}`} />
+                      <span className={`text-xs ${(item as any).highlight ? 'font-semibold' : ''}`}>{item.title}</span>
+                      {item.title === "Comunidade" && newMaterialsCount > 0 && (
+                        <Badge variant="destructive" className="ml-auto h-4 min-w-4 px-1 text-[9px]">
+                          {newMaterialsCount}
+                        </Badge>
+                      )}
                       {item.title === "Persona" && !personaLoading && (
                         hasRaioX ? (
                           <CheckCircle2 className="ml-auto h-3.5 w-3.5 text-green-500" />
