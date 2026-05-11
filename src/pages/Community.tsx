@@ -71,6 +71,27 @@ export default function Community() {
   // Poll dialog state
   const [pollDialogOpen, setPollDialogOpen] = useState(false);
 
+  // Vimeo player dialog
+  const [vimeoMaterial, setVimeoMaterial] = useState<{ url: string; title: string } | null>(null);
+
+  // Tab via query string + mark materials seen
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'materials' ? 'materials' : 'chat';
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const { markAllSeen } = useCommunityNewMaterials();
+
+  useEffect(() => {
+    if (activeTab === 'materials') {
+      markAllSeen();
+    }
+  }, [activeTab, markAllSeen]);
+
+  // Auto-detect Vimeo URL in the add-material dialog
+  const detectedVimeo = useMemo(() => isVimeoUrl(materialUrl), [materialUrl]);
+  useEffect(() => {
+    if (detectedVimeo && materialType !== 'vimeo') setMaterialType('vimeo');
+  }, [detectedVimeo]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
