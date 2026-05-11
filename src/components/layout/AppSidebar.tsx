@@ -1,4 +1,5 @@
-import { Home, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target, FileText, CheckCircle2, AlertCircle, Megaphone, Bot } from "lucide-react";
+import { Home, BotMessageSquare, GraduationCap, Trophy, Brain, Lightbulb, Camera, MessageSquare, Heart, Clock, BookOpen, Download, LogOut, Settings, ChevronDown, DollarSign, Target, FileText, CheckCircle2, AlertCircle, Megaphone, Bot, Users } from "lucide-react";
+import { useCommunityNewMaterials } from "@/hooks/useCommunityNewMaterials";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
