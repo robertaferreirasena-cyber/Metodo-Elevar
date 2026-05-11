@@ -1,8 +1,9 @@
 import {
   BotMessageSquare, GraduationCap, Trophy, ArrowRight,
   Brain, Target, AlertTriangle, Zap, TrendingUp, BookOpen, Sparkles, DollarSign,
-  MapPin, CheckCircle2
+  MapPin, CheckCircle2, Users, Bell
 } from "lucide-react";
+import { useCommunityNewMaterials } from "@/hooks/useCommunityNewMaterials";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
