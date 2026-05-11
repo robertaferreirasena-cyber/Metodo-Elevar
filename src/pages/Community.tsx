@@ -1,5 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useCommunity, CommunityMessage } from '@/hooks/useCommunity';
+import { VimeoPlayer, isVimeoUrl } from '@/components/community/VimeoPlayer';
+import { useCommunityNewMaterials } from '@/hooks/useCommunityNewMaterials';
+import { PlayCircle, Video } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
