@@ -59,6 +59,7 @@ export function AppSidebar() {
   const { isAdmin } = useAdmin();
   const { hasRaioX, hasProfile, loading: personaLoading } = usePersonaProfile();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { count: newMaterialsCount } = useCommunityNewMaterials();
 
   const isActive = (path: string) => {
     if (path === "/") return currentPath === "/";
