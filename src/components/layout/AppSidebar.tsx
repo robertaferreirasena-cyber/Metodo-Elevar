@@ -29,11 +29,20 @@ import { useState } from "react";
 const mainItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Mentora Gi", url: "/mentora-hub", icon: BotMessageSquare },
+  { title: "Comunidade", url: "/comunidade", icon: Users, highlight: true },
   { title: "Tráfego Pago", url: "/trafego-pago", icon: Megaphone },
   { title: "Central Instagram", url: "/instagram", icon: Bot },
   { title: "Persona", url: "/persona", icon: Brain },
   { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap },
   { title: "Conquistas", url: "/conquistas", icon: Trophy },
+];
+
+const moreItems = [
+  { title: "Ideias", url: "/ideias", icon: Lightbulb },
+  { title: "Ensaio Foto", url: "/ensaio-fotografico", icon: Camera },
+  { title: "Favoritos", url: "/favoritos", icon: Heart },
+  { title: "Histórico", url: "/historico", icon: Clock },
+  { title: "Instalar App", url: "/instalar", icon: Download },
 ];
 
 const financeItems = [
