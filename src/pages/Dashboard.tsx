@@ -355,6 +355,22 @@ export default function Dashboard() {
             href="/metas-elevar"
             color="bg-orange-500/10"
           />
+          <button
+            onClick={() => navigate('/comunidade')}
+            className="relative flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-muted/80 transition-all duration-200 group border-2 border-primary/40 bg-primary/5 hover:border-primary/60"
+          >
+            {newMaterialsCount > 0 && (
+              <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-[10px]">
+                {newMaterialsCount}
+              </Badge>
+            )}
+            <div className="p-3 rounded-xl bg-primary/15 transition-transform group-hover:scale-110">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <span className="text-xs font-semibold text-foreground text-center">
+              Comunidade
+            </span>
+          </button>
         </div>
       </div>
 
