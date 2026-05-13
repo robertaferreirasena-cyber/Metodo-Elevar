@@ -1056,10 +1056,13 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                         selectedTemplate.id === t.id ? "border-primary shadow-md" : "border-transparent"
                       }`}
                     >
-                      <img src={t.thumbnail} alt={t.name} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-end p-2 transition-opacity">
-                        <span className="text-[10px] text-white font-medium truncate w-full">{t.name}</span>
+                      <div 
+                        className="w-full h-full flex items-center justify-center text-[10px] font-bold p-2 text-center"
+                        style={{ backgroundColor: t.bgColor, color: t.textColor, background: t.bgGradient || t.bgColor }}
+                      >
+                        {t.name}
                       </div>
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>
                   ))}
                 </div>
@@ -1087,6 +1090,22 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   <Button variant="outline" className="w-full h-8 justify-start text-sm px-4" onClick={() => addLayer("text", "Corpo de texto")}>Corpo de texto</Button>
                 </div>
               </div>
+              <div className="pt-4 border-t">
+                <h3 className="text-xs font-semibold mb-3 uppercase tracking-wider text-muted-foreground">Fontes</h3>
+                <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-auto">
+                  {FONT_OPTIONS.map(font => (
+                    <Button
+                      key={font.name}
+                      variant="ghost"
+                      className="justify-start text-sm font-normal px-2 h-9"
+                      style={{ fontFamily: font.name }}
+                      onClick={() => updateSlide(currentSlide, { fontFamily: font.name })}
+                    >
+                      {font.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             </div>
           </ScrollArea>
         );
@@ -1102,7 +1121,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
         return (
           <ScrollArea className="h-[600px]">
             <div className="p-4">
-              <UserUploads onSelectImage={(url) => addLayer("image", url)} />
+              <UserUploads onSelect={(url) => addLayer("image", url)} />
             </div>
           </ScrollArea>
         );
@@ -1111,12 +1130,10 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
           <ScrollArea className="h-[600px]">
             <div className="p-4">
               <LayerList 
-                layers={cur.layers || []} 
+                slide={cur} 
+                onUpdate={(upd) => updateSlide(currentSlide, upd)} 
                 selectedLayerId={selectedLayerId}
-                onSelect={setSelectedLayerId}
-                onUpdate={(updatedLayers) => {
-                  updateSlide(currentSlide, { layers: updatedLayers });
-                }}
+                onSelectLayer={setSelectedLayerId}
               />
             </div>
           </ScrollArea>
