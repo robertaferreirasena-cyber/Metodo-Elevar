@@ -31,7 +31,7 @@ const mainItems = [
   { title: "Mentora Gi", url: "/mentora-hub", icon: BotMessageSquare },
   { title: "Comunidade", url: "/comunidade", icon: Users, highlight: true },
   { title: "Tráfego Pago", url: "/trafego-pago", icon: Megaphone },
-  { title: "Central Instagram", url: "/instagram", icon: Bot },
+  { title: "Insta PRO", url: "/instagram", icon: Bot, highlight: true },
   { title: "Persona", url: "/persona", icon: Brain },
   { title: "Aprendizado", url: "/aprendizado", icon: GraduationCap },
   { title: "Conquistas", url: "/conquistas", icon: Trophy },
