@@ -797,73 +797,82 @@ export default function Community() {
       {/* Universal Content Viewer (Vimeo, PDF, Images) */}
       <Dialog open={!!vimeoMaterial} onOpenChange={(open) => !open && setVimeoMaterial(null)}>
         <DialogContent className="max-w-4xl w-[95vw] p-4 sm:p-6 overflow-hidden flex flex-col max-h-[90vh]">
-          <DialogHeader className="shrink-0">
-            <DialogTitle className="flex items-center justify-between gap-2 pr-6">
-              <div className="flex items-center gap-2 truncate">
-                {vimeoMaterial?.type === 'vimeo' || isVimeoUrl(vimeoMaterial?.url || '') ? (
-                  <Video className="h-4 w-4 text-primary shrink-0" />
-                ) : (
-                  <FileText className="h-4 w-4 text-primary shrink-0" />
-                )}
-                <span className="truncate">{vimeoMaterial?.title}</span>
-              </div>
-              {vimeoMaterial && !isVimeoUrl(vimeoMaterial.url) && (
-                <Button variant="outline" size="sm" asChild className="ml-auto mr-4">
-                  <a href={vimeoMaterial.url} download target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                    <Download className="h-4 w-4" /> Baixar
-                  </a>
-                </Button>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="mt-4 flex-1 min-h-0 overflow-auto flex items-center justify-center bg-black/5 rounded-lg relative group">
-            {vimeoMaterial && (
-              isVimeoUrl(vimeoMaterial.url) ? (
-                <div className="w-full h-full flex items-center justify-center p-4">
-                  <VimeoPlayer url={vimeoMaterial.url} title={vimeoMaterial.title} />
-                </div>
-              ) : vimeoMaterial.type === 'pdf' || vimeoMaterial.url.toLowerCase().includes('.pdf') ? (
-                <iframe 
-                  src={`${vimeoMaterial.url}#toolbar=0`} 
-                  className="w-full h-[70vh] rounded-lg border-none bg-white"
-                  title={vimeoMaterial.title}
-                />
-              ) : vimeoMaterial.type === 'image' || vimeoMaterial.url.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) ? (
-                <div className="relative w-full h-full flex items-center justify-center p-4">
-                  <img 
-                    src={vimeoMaterial.url} 
-                    alt={vimeoMaterial.title} 
-                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg" 
-                  />
-                  <a 
-                    href={vimeoMaterial.url} 
-                    download 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="absolute top-4 right-4 bg-background/80 hover:bg-background p-2 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <Download className="h-5 w-5" />
-                  </a>
-                </div>
-              ) : (
-                <div className="p-12 text-center">
-                  <p className="mb-4 text-muted-foreground font-medium">Este conteúdo pode exigir abertura em nova aba para visualização completa.</p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button asChild variant="default">
-                      <a href={vimeoMaterial.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                        <LinkIcon className="h-4 w-4" /> Abrir em nova aba
+          {(() => {
+            if (!vimeoMaterial) return null;
+            const normalizedUrl = vimeoMaterial.url.startsWith('http') || vimeoMaterial.url.startsWith('blob:') 
+              ? vimeoMaterial.url 
+              : `https://${vimeoMaterial.url}`;
+            
+            return (
+              <>
+                <DialogHeader className="shrink-0">
+                  <DialogTitle className="flex items-center justify-between gap-2 pr-6">
+                    <div className="flex items-center gap-2 truncate">
+                      {vimeoMaterial.type === 'vimeo' || isVimeoUrl(normalizedUrl) ? (
+                        <Video className="h-4 w-4 text-primary shrink-0" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-primary shrink-0" />
+                      )}
+                      <span className="truncate">{vimeoMaterial.title}</span>
+                    </div>
+                    {!isVimeoUrl(normalizedUrl) && (
+                      <Button variant="outline" size="sm" asChild className="ml-auto mr-4">
+                        <a href={normalizedUrl} download target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                          <Download className="h-4 w-4" /> Baixar
+                        </a>
+                      </Button>
+                    )}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="mt-4 flex-1 min-h-0 overflow-auto flex items-center justify-center bg-black/5 rounded-lg relative group">
+                  {isVimeoUrl(normalizedUrl) ? (
+                    <div className="w-full h-full flex items-center justify-center p-4">
+                      <VimeoPlayer url={normalizedUrl} title={vimeoMaterial.title} />
+                    </div>
+                  ) : vimeoMaterial.type === 'pdf' || normalizedUrl.toLowerCase().includes('.pdf') ? (
+                    <iframe 
+                      src={`${normalizedUrl}#toolbar=0`} 
+                      className="w-full h-[70vh] rounded-lg border-none bg-white"
+                      title={vimeoMaterial.title}
+                    />
+                  ) : vimeoMaterial.type === 'image' || normalizedUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) ? (
+                    <div className="relative w-full h-full flex items-center justify-center p-4">
+                      <img 
+                        src={normalizedUrl} 
+                        alt={vimeoMaterial.title} 
+                        className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg" 
+                      />
+                      <a 
+                        href={normalizedUrl} 
+                        download 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="absolute top-4 right-4 bg-background/80 hover:bg-background p-2 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        <Download className="h-5 w-5" />
                       </a>
-                    </Button>
-                    <Button asChild variant="outline">
-                      <a href={vimeoMaterial.url} download className="flex items-center gap-2">
-                        <Download className="h-4 w-4" /> Baixar arquivo
-                      </a>
-                    </Button>
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="p-12 text-center">
+                      <p className="mb-4 text-muted-foreground font-medium">Este conteúdo pode exigir abertura em nova aba para visualização completa.</p>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Button asChild variant="default">
+                          <a href={normalizedUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                            <LinkIcon className="h-4 w-4" /> Abrir em nova aba
+                          </a>
+                        </Button>
+                        <Button asChild variant="outline">
+                          <a href={normalizedUrl} download className="flex items-center gap-2">
+                            <Download className="h-4 w-4" /> Baixar arquivo
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )
-            )}
-          </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
