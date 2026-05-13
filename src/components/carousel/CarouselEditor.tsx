@@ -821,7 +821,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   const applyTemplateToAll = (template: CarouselTemplate) => {
     setSelectedTemplate(template);
     const isJournal = isJournalTemplate(template.id);
-    setSlides((prev) =>
+    updateSlidesWithHistory((prev) =>
       prev.map((s, i) => ({
         ...s,
         bgColor: template.bgColor, textColor: template.textColor, accentColor: template.accentColor,
