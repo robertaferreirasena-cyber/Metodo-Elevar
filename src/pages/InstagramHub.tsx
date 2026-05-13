@@ -1,10 +1,20 @@
-import { Instagram, Palette, LayoutGrid, Bot, ArrowRight, PlusCircle, Sparkles } from "lucide-react";
+import { Instagram, Palette, LayoutGrid, Bot, ArrowRight, PlusCircle, Sparkles, MessageSquare } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 const tools = [
+  {
+    title: "iNSTA PRO",
+    description: "Grade estratégica 3x3, bio e perfil otimizado com IA para máxima conversão",
+    icon: LayoutGrid,
+    color: "bg-violet-500/10",
+    iconColor: "text-violet-500",
+    href: "/aprendizado?tab=instapro",
+    badge: "PREMIUM",
+    action: "Configurar Perfil"
+  },
   {
     title: "Gerador de Carrossel",
     description: "Crie carrosséis virais com templates profissionais e IA",
@@ -16,18 +26,8 @@ const tools = [
     action: "Acessar"
   },
   {
-    title: "iNSTA PRO",
-    description: "Grade estratégica 3x3, bio e perfil otimizado com IA",
-    icon: LayoutGrid,
-    color: "bg-violet-500/10",
-    iconColor: "text-violet-500",
-    href: "/aprendizado?tab=instapro",
-    badge: "PREMIUM",
-    action: "Acessar"
-  },
-  {
     title: "Criar do Zero",
-    description: "Inicie um design de carrossel em branco com total liberdade",
+    description: "Inicie um design de carrossel em branco com total liberdade estilo Canva",
     icon: PlusCircle,
     color: "bg-blue-500/10",
     iconColor: "text-blue-500",
@@ -37,12 +37,12 @@ const tools = [
   },
   {
     title: "Automação Instagram",
-    description: "Fluxos ManyChat de alta conversão para DMs automáticas",
-    icon: Bot,
+    description: "Fluxos ManyChat de alta conversão para DMs automáticas e funis",
+    icon: MessageSquare,
     color: "bg-emerald-500/10",
     iconColor: "text-emerald-500",
     href: "/automacao-instagram",
-    badge: null,
+    badge: "ESSENCIAL",
     action: "Configurar"
   },
 ];
