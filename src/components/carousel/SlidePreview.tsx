@@ -547,7 +547,14 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           return (
             <>
               {photoUrl ? (
-                <div className="absolute inset-0" style={buildImageStyle(photoUrl, { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} />
+                <div className="absolute inset-0 overflow-hidden">
+                  <img 
+                    src={photoUrl} 
+                    alt="" 
+                    className="absolute inset-0 w-full h-full object-cover" 
+                    style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} 
+                  />
+                </div>
               ) : (
                 <>
                   <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${slide.bgColor} 0%, rgba(0,0,0,0.55) 100%)` }} />
