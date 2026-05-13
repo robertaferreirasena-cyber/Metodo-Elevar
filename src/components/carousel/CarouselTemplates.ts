@@ -96,7 +96,21 @@ export interface CarouselTemplate {
   highlightBgColor?: string;
 }
 
-export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
+ export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
+   {
+     id: "blank-canvas",
+     name: "Criar do Zero",
+     description: "Tela em branco para total liberdade criativa",
+     aspectRatio: "1:1",
+     bgColor: "#FFFFFF",
+     textColor: "#1A1A1A",
+     accentColor: "#E11D48",
+     fontFamily: "'DM Sans', sans-serif",
+     titleSize: 42,
+     bodySize: 26,
+     align: "center",
+     layout: "text-only",
+   },
   // ========== TEMPLATES ORIGINAIS ==========
   {
     id: "twitter-thread",
