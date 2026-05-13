@@ -844,6 +844,61 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
             <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
           </>
         )}
+        {/* =========== CUSTOM LAYERS =========== */}
+        {slide.layers?.map((layer) => (
+          <Rnd
+            key={layer.id}
+            position={{ x: layer.x * spec.width, y: layer.y * spec.height }}
+            size={{ width: layer.width * spec.width, height: layer.height * spec.height }}
+            onDragStop={(e, d) => {
+              if (!isFreeEditMode) return;
+              const newLayers = slide.layers?.map(l => l.id === layer.id ? { ...l, x: d.x / spec.width, y: d.y / spec.height } : l);
+              onUpdate?.({ layers: newLayers });
+            }}
+            onResizeStop={(e, dir, ref, delta, pos) => {
+              if (!isFreeEditMode) return;
+              const newLayers = slide.layers?.map(l => l.id === layer.id ? { 
+                ...l, 
+                x: pos.x / spec.width, 
+                y: pos.y / spec.height, 
+                width: ref.offsetWidth / spec.width, 
+                height: ref.offsetHeight / spec.height 
+              } : l);
+              onUpdate?.({ layers: newLayers });
+            }}
+            bounds="parent"
+            enableResizing={isFreeEditMode}
+            disableDragging={!isFreeEditMode}
+            className={isFreeEditMode ? "z-10" : "pointer-events-none"}
+          >
+            <div className="w-full h-full flex items-center justify-center relative group">
+              {layer.type === "text" && (
+                <div style={{ ...bodyStyle, margin: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', ...layer.style }}>
+                  {layer.content}
+                </div>
+              )}
+              {layer.type === "shape" && (
+                <div style={{ width: '100%', height: '100%', backgroundColor: slide.accentColor, ...layer.style }} />
+              )}
+              {layer.type === "sticker" && (
+                <div style={{ fontSize: layer.height * spec.height * 0.8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {layer.content}
+                </div>
+              )}
+              {isFreeEditMode && (
+                <button 
+                  className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => {
+                    const newLayers = slide.layers?.filter(l => l.id !== layer.id);
+                    onUpdate?.({ layers: newLayers });
+                  }}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </Rnd>
+        ))}
       </div>
     );
 
