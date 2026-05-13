@@ -71,8 +71,8 @@ export default function Community() {
   // Poll dialog state
   const [pollDialogOpen, setPollDialogOpen] = useState(false);
 
-  // Vimeo player dialog
-  const [vimeoMaterial, setVimeoMaterial] = useState<{ url: string; title: string } | null>(null);
+  // Vimeo player and Universal Viewer dialog
+  const [vimeoMaterial, setVimeoMaterial] = useState<{ url: string; title: string; type?: string } | null>(null);
 
   // Tab via query string + mark materials seen
   const [searchParams, setSearchParams] = useSearchParams();
