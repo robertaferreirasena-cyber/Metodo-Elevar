@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { scopedSession, scopedKey } from "@/lib/userScopedKey";
+import { scopedSession, scopedLocal, scopedKey } from "@/lib/userScopedKey";
 
 const SESSION_METADATA_BASE = "session_metadata";
 const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
