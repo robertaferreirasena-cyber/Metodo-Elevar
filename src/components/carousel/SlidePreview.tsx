@@ -77,6 +77,64 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     // Use inline padding for exact control
     const padPx = `${padSize}px`;
 
+    const renderTitle = (extraStyles: React.CSSProperties = {}, className: string = "mb-4") => {
+      const combinedStyle = { ...titleStyle, ...extraStyles };
+      if (isFreeEditMode) {
+        return (
+          <Rnd
+            className="pointer-events-auto z-20"
+            position={slide.titlePos ? { x: slide.titlePos.x * spec.width, y: slide.titlePos.y * spec.height } : undefined}
+            size={slide.titlePos?.width ? { width: slide.titlePos.width * spec.width, height: slide.titlePos.height * spec.height } : undefined}
+            onDragStop={(e, d) => onUpdate?.({ titlePos: { ...slide.titlePos, x: d.x / spec.width, y: d.y / spec.height } })}
+            onResizeStop={(e, dir, ref, delta, pos) => onUpdate?.({ titlePos: { ...slide.titlePos, x: pos.x / spec.width, y: pos.y / spec.height, width: ref.offsetWidth / spec.width, height: ref.offsetHeight / spec.height } })}
+            bounds="parent"
+            enableResizing={isFreeEditMode}
+            disableDragging={!isFreeEditMode}
+          >
+            <h2 style={{ ...combinedStyle, margin: 0, width: '100%', height: '100%' }}>{slide.title}</h2>
+          </Rnd>
+        );
+      }
+      const posStyle: React.CSSProperties = slide.titlePos ? { 
+        position: 'absolute', 
+        left: `${slide.titlePos.x * 100}%`, 
+        top: `${slide.titlePos.y * 100}%`, 
+        width: slide.titlePos.width ? `${slide.titlePos.width * 100}%` : undefined,
+        height: slide.titlePos.height ? `${slide.titlePos.height * 100}%` : undefined,
+        margin: 0
+      } : {};
+      return <h2 className={className} style={{ ...combinedStyle, ...posStyle }}>{slide.title}</h2>;
+    };
+
+    const renderBody = (extraStyles: React.CSSProperties = {}, className: string = "whitespace-pre-wrap") => {
+      const combinedStyle = { ...bodyStyle, ...extraStyles };
+      if (isFreeEditMode) {
+        return (
+          <Rnd
+            className="pointer-events-auto z-20"
+            position={slide.bodyPos ? { x: slide.bodyPos.x * spec.width, y: slide.bodyPos.y * spec.height } : undefined}
+            size={slide.bodyPos?.width ? { width: slide.bodyPos.width * spec.width, height: slide.bodyPos.height * spec.height } : undefined}
+            onDragStop={(e, d) => onUpdate?.({ bodyPos: { ...slide.bodyPos, x: d.x / spec.width, y: d.y / spec.height } })}
+            onResizeStop={(e, dir, ref, delta, pos) => onUpdate?.({ bodyPos: { ...slide.bodyPos, x: pos.x / spec.width, y: pos.y / spec.height, width: ref.offsetWidth / spec.width, height: ref.offsetHeight / spec.height } })}
+            bounds="parent"
+            enableResizing={isFreeEditMode}
+            disableDragging={!isFreeEditMode}
+          >
+            <p style={{ ...combinedStyle, margin: 0, width: '100%', height: '100%' }}>{slide.body}</p>
+          </Rnd>
+        );
+      }
+      const posStyle: React.CSSProperties = slide.bodyPos ? { 
+        position: 'absolute', 
+        left: `${slide.bodyPos.x * 100}%`, 
+        top: `${slide.bodyPos.y * 100}%`, 
+        width: slide.bodyPos.width ? `${slide.bodyPos.width * 100}%` : undefined,
+        height: slide.bodyPos.height ? `${slide.bodyPos.height * 100}%` : undefined,
+        margin: 0
+      } : {};
+      return <p className={className} style={{ ...combinedStyle, ...posStyle }}>{slide.body}</p>;
+    };
+
     // Helper: build CSS style object for an image container or direct img adjustments.
     const buildImageStyle = (
       opts: {
