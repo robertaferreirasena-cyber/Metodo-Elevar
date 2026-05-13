@@ -151,6 +151,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [giInput, setGiInput] = useState("");
   const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
   const [giLoading, setGiLoading] = useState(false);
+  const [isFreeEditMode, setIsFreeEditMode] = useState(false);
 
   // Persisted template apply mode
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
