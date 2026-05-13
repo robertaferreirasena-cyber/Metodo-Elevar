@@ -162,6 +162,31 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [activeTab, setActiveTab] = useState("templates");
   const [activeEditorTab, setActiveEditorTab] = useState("templates");
   const [searchParams] = useSearchParams();
+  const [history, setHistory] = useState<SlideData[][]>([]);
+  const [redoStack, setRedoStack] = useState<SlideData[][]>([]);
+
+  const pushToHistory = useCallback((currentSlides: SlideData[]) => {
+    setHistory(prev => [...prev.slice(-19), currentSlides]);
+    setRedoStack([]);
+  }, []);
+
+  const undo = useCallback(() => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setRedoStack(prevStack => [...prevStack, slides]);
+    setSlides(prev);
+    setHistory(prevHistory => prevHistory.slice(0, -1));
+    toast.success("Desfeito");
+  }, [history, slides]);
+
+  const redo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setHistory(prevHistory => [...prevHistory, slides]);
+    setSlides(next);
+    setRedoStack(prevStack => prevStack.slice(0, -1));
+    toast.success("Refeito");
+  }, [redoStack, slides]);
 
   const sidebarTabs = [
     { id: "templates", label: "Design", icon: LayoutGrid },
