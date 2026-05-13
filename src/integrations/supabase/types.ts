@@ -839,6 +839,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          community_last_seen_at: string | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -847,6 +848,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          community_last_seen_at?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -855,6 +857,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          community_last_seen_at?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -1530,6 +1533,7 @@ export type Database = {
         Args: never
         Returns: {
           avatar_url: string | null
+          community_last_seen_at: string | null
           created_at: string
           email: string | null
           full_name: string | null
