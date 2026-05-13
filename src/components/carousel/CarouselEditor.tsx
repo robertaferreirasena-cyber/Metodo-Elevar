@@ -5,7 +5,7 @@ import {
   AlignLeft, AlignCenter, DownloadCloud, ImagePlus, User, X, Smartphone,
   Square, Monitor, Sparkles, Send, ChevronDown, ChevronUp,
   Bold, Italic, Underline, ArrowUpFromLine, AlignVerticalSpaceAround, ArrowDownFromLine, Palette, Copy,
-  CopyPlus, Trash2, Maximize, Minimize, Undo2, CheckCircle2, LayoutGrid, Layers, MousePointer2
+  CopyPlus, Trash2, Maximize, Minimize, Undo2, CheckCircle2, LayoutGrid, Layers, MousePointer2, PlusCircle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,8 +159,18 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [giLoading, setGiLoading] = useState(false);
   const [isFreeEditMode, setIsFreeEditMode] = useState(false);
   const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useState("templates");
   const [activeEditorTab, setActiveEditorTab] = useState("templates");
   const [searchParams] = useSearchParams();
+
+  const sidebarTabs = [
+    { id: "templates", label: "Design", icon: LayoutGrid },
+    { id: "elements", label: "Elementos", icon: Square },
+    { id: "text", label: "Texto", icon: Type },
+    { id: "brand", label: "Marca", icon: Palette },
+    { id: "uploads", label: "Uploads", icon: ArrowUpFromLine },
+    { id: "layers", label: "Camadas", icon: Layers },
+  ];
 
   // Persisted template apply mode
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
@@ -1019,6 +1029,120 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   const showProfile = PROFILE_LAYOUTS.includes(curLayout);
   const showHighlight = HIGHLIGHT_LAYOUTS.includes(curLayout);
 
+  const renderActiveTabContent = () => {
+    if (!cur) return null;
+
+    switch (activeTab) {
+      case "templates":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4 space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Designs</h3>
+                  <div className="flex gap-1">
+                    <Button variant={formatFilter === "all" ? "default" : "outline"} size="icon" className="h-6 w-6" onClick={() => setFormatFilter("all")} title="Todos"><LayoutGrid className="h-3 w-3" /></Button>
+                    <Button variant={formatFilter === "1:1" ? "default" : "outline"} size="icon" className="h-6 w-6" onClick={() => setFormatFilter("1:1")} title="1:1"><Square className="h-3 w-3" /></Button>
+                    <Button variant={formatFilter === "9:16" ? "default" : "outline"} size="icon" className="h-6 w-6" onClick={() => setFormatFilter("9:16")} title="9:16"><Smartphone className="h-3 w-3" /></Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {CAROUSEL_TEMPLATES.filter(t => formatFilter === "all" || t.aspectRatio === formatFilter).map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => applyTemplate(t)}
+                      className={`group relative aspect-[4/5] rounded-lg overflow-hidden border-2 transition-all hover:border-primary/50 ${
+                        selectedTemplate.id === t.id ? "border-primary shadow-md" : "border-transparent"
+                      }`}
+                    >
+                      <div 
+                        className="w-full h-full flex items-center justify-center text-[10px] font-bold p-2 text-center"
+                        style={{ backgroundColor: t.bgColor, color: t.textColor, background: t.bgGradient || t.bgColor }}
+                      >
+                        {t.name}
+                      </div>
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        );
+      case "elements":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4">
+              <CanvasElementsLibrary onAddElement={addLayer} />
+            </div>
+          </ScrollArea>
+        );
+      case "text":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4 space-y-6">
+              <div>
+                <h3 className="text-xs font-semibold mb-3 uppercase tracking-wider text-muted-foreground">Adicionar Texto</h3>
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full h-12 justify-start text-xl font-bold px-4" onClick={() => addLayer("text", "Título Principal")}>Título</Button>
+                  <Button variant="outline" className="w-full h-10 justify-start text-base font-semibold px-4" onClick={() => addLayer("text", "Subtítulo")}>Subtítulo</Button>
+                  <Button variant="outline" className="w-full h-8 justify-start text-sm px-4" onClick={() => addLayer("text", "Corpo de texto")}>Corpo de texto</Button>
+                </div>
+              </div>
+              <div className="pt-4 border-t">
+                <h3 className="text-xs font-semibold mb-3 uppercase tracking-wider text-muted-foreground">Fontes</h3>
+                <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-auto">
+                  {FONT_OPTIONS.map(font => (
+                    <Button
+                      key={font.name}
+                      variant="ghost"
+                      className="justify-start text-sm font-normal px-2 h-9"
+                      style={{ fontFamily: font.name }}
+                      onClick={() => updateSlide(currentSlide, { fontFamily: font.name })}
+                    >
+                      {font.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        );
+      case "brand":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4">
+              <BrandKitManager onApply={applyBrandKit} />
+            </div>
+          </ScrollArea>
+        );
+      case "uploads":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4">
+              <UserUploads onSelect={(url) => addLayer("image", url)} />
+            </div>
+          </ScrollArea>
+        );
+      case "layers":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4">
+              <LayerList 
+                slide={cur} 
+                onUpdate={(upd) => updateSlide(currentSlide, upd)} 
+                selectedLayerId={selectedLayerId}
+                onSelectLayer={setSelectedLayerId}
+              />
+            </div>
+          </ScrollArea>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-4 mt-4" style={{ paddingBottom: isMobile && slides.length > 0 ? "calc(72px + env(safe-area-inset-bottom))" : undefined }}>
       <SessionIndicator show={hasRestoredSession && slides.length > 0} onClear={clearSession} />
@@ -1394,140 +1518,89 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
 
       {/* ========== EDITOR + PREVIEW ========== */}
       {slides.length > 0 && cur && (
-        <>
-          {/* Format toggle + Navigation */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Label className="text-xs text-muted-foreground shrink-0">Formato:</Label>
-              {(["1:1", "9:16", "16:9"] as AspectRatio[]).map((r) => (
-                <Button key={r} size="sm" variant={selectedTemplate.aspectRatio === r ? "default" : "outline"} onClick={() => changeFormat(r)}>
-                  {r === "1:1" && <Square className="h-3 w-3 mr-1" />}
-                  {r === "9:16" && <Smartphone className="h-3 w-3 mr-1" />}
-                  {r === "16:9" && <Monitor className="h-3 w-3 mr-1" />}
-                  {FORMAT_SPECS[r].label}
-                </Button>
-              ))}
-            </div>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button size="icon" variant="outline" disabled={currentSlide === 0} onClick={() => setCurrentSlide((p) => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
-                <Badge variant="secondary">Slide {currentSlide + 1} / {slides.length}</Badge>
-                <Button size="icon" variant="outline" disabled={currentSlide === slides.length - 1} onClick={() => setCurrentSlide((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
-                <div className="border-l border-border pl-2 flex gap-1">
-                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Duplicar slide" onClick={() => duplicateSlide(currentSlide)}>
-                    <CopyPlus className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" title="Excluir slide" onClick={() => deleteSlide(currentSlide)} disabled={slides.length <= 1}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="flex gap-2 flex-wrap md:flex-nowrap md:static fixed bottom-0 left-0 right-0 md:bg-transparent bg-background/95 backdrop-blur md:p-0 p-2 md:border-0 border-t border-border z-40 md:z-auto justify-center md:justify-end" style={{ paddingBottom: isMobile ? "max(0.5rem, env(safe-area-inset-bottom))" : undefined }}>
-                <Button size="sm" variant="outline" onClick={toggleFullscreen} title="Modo apresentação" className="min-h-11 md:min-h-9">
-                  <Maximize className="h-4 w-4 mr-1" /> <span>Apresentar</span>
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => exportSlide(currentSlide)} disabled={exporting} className="min-h-11 md:min-h-9"><Download className="h-4 w-4 mr-1" /> PNG</Button>
-                <Button size="sm" onClick={exportAll} disabled={exporting} className="min-h-11 md:min-h-9"><DownloadCloud className="h-4 w-4 mr-1" />{exporting ? "Exportando..." : "Baixar Todos"}</Button>
-              </div>
+        <div className="flex flex-col lg:flex-row h-[700px] lg:h-[850px] border border-border/50 rounded-2xl overflow-hidden bg-card shadow-2xl relative">
+          {/* Canva-style Side Sidebar (Icon Bar) */}
+          <div className="w-[70px] bg-muted/30 border-r border-border/50 flex flex-col py-4 gap-2 items-center shrink-0 z-20">
+            {sidebarTabs.map(tab => (
+              <button 
+                key={tab.id} 
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex flex-col items-center justify-center py-3 gap-1 transition-all relative ${
+                  activeTab === tab.id ? 'text-primary bg-background' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                }`}
+              >
+                {activeTab === tab.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" />}
+                <tab.icon className={`h-5 w-5 ${activeTab === tab.id ? 'stroke-[2.5px]' : ''}`} />
+                <span className="text-[10px] font-medium">{tab.label}</span>
+              </button>
+            ))}
+            
+            <div className="mt-auto flex flex-col gap-2 items-center w-full px-2">
+               <Button size="icon" variant="ghost" onClick={toggleFullscreen} title="Tela Cheia" className="h-10 w-10">
+                 <Maximize className="h-5 w-5" />
+               </Button>
             </div>
           </div>
 
+          {/* Canva-style Content Panel */}
+          {activeTab && (
+            <div className="w-[320px] bg-background border-r border-border/50 flex flex-col shrink-0 animate-in slide-in-from-left-2 duration-300 z-10 shadow-xl">
+               <div className="p-4 border-b border-border/50 flex items-center justify-between bg-muted/5">
+                  <h2 className="text-sm font-bold capitalize">{sidebarTabs.find(t => t.id === activeTab)?.label}</h2>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setActiveTab("")}>
+                    <X className="h-4 w-4" />
+                  </Button>
+               </div>
+               <div className="flex-1 overflow-hidden">
+                  {renderActiveTabContent()}
+               </div>
+            </div>
+          )}
 
+          {/* Main Workspace */}
+          <div className="flex-1 bg-muted/10 relative flex flex-col overflow-hidden">
+            {/* Top Toolbar */}
+            <div className="h-14 bg-background border-b border-border/50 flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
+               <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setCurrentSlide(p => Math.max(0, p - 1))} disabled={currentSlide === 0}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-xs font-semibold px-2 py-1 bg-muted/50 rounded-md min-w-[100px] text-center">
+                      Página {currentSlide + 1} de {slides.length}
+                    </span>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setCurrentSlide(p => Math.min(slides.length - 1, p + 1))} disabled={currentSlide === slides.length - 1}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="h-6 w-[1px] bg-border mx-2" />
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicateSlide(currentSlide)} title="Duplicar">
+                       <CopyPlus className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteSlide(currentSlide)} disabled={slides.length <= 1} title="Excluir">
+                       <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className={`h-8 w-8 ${isFreeEditMode ? 'text-primary bg-primary/10' : ''}`} onClick={() => setIsFreeEditMode(!isFreeEditMode)} title={isFreeEditMode ? 'Sair do Modo Edição Livre' : 'Modo Edição Livre'}>
+                       <MousePointer2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+               </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4">
-            {/* Sidebar Tabs (Canva-like) */}
-            <div className="lg:col-span-4 flex flex-col gap-4 order-2 lg:order-1">
-              <Tabs value={activeEditorTab} onValueChange={setActiveEditorTab} className="w-full">
-                <TabsList className="grid grid-cols-5 w-full h-12">
-                  <TabsTrigger value="templates" title="Templates"><LayoutGrid className="h-4 w-4" /></TabsTrigger>
-                  <TabsTrigger value="layers" title="Camadas"><Layers className="h-4 w-4" /></TabsTrigger>
-                  <TabsTrigger value="brand" title="Marca"><Palette className="h-4 w-4" /></TabsTrigger>
-                  <TabsTrigger value="uploads" title="Uploads"><DownloadCloud className="h-4 w-4" /></TabsTrigger>
-                  <TabsTrigger value="elements" title="Elementos"><Sparkles className="h-4 w-4" /></TabsTrigger>
-                </TabsList>
-
-                <div className="mt-4 min-h-[500px] flex flex-col gap-4">
-                  <TabsContent value="templates" className="m-0 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-bold flex items-center gap-2"><LayoutGrid className="h-4 w-4" /> Templates</h3>
-                      <Select value={formatFilter} onValueChange={(v: any) => setFormatFilter(v)}>
-                        <SelectTrigger className="w-[100px] h-8 text-[10px]">
-                          <SelectValue placeholder="Filtro" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos</SelectItem>
-                          <SelectItem value="1:1">Quadrado</SelectItem>
-                          <SelectItem value="9:16">Stories</SelectItem>
-                          <SelectItem value="16:9">Wide</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <ScrollArea className="h-[450px]">
-                      <div className="grid grid-cols-2 gap-2 pr-4">
-                        {CAROUSEL_TEMPLATES.filter(t => formatFilter === "all" || t.aspectRatio === formatFilter).map((t) => (
-                          <button
-                            key={t.id}
-                            onClick={() => applyTemplate(t)}
-                            className={`p-1 rounded-lg border-2 transition-all hover:scale-[1.02] ${selectedTemplate.id === t.id ? 'border-primary' : 'border-transparent'}`}
-                          >
-                            <TemplatePreviewTooltip template={t}>
-                              <div className="w-full aspect-square rounded-md overflow-hidden border bg-muted flex items-center justify-center text-[10px] p-2 text-center leading-tight">
-                                {t.name}
-                              </div>
-                            </TemplatePreviewTooltip>
-                          </button>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </TabsContent>
-
-                  <TabsContent value="layers" className="m-0 h-full flex flex-col gap-4">
-                    <LayerList 
-                      slide={cur} 
-                      onUpdate={(upd) => updateSlide(currentSlide, upd)} 
-                      selectedLayerId={selectedLayerId}
-                      onSelectLayer={setSelectedLayerId}
-                    />
-                    <div className="grid grid-cols-2 gap-2 mt-auto">
-                      <Button variant="outline" size="sm" onClick={() => addLayer('text')} className="gap-2 h-10">
-                        <Type className="h-4 w-4" /> Texto
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => addLayer('sticker', '✨')} className="gap-2 h-10">
-                        <Sparkles className="h-4 w-4" /> Sticker
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => addLayer('shape')} className="gap-2 h-10">
-                        <Square className="h-4 w-4" /> Forma
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => setIsFreeEditMode(!isFreeEditMode)} className={`gap-2 h-10 ${isFreeEditMode ? 'bg-primary text-primary-foreground' : ''}`}>
-                        <MousePointer2 className="h-4 w-4" /> {isFreeEditMode ? 'Editando' : 'Visualizar'}
-                      </Button>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="brand" className="m-0">
-                    <BrandKitManager onApply={applyBrandKit} />
-                  </TabsContent>
-
-                  <TabsContent value="uploads" className="m-0">
-                    <UserUploads onSelect={(url) => {
-                      if (activeEditorTab === 'uploads') {
-                        addLayer('image', url);
-                      }
-                    }} />
-                  </TabsContent>
-
-                  <TabsContent value="elements" className="m-0">
-                    <CanvasElementsLibrary onAddElement={addLayer} />
-                  </TabsContent>
-                </div>
-              </Tabs>
+               <div className="flex items-center gap-3">
+                  <Button size="sm" variant="outline" onClick={() => setSlides(prev => [...prev, { ...cur, id: Math.random().toString(36).substr(2, 9), title: "Nova Página", body: "Adicione seu texto aqui." }])} className="gap-2 hidden sm:flex">
+                    <PlusCircle className="h-4 w-4" /> Adicionar Página
+                  </Button>
+                  <Button size="sm" onClick={() => exportSlide(currentSlide)} disabled={exporting} className="gap-2 bg-primary hover:bg-primary/90 shadow-md">
+                    {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Exportar
+                  </Button>
+               </div>
             </div>
 
-            {/* Preview & Editor Controls */}
-            <div className="lg:col-span-8 flex flex-col gap-6 order-1 lg:order-2">
-              <div className="flex justify-center w-full bg-muted/20 rounded-xl p-4 sm:p-8 relative overflow-hidden group">
-                <div className="w-full max-w-full flex justify-center shadow-2xl">
-                  <SlidePreview 
+            {/* Canvas Area */}
+            <div className="flex-1 p-4 lg:p-12 overflow-auto flex items-center justify-center bg-[#f0f2f5] dark:bg-[#111111]">
+               <div className="relative shadow-[0_20px_50px_rgba(0,0,0,0.2)] transition-all duration-500">
+                 <SlidePreview 
                     ref={setSlideRef(currentSlide)} 
                     slide={cur} 
                     slideIndex={currentSlide} 
@@ -1537,514 +1610,108 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     selectedLayerId={selectedLayerId}
                     onSelectLayer={setSelectedLayerId}
                     onUpdate={(updates) => updateSlide(currentSlide, updates)}
-                    onReady={() => {/* Readiness tracking for export */}}
-                  />
-                </div>
-              </div>
+                 />
+               </div>
+            </div>
 
-              {/* Editor Controls Card */}
-              <Card className="border-border/50 shadow-sm">
-                <CardHeader className="pb-3 border-b bg-muted/10">
-                  <CardTitle className="text-sm font-bold flex items-center justify-between">
-                    <div className="flex items-center gap-2"><Paintbrush className="h-4 w-4 text-primary" /> Editor Detalhado</div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <ScrollArea className="h-[400px]">
-                    <div className="p-6 space-y-6">
-                {/* Title */}
-                <div>
-                  <Label className="text-xs">Título</Label>
-                  <Input value={cur.title} onChange={(e) => updateSlide(currentSlide, { title: e.target.value })} className="mt-1" />
-                  <div className="flex items-center gap-1 mt-1">
-                    <Button size="icon" variant={cur.titleBold !== false ? "default" : "outline"} className="h-7 w-7" onClick={() => updateSlide(currentSlide, { titleBold: cur.titleBold === false ? true : false })}>
-                      <Bold className="h-3 w-3" />
-                    </Button>
-                    <Button size="icon" variant={cur.titleItalic ? "default" : "outline"} className="h-7 w-7" onClick={() => updateSlide(currentSlide, { titleItalic: !cur.titleItalic })}>
-                      <Italic className="h-3 w-3" />
-                    </Button>
-                    <input type="color" value={cur.titleColor || cur.textColor} onChange={(e) => updateSlide(currentSlide, { titleColor: e.target.value })} className="h-7 w-7 rounded border border-input cursor-pointer" title="Cor do título" />
-                  </div>
-                </div>
-
-                {/* Body */}
-                <div>
-                  <Label className="text-xs">Corpo</Label>
-                  <Textarea value={cur.body} onChange={(e) => updateSlide(currentSlide, { body: e.target.value })} className="mt-1" rows={4} />
-                  <div className="flex items-center gap-1 mt-1">
-                    <Button size="icon" variant={cur.bodyBold ? "default" : "outline"} className="h-7 w-7" onClick={() => updateSlide(currentSlide, { bodyBold: !cur.bodyBold })}>
-                      <Bold className="h-3 w-3" />
-                    </Button>
-                    <Button size="icon" variant={cur.bodyItalic ? "default" : "outline"} className="h-7 w-7" onClick={() => updateSlide(currentSlide, { bodyItalic: !cur.bodyItalic })}>
-                      <Italic className="h-3 w-3" />
-                    </Button>
-                    <Button size="icon" variant={cur.bodyUnderline ? "default" : "outline"} className="h-7 w-7" onClick={() => updateSlide(currentSlide, { bodyUnderline: !cur.bodyUnderline })}>
-                      <Underline className="h-3 w-3" />
-                    </Button>
-                    <input type="color" value={cur.bodyColor || cur.textColor} onChange={(e) => updateSlide(currentSlide, { bodyColor: e.target.value })} className="h-7 w-7 rounded border border-input cursor-pointer" title="Cor do corpo" />
-                  </div>
-                </div>
-
-                {/* ===== UNIVERSAL BG IMAGE ===== */}
-                <div>
-                  <Label className="text-xs flex items-center gap-1"><ImagePlus className="h-3 w-3" /> Imagem de fundo</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors text-xs text-muted-foreground">
-                      <ImagePlus className="h-4 w-4" />
-                      {cur.bgImageUrl ? "Trocar fundo" : "Adicionar fundo"}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleBgImageUpload(currentSlide, f); }} />
-                    </label>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs h-9 shrink-0"
-                      onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}
-                      title="Buscar no banco de imagens grátis"
-                    >
-                      🖼 Banco
-                    </Button>
-                    {cur.bgImageUrl && (
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { snapshotSlideForUndo(currentSlide, "Imagem de fundo removida"); updateSlide(currentSlide, { bgImageUrl: undefined, bgImagePositionX: undefined, bgImagePositionY: undefined, bgImageScale: undefined, bgImageBlur: undefined, bgImageBrightness: undefined, bgImageContrast: undefined }); }}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  {cur.bgImageUrl && (
-                    <div className="mt-2 space-y-3">
-                      <div>
-                        <Label className="text-xs">Opacidade do overlay (sombra): {Math.round((cur.overlayOpacity ?? 0.55) * 100)}%</Label>
-                        <Slider value={[cur.overlayOpacity ?? 0.55]} onValueChange={([v]) => updateSlide(currentSlide, { overlayOpacity: v })} min={0} max={1} step={0.05} className="mt-1" />
-                      </div>
-                      <ImageAdjustPanel
-                        imageUrl={cur.bgImageUrl}
-                        aspectRatio={FORMAT_SPECS[selectedTemplate.aspectRatio].width / FORMAT_SPECS[selectedTemplate.aspectRatio].height}
-                        values={{
-                          positionX: cur.bgImagePositionX, positionY: cur.bgImagePositionY,
-                          scale: cur.bgImageScale, blur: cur.bgImageBlur,
-                          brightness: cur.bgImageBrightness, contrast: cur.bgImageContrast,
-                        }}
-                        onChange={(v) => {
-                          const isReset = v.positionX === undefined && v.positionY === undefined && v.scale === undefined && v.blur === undefined && v.brightness === undefined && v.contrast === undefined;
-                          if (isReset) snapshotSlideForUndo(currentSlide, "Ajustes do fundo resetados");
-                          updateSlide(currentSlide, {
-                            bgImagePositionX: v.positionX, bgImagePositionY: v.positionY,
-                            bgImageScale: v.scale, bgImageBlur: v.blur,
-                            bgImageBrightness: v.brightness, bgImageContrast: v.contrast,
-                          });
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* ===== LAYOUT-SPECIFIC IMAGE (image-bg, editorial) ===== */}
-                {showImageUpload && (
-                  <div>
-                    <Label className="text-xs flex items-center gap-1"><ImagePlus className="h-3 w-3" /> Imagem do layout</Label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors text-xs text-muted-foreground">
-                        <ImagePlus className="h-4 w-4" />
-                        {cur.imageUrl ? "Trocar imagem" : "Enviar imagem"}
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(currentSlide, f); }} />
-                      </label>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs h-9 shrink-0"
-                        onClick={() => { setLibraryTarget("image"); setLibraryOpen(true); }}
-                        title="Buscar no banco de imagens grátis"
-                      >
-                        🖼 Banco
-                      </Button>
-                      {cur.imageUrl && (
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { snapshotSlideForUndo(currentSlide, "Imagem do layout removida"); updateSlide(currentSlide, { imageUrl: undefined, imagePositionX: undefined, imagePositionY: undefined, imageScale: undefined, imageBlur: undefined, imageBrightness: undefined, imageContrast: undefined }); }}><X className="h-4 w-4" /></Button>
-                      )}
-                    </div>
-                    {cur.imageUrl && (
-                      <div className="mt-2">
-                        <ImageAdjustPanel
-                          imageUrl={cur.imageUrl}
-                          aspectRatio={curLayout === "editorial" ? 0.9 : (FORMAT_SPECS[selectedTemplate.aspectRatio].width / FORMAT_SPECS[selectedTemplate.aspectRatio].height)}
-                          values={{
-                            positionX: cur.imagePositionX, positionY: cur.imagePositionY,
-                            scale: cur.imageScale, blur: cur.imageBlur,
-                            brightness: cur.imageBrightness, contrast: cur.imageContrast,
+            {/* Bottom Timeline */}
+            <div className="h-28 bg-background border-t border-border/50 flex items-center px-6 gap-4 overflow-x-auto shrink-0 scrollbar-hide">
+               {slides.map((s, idx) => {
+                 const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
+                 const thumbRatio = spec.width / spec.height;
+                 return (
+                   <button 
+                    key={idx} 
+                    onClick={() => setCurrentSlide(idx)}
+                    className={`relative rounded-lg border-2 shrink-0 transition-all flex flex-col items-center ${
+                      currentSlide === idx ? 'border-primary ring-4 ring-primary/10 scale-105 z-10' : 'border-transparent hover:border-muted-foreground/30'
+                    }`}
+                   >
+                     <div 
+                       className="rounded-md overflow-hidden bg-muted shadow-sm"
+                       style={{ 
+                         width: 60 * thumbRatio, 
+                         height: 60,
+                       }}
+                     >
+                        <div 
+                          className="origin-top-left" 
+                          style={{ 
+                            width: spec.width, 
+                            height: spec.height,
+                            transform: `scale(${60 / spec.height})`,
+                            background: s.bgGradient || s.bgColor,
                           }}
-                          onChange={(v) => {
-                            const isReset = v.positionX === undefined && v.positionY === undefined && v.scale === undefined && v.blur === undefined && v.brightness === undefined && v.contrast === undefined;
-                            if (isReset) snapshotSlideForUndo(currentSlide, "Ajustes da imagem resetados");
-                            updateSlide(currentSlide, {
-                              imagePositionX: v.positionX, imagePositionY: v.positionY,
-                              imageScale: v.scale, imageBlur: v.blur,
-                              imageBrightness: v.brightness, imageContrast: v.contrast,
-                            });
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ===== MULTI IMAGE (photo-grid) ===== */}
-                {showMultiImage && (
-                  <div>
-                    <Label className="text-xs flex items-center gap-1"><ImagePlus className="h-3 w-3" /> Fotos do grid (até 4)</Label>
-                    <label className="mt-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors text-xs text-muted-foreground">
-                      <ImagePlus className="h-4 w-4" /> Adicionar fotos
-                      <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { if (e.target.files) handleMultiImageUpload(currentSlide, e.target.files); }} />
-                    </label>
-                    {(cur.imageUrls?.length || 0) > 0 && (
-                      <div className="flex gap-1 flex-wrap mt-1">
-                        {cur.imageUrls!.map((url, i) => (
-                          <div key={i} className="relative w-12 h-12 rounded overflow-hidden group">
-                            <img src={url} alt="" className="w-full h-full object-cover" />
-                            <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity" onClick={() => { snapshotSlideForUndo(currentSlide, "Foto removida do grid"); const u = [...(cur.imageUrls || [])]; u.splice(i, 1); updateSlide(currentSlide, { imageUrls: u }); }}>
-                              <X className="h-3 w-3 text-white" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ===== PROFILE (profile-post, photo-grid) ===== */}
-                {showProfile && (
-                  <div className="space-y-2">
-                    <Label className="text-xs flex items-center gap-1"><User className="h-3 w-3" /> Dados do perfil</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input placeholder="Nome" value={cur.profileName || ""} onChange={(e) => updateSlide(currentSlide, { profileName: e.target.value })} className="text-xs" />
-                      <Input placeholder="@handle" value={cur.profileHandle || ""} onChange={(e) => updateSlide(currentSlide, { profileHandle: e.target.value })} className="text-xs" />
-                    </div>
-                    <label className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors text-xs text-muted-foreground">
-                      <User className="h-3 w-3" /> {cur.profileImageUrl ? "Trocar avatar" : "Enviar avatar"}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleProfileImageUpload(currentSlide, f); }} />
-                    </label>
-                  </div>
-                )}
-
-                {/* ===== HIGHLIGHT (sales-highlight) ===== */}
-                {showHighlight && (
-                  <div>
-                    <Label className="text-xs">Cor do bloco de destaque</Label>
-                    <input type="color" value={cur.highlightBgColor || "#22C55E"} onChange={(e) => updateSlide(currentSlide, { highlightBgColor: e.target.value })} className="w-full h-9 rounded border border-input cursor-pointer mt-1" />
-                  </div>
-                )}
-
-                {/* ===== JOURNAL CARD CONTROLS (only for journal-* layouts) ===== */}
-                {(cur.layout || "").startsWith("journal-") && (
-                  <>
-                    <div>
-                      <Label className="text-xs">Cor da caixa de destaque</Label>
-                      <input
-                        type="color"
-                        value={cur.highlightBgColor || cur.accentColor || "#a23e2e"}
-                        onChange={(e) => updateSlide(currentSlide, { highlightBgColor: e.target.value })}
-                        className="w-full h-9 rounded border border-input cursor-pointer mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Tamanho da caixa: {((cur.highlightScale ?? 1) * 100).toFixed(0)}%</Label>
-                      <Slider
-                        value={[cur.highlightScale ?? 1]}
-                        onValueChange={([v]) => updateSlide(currentSlide, { highlightScale: v })}
-                        min={0.7} max={1.3} step={0.05}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Posição vertical da caixa: {(cur.highlightOffsetY ?? 0) > 0 ? "+" : ""}{(cur.highlightOffsetY ?? 0).toFixed(0)}%</Label>
-                      <Slider
-                        value={[cur.highlightOffsetY ?? 0]}
-                        onValueChange={([v]) => updateSlide(currentSlide, { highlightOffsetY: v })}
-                        min={-15} max={15} step={1}
-                        className="mt-2"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {/* ===== TEXT SHADOW ===== */}
-                <div>
-                  <Label className="text-xs">Sombra no texto</Label>
-                  <Select value={cur.textShadow || "none"} onValueChange={(v) => updateSlide(currentSlide, { textShadow: v === "none" ? undefined : v })}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sem sombra</SelectItem>
-                      <SelectItem value="1px 1px 2px rgba(0,0,0,0.5)">Sutil</SelectItem>
-                      <SelectItem value="2px 2px 4px rgba(0,0,0,0.7)">Média</SelectItem>
-                      <SelectItem value="3px 3px 8px rgba(0,0,0,0.9)">Forte</SelectItem>
-                      <SelectItem value="0 0 10px rgba(255,255,255,0.8)">Glow claro</SelectItem>
-                      <SelectItem value="0 0 10px rgba(0,0,0,0.8)">Glow escuro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* ===== ELEMENTS LIBRARY ===== */}
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
-                      <div className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Biblioteca de Elementos</div>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-4">
-                    <CanvasElementsLibrary onAddElement={addElement} />
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Colors */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <Label className="text-xs">Fundo</Label>
-                    <input type="color" value={cur.bgColor} onChange={(e) => updateSlide(currentSlide, { bgColor: e.target.value, bgGradient: undefined })} className="w-full h-9 rounded border border-input cursor-pointer mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Texto</Label>
-                    <input type="color" value={cur.textColor} onChange={(e) => updateSlide(currentSlide, { textColor: e.target.value })} className="w-full h-9 rounded border border-input cursor-pointer mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Destaque</Label>
-                    <input type="color" value={cur.accentColor} onChange={(e) => updateSlide(currentSlide, { accentColor: e.target.value })} className="w-full h-9 rounded border border-input cursor-pointer mt-1" />
-                  </div>
-                </div>
-
-                {/* ===== GRADIENT PRESETS ===== */}
-                <div>
-                  <Label className="text-xs flex items-center gap-1"><Palette className="h-3 w-3" /> Gradientes Premium</Label>
-                  <div className="grid grid-cols-4 gap-1.5 mt-1.5">
-                    {GRADIENT_PRESETS.map((g) => (
-                      <button
-                        key={g.name}
-                        title={g.name}
-                        className={`h-8 rounded-md border-2 transition-all hover:scale-105 ${cur.bgGradient === g.value ? "border-primary ring-1 ring-primary/50" : "border-transparent hover:border-primary/40"}`}
-                        style={{ background: g.value }}
-                        onClick={() => updateSlide(currentSlide, { bgGradient: g.value })}
-                      />
-                    ))}
-                    <button
-                      title="Remover gradiente"
-                      className={`h-8 rounded-md border-2 transition-all text-[10px] font-medium text-muted-foreground hover:border-primary/40 ${!cur.bgGradient ? "border-primary" : "border-border"}`}
-                      style={{ background: cur.bgColor }}
-                      onClick={() => updateSlide(currentSlide, { bgGradient: undefined })}
-                    >✕</button>
-                  </div>
-                </div>
-
-                {/* ===== FONT SELECTOR ===== */}
-                <div>
-                  <Label className="text-xs flex items-center gap-1"><Type className="h-3 w-3" /> Fonte</Label>
-                  <div className="grid grid-cols-1 gap-1 mt-1.5 max-h-48 overflow-y-auto rounded-md border border-border p-1">
-                    {FONT_OPTIONS.map((f) => (
-                      <button
-                        key={f.name}
-                        onClick={() => updateSlide(currentSlide, { fontFamily: f.family })}
-                        className={`flex items-center gap-2 px-2 py-1.5 rounded text-left transition-all ${cur.fontFamily === f.family ? "bg-primary/10 border border-primary/30" : "hover:bg-accent/50 border border-transparent"}`}
-                      >
-                        <span className="text-lg leading-none min-w-[28px]" style={{ fontFamily: f.family }}>Aa</span>
-                        <span className="text-xs font-medium">{f.name}</span>
-                        <span className="text-[9px] text-muted-foreground ml-auto">{f.category}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Font sizes */}
-                <div>
-                  <Label className="text-xs flex items-center gap-1"><Type className="h-3 w-3" /> Tamanho do título: {cur.titleSize}px</Label>
-                  <Slider value={[cur.titleSize]} onValueChange={([v]) => updateSlide(currentSlide, { titleSize: v })} min={16} max={48} step={1} className="mt-2" />
-                </div>
-                <div>
-                  <Label className="text-xs">Tamanho do corpo: {cur.bodySize}px</Label>
-                  <Slider value={[cur.bodySize]} onValueChange={([v]) => updateSlide(currentSlide, { bodySize: v })} min={12} max={32} step={1} className="mt-2" />
-                </div>
-
-                {/* Horizontal Alignment */}
-                <div>
-                  <Label className="text-xs">Alinhamento horizontal</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Button size="sm" variant={cur.align === "left" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { align: "left" })}><AlignLeft className="h-4 w-4" /></Button>
-                    <Button size="sm" variant={cur.align === "center" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { align: "center" })}><AlignCenter className="h-4 w-4" /></Button>
-                  </div>
-                </div>
-
-                {/* Vertical Position */}
-                <div>
-                  <Label className="text-xs">Posição vertical do texto</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Button size="sm" variant={(cur.verticalAlign || "center") === "top" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { verticalAlign: "top" })}>
-                      <ArrowUpFromLine className="h-4 w-4 mr-1" /> Topo
-                    </Button>
-                    <Button size="sm" variant={(cur.verticalAlign || "center") === "center" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { verticalAlign: "center" })}>
-                      <AlignVerticalSpaceAround className="h-4 w-4 mr-1" /> Meio
-                    </Button>
-                    <Button size="sm" variant={(cur.verticalAlign || "center") === "bottom" ? "default" : "outline"} onClick={() => updateSlide(currentSlide, { verticalAlign: "bottom" })}>
-                      <ArrowDownFromLine className="h-4 w-4 mr-1" /> Baixo
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Copy formatting to other slides */}
-                <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => {
-                  const source = slides[currentSlide];
-                  setSlides(prev => prev.map((s, i) => i === currentSlide ? s : {
-                    ...s,
-                    bgColor: source.bgColor, textColor: source.textColor, accentColor: source.accentColor,
-                    titleSize: source.titleSize, bodySize: source.bodySize, fontFamily: source.fontFamily,
-                    align: source.align, bgGradient: source.bgGradient, titleColor: source.titleColor,
-                    bodyColor: source.bodyColor, titleBold: source.titleBold, titleItalic: source.titleItalic,
-                    bodyBold: source.bodyBold, bodyItalic: source.bodyItalic, bodyUnderline: source.bodyUnderline,
-                    textShadow: source.textShadow, verticalAlign: source.verticalAlign,
-                    highlightBgColor: source.highlightBgColor,
-                  }));
-                  toast.success("Formatação copiada para todos os slides!");
-                }}>
-                  <Copy className="h-3 w-3 mr-1" /> Copiar formatação para todos os slides
-                </Button>
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+                        >
+                          <SlidePreview slide={s} slideIndex={idx} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} />
+                        </div>
+                     </div>
+                     <span className="text-[10px] mt-1 font-bold text-muted-foreground">{idx + 1}</span>
+                   </button>
+                 );
+               })}
+               <Button 
+                 variant="outline" 
+                 size="icon" 
+                 className="w-16 h-16 shrink-0 rounded-lg border-dashed"
+                 onClick={() => setSlides(prev => [...prev, { ...cur, id: Math.random().toString(36).substr(2, 9), title: "Nova Página", body: "Adicione seu texto aqui." }])}
+               >
+                 <PlusCircle className="h-6 w-6 text-muted-foreground" />
+               </Button>
             </div>
           </div>
 
-          {/* Thumbnail strip — aspect-ratio aware */}
-          <div className="flex gap-3 overflow-x-auto pb-3 pt-1">
-            {slides.map((s, i) => {
-              const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
-              const thumbH = 100;
-              const thumbW = Math.round(thumbH * (spec.width / spec.height));
-              return (
-                <button
-                  key={i}
-                  onClick={() => setCurrentSlide(i)}
-                  className={`flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${i === currentSlide ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
-                  style={{ width: thumbW, height: thumbH }}
-                >
-                  <div className="w-full h-full flex flex-col items-center justify-center p-1.5 relative" style={{ background: s.bgImageUrl ? `linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url(${s.bgImageUrl}) center/cover` : s.imageUrl ? `linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url(${s.imageUrl}) center/cover` : s.bgGradient || s.bgColor }}>
-                    <span className="text-[7px] font-bold uppercase tracking-wide mb-0.5" style={{ color: s.accentColor }}>{i + 1}/{slides.length}</span>
-                    <span className="text-[9px] font-bold leading-tight text-center line-clamp-3" style={{ color: s.textColor }}>{s.title}</span>
+          {/* AI Helper (Gi) Floating Button/Panel */}
+          <div className="absolute bottom-32 right-6 z-40">
+             {!giOpen ? (
+               <Button size="icon" className="h-12 w-12 rounded-full shadow-2xl animate-bounce hover:animate-none" onClick={() => setGiOpen(true)}>
+                  <Sparkles className="h-6 w-6" />
+               </Button>
+             ) : (
+               <div className="w-80 h-[500px] bg-card border border-border/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4">
+                  <div className="p-3 bg-primary text-primary-foreground flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        <span className="text-xs font-bold">Mentora Gi IA</span>
+                     </div>
+                     <Button variant="ghost" size="icon" className="h-6 w-6 text-primary-foreground hover:bg-white/10" onClick={() => setGiOpen(false)}>
+                        <X className="h-4 w-4" />
+                     </Button>
                   </div>
-                </button>
-              );
-            })}
-          </div>
-
-
-
-          {/* Mentora Gi Mini-Chat */}
-          <Collapsible open={giOpen} onOpenChange={setGiOpen}>
-            <Card>
-              <CollapsibleTrigger asChild>
-                <button className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors rounded-t-lg">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                    <span className="font-semibold text-sm">Mentora Gi — Copywriter</span>
-                    <Badge variant="secondary" className="text-[10px]">IA</Badge>
-                  </div>
-                  {giOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0 space-y-3">
-                  <p className="text-xs text-muted-foreground">Peça melhorias nas copies, ajuste tom, peça mais storytelling ou refine slides específicos.</p>
-                  <Button size="sm" variant="outline" onClick={improveAllCopies} disabled={giLoading} className="w-full">
-                    <Sparkles className="h-4 w-4 mr-1" /> ✨ Melhorar todas as copies
-                  </Button>
-                  {giMessages.length > 0 && (
-                    <ScrollArea className="max-h-60 rounded-md border p-3">
-                      <div className="space-y-3">
+                  <div className="flex-1 p-4 overflow-hidden flex flex-col gap-3">
+                    <p className="text-[10px] text-muted-foreground">Otimize suas copies, ajuste o tom ou peça novos slides.</p>
+                    <ScrollArea className="flex-1 pr-3">
+                      <div className="space-y-4">
                         {giMessages.map((msg, i) => (
-                          <div key={i} className={`text-sm ${msg.role === "user" ? "text-right" : ""}`}>
-                            <div className={`inline-block max-w-[90%] rounded-lg px-3 py-2 ${msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
-                              <p className="whitespace-pre-wrap text-xs">{msg.content}</p>
+                          <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                            <div className={`max-w-[85%] p-2 rounded-xl text-[11px] ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                              {msg.content}
                             </div>
-                            {msg.role === "assistant" && !giLoading && (
-                              <Button size="sm" variant="outline" className="mt-1 text-xs h-7" onClick={() => applyGiSuggestions(msg.content)}>
-                                <Wand2 className="h-3 w-3 mr-1" /> Aplicar nos slides
+                            {msg.role === 'assistant' && (
+                              <Button size="sm" variant="link" className="h-auto p-0 text-[10px] mt-1" onClick={() => applyGiSuggestions(msg.content)}>
+                                Aplicar alterações
                               </Button>
                             )}
                           </div>
                         ))}
-                        {giLoading && (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Mentora Gi pensando...</div>
-                        )}
+                        {giLoading && <div className="text-[10px] text-muted-foreground animate-pulse italic">Gi está digitando...</div>}
                       </div>
                     </ScrollArea>
-                  )}
-                  <div className="flex gap-2">
-                    <Input placeholder="Ex: Deixe o slide 3 mais agressivo..." value={giInput} onChange={(e) => setGiInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendToGi(giInput); } }} className="text-sm" />
-                    <Button size="icon" onClick={() => sendToGi(giInput)} disabled={!giInput.trim() || giLoading}><Send className="h-4 w-4" /></Button>
+                    <div className="flex gap-2 pt-2 border-t">
+                      <Input 
+                        placeholder="Diga algo para Gi..." 
+                        value={giInput} 
+                        onChange={(e) => setGiInput(e.target.value)} 
+                        onKeyDown={(e) => e.key === 'Enter' && sendToGi(giInput)}
+                        className="text-xs h-8"
+                      />
+                      <Button size="icon" className="h-8 w-8 shrink-0" onClick={() => sendToGi(giInput)} disabled={giLoading}>
+                        <Send className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-
-          {/* Hidden slides for export at native resolution */}
-          <div className="absolute -left-[9999px] top-0" aria-hidden>
-            {slides.map((s, i) => (
-              <SlidePreview key={i} ref={setExportRef(i)} slide={s} slideIndex={i} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} nativeSize />
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* ========== FULLSCREEN PRESENTATION MODE ========== */}
-      {fullscreen && slides.length > 0 && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center" onClick={(e) => { if (e.target === e.currentTarget) setFullscreen(false); }}>
-          {/* Top bar — always visible on mobile, hover-reveal on desktop */}
-          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-b from-black/80 to-transparent z-10 md:opacity-0 md:hover:opacity-100 transition-opacity duration-300" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
-            <Badge variant="secondary" className="text-sm">
-              Slide {currentSlide + 1} / {slides.length}
-            </Badge>
-            <div className="flex gap-2">
-              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 min-h-11 min-w-11" onClick={() => setFullscreen(false)}>
-                <Minimize className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Sair (Esc)</span><span className="sm:hidden">Sair</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Slide */}
-          <div className="flex items-center justify-center w-full h-full" style={{ paddingTop: "calc(56px + env(safe-area-inset-top))", paddingBottom: "calc(56px + env(safe-area-inset-bottom))", paddingLeft: "max(0.5rem, env(safe-area-inset-left))", paddingRight: "max(0.5rem, env(safe-area-inset-right))" }}>
-            <div style={{ maxWidth: "min(94vw, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1rem))", maxHeight: "78vh" }}>
-              <SlidePreview
-                slide={slides[currentSlide]}
-                slideIndex={currentSlide}
-                totalSlides={slides.length}
-                aspectRatio={selectedTemplate.aspectRatio}
-              />
-            </div>
-          </div>
-
-          {/* Navigation arrows — bigger touch target, always visible */}
-          <button
-            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 active:bg-white/40 hover:bg-white/30 flex items-center justify-center transition-colors disabled:opacity-20"
-            onClick={() => setCurrentSlide(p => Math.max(p - 1, 0))}
-            disabled={currentSlide === 0}
-            aria-label="Slide anterior"
-          >
-            <ChevronLeft className="h-7 w-7 text-white" />
-          </button>
-          <button
-            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 active:bg-white/40 hover:bg-white/30 flex items-center justify-center transition-colors disabled:opacity-20"
-            onClick={() => setCurrentSlide(p => Math.min(p + 1, slides.length - 1))}
-            disabled={currentSlide === slides.length - 1}
-            aria-label="Próximo slide"
-          >
-            <ChevronRight className="h-7 w-7 text-white" />
-          </button>
-
-          {/* Bottom dots */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex gap-2" style={{ bottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentSlide(i)}
-                className={`w-3 h-3 rounded-full transition-all ${i === currentSlide ? "bg-white scale-125" : "bg-white/30 hover:bg-white/60"}`}
-                aria-label={`Ir para slide ${i + 1}`}
-              />
-            ))}
+               </div>
+             )}
           </div>
         </div>
       )}
