@@ -1470,7 +1470,11 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                             onClick={() => applyTemplate(t)}
                             className={`p-1 rounded-lg border-2 transition-all hover:scale-[1.02] ${selectedTemplate.id === t.id ? 'border-primary' : 'border-transparent'}`}
                           >
-                            <TemplatePreviewTooltip template={t} />
+                            <TemplatePreviewTooltip template={t}>
+                              <div className="w-full aspect-square rounded-md overflow-hidden border bg-muted flex items-center justify-center text-[10px] p-2 text-center leading-tight">
+                                {t.name}
+                              </div>
+                            </TemplatePreviewTooltip>
                           </button>
                         ))}
                       </div>
