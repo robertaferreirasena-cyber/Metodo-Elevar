@@ -192,6 +192,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
             <img 
               src={bgUrl} 
               alt="" 
+              crossOrigin="anonymous"
               className="absolute inset-0 w-full h-full object-cover" 
               style={buildImageStyle(adj)}
             />
