@@ -986,12 +986,21 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
         zip.file(`slide-${i + 1}.png`, base64Data, { base64: true });
       }
       
+      // Add JSON metadata for later import
+      const metadata = {
+        name: topic || "Projeto de Carrossel",
+        created_at: new Date().toISOString(),
+        template: selectedTemplate.id,
+        slides: slides
+      };
+      zip.file("project_data.json", JSON.stringify(metadata, null, 2));
+
       const content = await zip.generateAsync({ type: "blob" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(content);
-      link.download = `carrossel-${topic.slice(0, 20) || 'projeto'}.zip`;
+      link.download = `carrossel-${topic.slice(0, 20).replace(/\s+/g, '-') || 'projeto'}.zip`;
       link.click();
-      
+
       toast.success("Arquivo .zip gerado com todos os slides!");
     } catch (err) {
       console.error("Export all error:", err);
