@@ -246,6 +246,14 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   // Persisted template apply mode
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
 
+  const sidebarTabs = [
+    { id: "templates", label: "Design", icon: LayoutGrid },
+    { id: "elements", label: "Elementos", icon: Square },
+    { id: "text", label: "Texto", icon: Type },
+    { id: "brand", label: "Marca", icon: Palette },
+    { id: "uploads", label: "Uploads", icon: ArrowUpFromLine },
+    { id: "layers", label: "Camadas", icon: Layers },
+  ];
   const applyTemplate = useCallback((template: CarouselTemplate) => {
     if (templateApplyMode === "all") {
       applyTemplateToAll(template);
