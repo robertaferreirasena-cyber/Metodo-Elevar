@@ -72,9 +72,8 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     // Use inline padding for exact control
     const padPx = `${padSize}px`;
 
-    // Helper: build CSS style object for an image with optional pan/zoom/filter adjustments.
+    // Helper: build CSS style object for an image container or direct img adjustments.
     const buildImageStyle = (
-      url: string,
       opts: {
         positionX?: number; positionY?: number; scale?: number;
         blur?: number; brightness?: number; contrast?: number;
@@ -86,11 +85,10 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
       const blur = opts.blur ?? 0;
       const bright = opts.brightness ?? 100;
       const contrast = opts.contrast ?? 100;
+      
       return {
-        backgroundImage: `url(${url})`,
-        backgroundSize: `${scl * 100}%`,
-        backgroundPosition: `${posX}% ${posY}%`,
-        backgroundRepeat: "no-repeat",
+        objectPosition: `${posX}% ${posY}%`,
+        transform: `scale(${scl})`,
         filter: `blur(${blur}px) brightness(${bright}%) contrast(${contrast}%)`,
       };
     };
@@ -99,15 +97,22 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
       const bgUrl = slide.bgImageUrl || (layout === "image-bg" ? slide.imageUrl : undefined);
       if (!bgUrl) return null;
       const opacity = slide.overlayOpacity ?? 0.55;
-      // Use bg-specific adjustments when bgImageUrl is set; otherwise use image-* (image-bg layout fallback)
       const useBg = !!slide.bgImageUrl;
       const adj = useBg
         ? { positionX: slide.bgImagePositionX, positionY: slide.bgImagePositionY, scale: slide.bgImageScale, blur: slide.bgImageBlur, brightness: slide.bgImageBrightness, contrast: slide.bgImageContrast }
         : { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast };
+      
       return (
         <>
-          <div className="absolute inset-0" style={buildImageStyle(bgUrl, adj)} />
-          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${opacity})` }} />
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <img 
+              src={bgUrl} 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover" 
+              style={buildImageStyle(adj)}
+            />
+          </div>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(0,0,0,${opacity})` }} />
         </>
       );
     };
