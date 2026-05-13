@@ -159,8 +159,18 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [giLoading, setGiLoading] = useState(false);
   const [isFreeEditMode, setIsFreeEditMode] = useState(false);
   const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useState("templates");
   const [activeEditorTab, setActiveEditorTab] = useState("templates");
   const [searchParams] = useSearchParams();
+
+  const sidebarTabs = [
+    { id: "templates", label: "Design", icon: LayoutGrid },
+    { id: "elements", label: "Elementos", icon: Square },
+    { id: "text", label: "Texto", icon: Type },
+    { id: "brand", label: "Marca", icon: Palette },
+    { id: "uploads", label: "Uploads", icon: ArrowUpFromLine },
+    { id: "layers", label: "Camadas", icon: Layers },
+  ];
 
   // Persisted template apply mode
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
