@@ -278,7 +278,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   }, [searchParams]);
 
   const applyBrandKit = useCallback((kit: BrandKit) => {
-    setSlides(prev => prev.map(s => ({
+    updateSlidesWithHistory(prev => prev.map(s => ({
       ...s,
       bgColor: kit.primary_color,
       textColor: kit.secondary_color,
@@ -300,7 +300,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       style: layerType === 'shape' ? { backgroundColor: selectedTemplate.accentColor, borderRadius: '8px' } : {}
     };
 
-    setSlides(prev => prev.map((s, i) => i === currentSlide ? {
+    updateSlidesWithHistory(prev => prev.map((s, i) => i === currentSlide ? {
       ...s,
       layers: [...(s.layers || []), newLayer]
     } : s));
@@ -347,7 +347,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   const applyJournalPalette = useCallback((palette: JournalPalette) => {
     setCurrentJournalPaletteId(palette.id);
-    setSlides(prev => prev.map(s => {
+    updateSlidesWithHistory(prev => prev.map(s => {
       const isJournalSlide = isJournalTemplate(selectedTemplate.id) || (s.layout || "").startsWith("journal-");
       if (!isJournalSlide) return s;
       // Preserve user color customizations: only swap base palette colors,
@@ -1026,7 +1026,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     const newSlide = { ...slides[index] };
     const newSlides = [...slides];
     newSlides.splice(index + 1, 0, newSlide);
-    setSlides(newSlides);
+    updateSlidesWithHistory(newSlides);
     setCurrentSlide(index + 1);
     slideRefs.current = new Array(newSlides.length).fill(null);
     toast.success(`Slide ${index + 1} duplicado!`);
@@ -1035,7 +1035,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   const deleteSlide = (index: number) => {
     if (slides.length <= 1) { toast.error("Mínimo de 1 slide"); return; }
     const newSlides = slides.filter((_, i) => i !== index);
-    setSlides(newSlides);
+    updateSlidesWithHistory(newSlides);
     setCurrentSlide(Math.min(currentSlide, newSlides.length - 1));
     slideRefs.current = new Array(newSlides.length).fill(null);
     toast.success(`Slide ${index + 1} removido`);
