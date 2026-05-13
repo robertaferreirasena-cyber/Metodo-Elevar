@@ -29,6 +29,7 @@ import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
+import CanvasElementsLibrary from "./CanvasElementsLibrary";
 import { scopedLocal } from "@/lib/userScopedKey";
 import TemplatePreviewTooltip from "./TemplatePreviewTooltip";
 import ImageAdjustPanel, { type ImageAdjustValues } from "./ImageAdjustPanel";
