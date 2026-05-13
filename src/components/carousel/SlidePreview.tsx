@@ -20,6 +20,11 @@ interface SlidePreviewProps {
   isFreeEditMode?: boolean;
   /** Callback when an element is moved or resized in free edit mode */
   onUpdate?: (updates: Partial<SlideData>) => void;
+  /** Callback when all assets are loaded */
+  onReady?: () => void;
+  /** ID of the layer being edited */
+  selectedLayerId?: string;
+  onSelectLayer?: (id: string | undefined) => void;
 }
 
 const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
