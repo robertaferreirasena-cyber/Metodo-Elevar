@@ -1029,6 +1029,103 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   const showProfile = PROFILE_LAYOUTS.includes(curLayout);
   const showHighlight = HIGHLIGHT_LAYOUTS.includes(curLayout);
 
+  const renderActiveTabContent = () => {
+    if (!cur) return null;
+
+    switch (activeTab) {
+      case "templates":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4 space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Designs</h3>
+                  <div className="flex gap-1">
+                    <Button variant={formatFilter === "all" ? "default" : "outline"} size="icon" className="h-6 w-6" onClick={() => setFormatFilter("all")} title="Todos"><LayoutGrid className="h-3 w-3" /></Button>
+                    <Button variant={formatFilter === "1:1" ? "default" : "outline"} size="icon" className="h-6 w-6" onClick={() => setFormatFilter("1:1")} title="1:1"><Square className="h-3 w-3" /></Button>
+                    <Button variant={formatFilter === "9:16" ? "default" : "outline"} size="icon" className="h-6 w-6" onClick={() => setFormatFilter("9:16")} title="9:16"><Smartphone className="h-3 w-3" /></Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {CAROUSEL_TEMPLATES.filter(t => formatFilter === "all" || t.aspectRatio === formatFilter).map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => applyTemplate(t)}
+                      className={`group relative aspect-[4/5] rounded-lg overflow-hidden border-2 transition-all hover:border-primary/50 ${
+                        selectedTemplate.id === t.id ? "border-primary shadow-md" : "border-transparent"
+                      }`}
+                    >
+                      <img src={t.thumbnail} alt={t.name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-end p-2 transition-opacity">
+                        <span className="text-[10px] text-white font-medium truncate w-full">{t.name}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        );
+      case "elements":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4">
+              <CanvasElementsLibrary onAddElement={addLayer} />
+            </div>
+          </ScrollArea>
+        );
+      case "text":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4 space-y-6">
+              <div>
+                <h3 className="text-xs font-semibold mb-3 uppercase tracking-wider text-muted-foreground">Adicionar Texto</h3>
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full h-12 justify-start text-xl font-bold px-4" onClick={() => addLayer("text", "Título Principal")}>Título</Button>
+                  <Button variant="outline" className="w-full h-10 justify-start text-base font-semibold px-4" onClick={() => addLayer("text", "Subtítulo")}>Subtítulo</Button>
+                  <Button variant="outline" className="w-full h-8 justify-start text-sm px-4" onClick={() => addLayer("text", "Corpo de texto")}>Corpo de texto</Button>
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        );
+      case "brand":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4">
+              <BrandKitManager onApply={applyBrandKit} />
+            </div>
+          </ScrollArea>
+        );
+      case "uploads":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4">
+              <UserUploads onSelectImage={(url) => addLayer("image", url)} />
+            </div>
+          </ScrollArea>
+        );
+      case "layers":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4">
+              <LayerList 
+                layers={cur.layers || []} 
+                selectedLayerId={selectedLayerId}
+                onSelect={setSelectedLayerId}
+                onUpdate={(updatedLayers) => {
+                  updateSlide(currentSlide, { layers: updatedLayers });
+                }}
+              />
+            </div>
+          </ScrollArea>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-4 mt-4" style={{ paddingBottom: isMobile && slides.length > 0 ? "calc(72px + env(safe-area-inset-bottom))" : undefined }}>
       <SessionIndicator show={hasRestoredSession && slides.length > 0} onClear={clearSession} />
