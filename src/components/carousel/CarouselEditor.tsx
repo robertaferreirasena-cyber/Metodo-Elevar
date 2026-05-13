@@ -222,7 +222,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   }, [currentSlide, selectedTemplate.accentColor]);
 
   // Persisted template apply mode
-  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
+  // templateApplyMode is already declared above
 
   // Image library + collection export state
   const [libraryOpen, setLibraryOpen] = useState(false);
