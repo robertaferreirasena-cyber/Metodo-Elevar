@@ -128,6 +128,48 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_kit: {
+        Row: {
+          accent_color: string | null
+          business_name: string | null
+          created_at: string | null
+          font_family_body: string | null
+          font_family_title: string | null
+          id: string
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string | null
+          business_name?: string | null
+          created_at?: string | null
+          font_family_body?: string | null
+          font_family_title?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          accent_color?: string | null
+          business_name?: string | null
+          created_at?: string | null
+          font_family_body?: string | null
+          font_family_title?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       community_materials: {
         Row: {
           created_at: string | null
