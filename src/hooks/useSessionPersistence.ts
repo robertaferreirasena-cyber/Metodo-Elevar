@@ -68,6 +68,7 @@ export function useSessionPersistence<T>(
 ): [T, (value: T | ((prev: T) => T)) => void, () => void, boolean] {
   const storage = storageType === "local" ? scopedLocal : scopedSession;
 
+
   const [state, setState] = useState<T>(() => {
     try {
       const stored = storage.get(key);
