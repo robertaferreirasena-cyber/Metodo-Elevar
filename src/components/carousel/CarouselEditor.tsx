@@ -1517,7 +1517,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </TabsContent>
 
                   <TabsContent value="elements" className="m-0">
-                    <CanvasElementsLibrary onSelectSticker={(emoji) => addLayer('sticker', emoji)} />
+                    <CanvasElementsLibrary onAddElement={addLayer} />
                   </TabsContent>
                 </div>
               </Tabs>
