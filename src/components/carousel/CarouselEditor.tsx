@@ -162,6 +162,17 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [activeEditorTab, setActiveEditorTab] = useState("templates");
   const [searchParams] = useSearchParams();
 
+  const applyTemplate = useCallback((template: CarouselTemplate) => {
+    if (templateApplyMode === "all") {
+      applyTemplateToAll(template);
+    } else if (templateApplyMode === "current") {
+      applyTemplateToSlide(template, currentSlide);
+    } else {
+      applyTemplatePreservingFormatting(template, currentSlide);
+    }
+    toast.success(`Template "${template.name}" aplicado`);
+  }, [templateApplyMode, currentSlide]);
+
   // "Create from scratch" detection
   useEffect(() => {
     if (searchParams.get("mode") === "blank") {
