@@ -1,6 +1,6 @@
-import { Instagram, Palette, LayoutGrid, Bot, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import { Instagram, Palette, LayoutGrid, Bot, ArrowRight, PlusCircle, Sparkles } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +13,7 @@ const tools = [
     iconColor: "text-pink-500",
     href: "/aprendizado?tab=carousel",
     badge: "POPULAR",
+    action: "Acessar"
   },
   {
     title: "iNSTA PRO",
@@ -21,16 +22,28 @@ const tools = [
     color: "bg-violet-500/10",
     iconColor: "text-violet-500",
     href: "/aprendizado?tab=instapro",
-    badge: null,
+    badge: "PREMIUM",
+    action: "Acessar"
+  },
+  {
+    title: "Criar do Zero",
+    description: "Inicie um design de carrossel em branco com total liberdade",
+    icon: PlusCircle,
+    color: "bg-blue-500/10",
+    iconColor: "text-blue-500",
+    href: "/aprendizado?tab=carousel&mode=blank",
+    badge: "NOVO",
+    action: "Criar"
   },
   {
     title: "Automação Instagram",
     description: "Fluxos ManyChat de alta conversão para DMs automáticas",
     icon: Bot,
-    color: "bg-blue-500/10",
-    iconColor: "text-blue-500",
+    color: "bg-emerald-500/10",
+    iconColor: "text-emerald-500",
     href: "/automacao-instagram",
     badge: null,
+    action: "Configurar"
   },
 ];
 
