@@ -1,5 +1,6 @@
 import { forwardRef, useRef, useEffect, useState } from "react";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, X } from "lucide-react";
+import { Rnd } from "react-rnd";
 import type { SlideData } from "./CarouselTemplates";
 import { FORMAT_SPECS, type AspectRatio } from "./CarouselTemplates";
 import {
@@ -15,10 +16,14 @@ interface SlidePreviewProps {
   aspectRatio: AspectRatio;
   /** When true, render at native resolution without scaling (for export) */
   nativeSize?: boolean;
+  /** Whether we are in "Free Edit" mode (drag & resize) */
+  isFreeEditMode?: boolean;
+  /** Callback when an element is moved or resized in free edit mode */
+  onUpdate?: (updates: Partial<SlideData>) => void;
 }
 
 const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
-  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize }, ref) => {
+  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
     const spec = FORMAT_SPECS[aspectRatio];
@@ -72,9 +77,66 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     // Use inline padding for exact control
     const padPx = `${padSize}px`;
 
-    // Helper: build CSS style object for an image with optional pan/zoom/filter adjustments.
+    const renderTitle = (extraStyles: React.CSSProperties = {}, className: string = "mb-4") => {
+      const combinedStyle = { ...titleStyle, ...extraStyles };
+      if (isFreeEditMode) {
+        return (
+          <Rnd
+            className="pointer-events-auto z-20"
+            position={slide.titlePos ? { x: slide.titlePos.x * spec.width, y: slide.titlePos.y * spec.height } : undefined}
+            size={slide.titlePos?.width ? { width: slide.titlePos.width * spec.width, height: slide.titlePos.height * spec.height } : undefined}
+            onDragStop={(e, d) => onUpdate?.({ titlePos: { ...slide.titlePos, x: d.x / spec.width, y: d.y / spec.height } })}
+            onResizeStop={(e, dir, ref, delta, pos) => onUpdate?.({ titlePos: { ...slide.titlePos, x: pos.x / spec.width, y: pos.y / spec.height, width: ref.offsetWidth / spec.width, height: ref.offsetHeight / spec.height } })}
+            bounds="parent"
+            enableResizing={isFreeEditMode}
+            disableDragging={!isFreeEditMode}
+          >
+            <h2 style={{ ...combinedStyle, margin: 0, width: '100%', height: '100%' }}>{slide.title}</h2>
+          </Rnd>
+        );
+      }
+      const posStyle: React.CSSProperties = slide.titlePos ? { 
+        position: 'absolute', 
+        left: `${slide.titlePos.x * 100}%`, 
+        top: `${slide.titlePos.y * 100}%`, 
+        width: slide.titlePos.width ? `${slide.titlePos.width * 100}%` : undefined,
+        height: slide.titlePos.height ? `${slide.titlePos.height * 100}%` : undefined,
+        margin: 0
+      } : {};
+      return <h2 className={className} style={{ ...combinedStyle, ...posStyle }}>{slide.title}</h2>;
+    };
+
+    const renderBody = (extraStyles: React.CSSProperties = {}, className: string = "whitespace-pre-wrap") => {
+      const combinedStyle = { ...bodyStyle, ...extraStyles };
+      if (isFreeEditMode) {
+        return (
+          <Rnd
+            className="pointer-events-auto z-20"
+            position={slide.bodyPos ? { x: slide.bodyPos.x * spec.width, y: slide.bodyPos.y * spec.height } : undefined}
+            size={slide.bodyPos?.width ? { width: slide.bodyPos.width * spec.width, height: slide.bodyPos.height * spec.height } : undefined}
+            onDragStop={(e, d) => onUpdate?.({ bodyPos: { ...slide.bodyPos, x: d.x / spec.width, y: d.y / spec.height } })}
+            onResizeStop={(e, dir, ref, delta, pos) => onUpdate?.({ bodyPos: { ...slide.bodyPos, x: pos.x / spec.width, y: pos.y / spec.height, width: ref.offsetWidth / spec.width, height: ref.offsetHeight / spec.height } })}
+            bounds="parent"
+            enableResizing={isFreeEditMode}
+            disableDragging={!isFreeEditMode}
+          >
+            <p style={{ ...combinedStyle, margin: 0, width: '100%', height: '100%' }}>{slide.body}</p>
+          </Rnd>
+        );
+      }
+      const posStyle: React.CSSProperties = slide.bodyPos ? { 
+        position: 'absolute', 
+        left: `${slide.bodyPos.x * 100}%`, 
+        top: `${slide.bodyPos.y * 100}%`, 
+        width: slide.bodyPos.width ? `${slide.bodyPos.width * 100}%` : undefined,
+        height: slide.bodyPos.height ? `${slide.bodyPos.height * 100}%` : undefined,
+        margin: 0
+      } : {};
+      return <p className={className} style={{ ...combinedStyle, ...posStyle }}>{slide.body}</p>;
+    };
+
+    // Helper: build CSS style object for an image container or direct img adjustments.
     const buildImageStyle = (
-      url: string,
       opts: {
         positionX?: number; positionY?: number; scale?: number;
         blur?: number; brightness?: number; contrast?: number;
@@ -86,11 +148,10 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
       const blur = opts.blur ?? 0;
       const bright = opts.brightness ?? 100;
       const contrast = opts.contrast ?? 100;
+      
       return {
-        backgroundImage: `url(${url})`,
-        backgroundSize: `${scl * 100}%`,
-        backgroundPosition: `${posX}% ${posY}%`,
-        backgroundRepeat: "no-repeat",
+        objectPosition: `${posX}% ${posY}%`,
+        transform: `scale(${scl})`,
         filter: `blur(${blur}px) brightness(${bright}%) contrast(${contrast}%)`,
       };
     };
@@ -99,15 +160,22 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
       const bgUrl = slide.bgImageUrl || (layout === "image-bg" ? slide.imageUrl : undefined);
       if (!bgUrl) return null;
       const opacity = slide.overlayOpacity ?? 0.55;
-      // Use bg-specific adjustments when bgImageUrl is set; otherwise use image-* (image-bg layout fallback)
       const useBg = !!slide.bgImageUrl;
       const adj = useBg
         ? { positionX: slide.bgImagePositionX, positionY: slide.bgImagePositionY, scale: slide.bgImageScale, blur: slide.bgImageBlur, brightness: slide.bgImageBrightness, contrast: slide.bgImageContrast }
         : { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast };
+      
       return (
         <>
-          <div className="absolute inset-0" style={buildImageStyle(bgUrl, adj)} />
-          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${opacity})` }} />
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <img 
+              src={bgUrl} 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover" 
+              style={buildImageStyle(adj)}
+            />
+          </div>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(0,0,0,${opacity})` }} />
         </>
       );
     };
@@ -140,8 +208,8 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               <div className="mb-2 font-bold uppercase tracking-widest" style={counterStyle}>
                 {slideIndex + 1} / {totalSlides}
               </div>
-              <h2 className="mb-3" style={titleStyle}>{slide.title}</h2>
-              <p className="whitespace-pre-wrap" style={bodyStyle}>{slide.body}</p>
+              {renderTitle({ marginBottom: 8 * fontScale }, "mb-2")}
+              {renderBody({ opacity: 0.85 })}
             </div>
             <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
           </>
@@ -155,12 +223,19 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 <div className="mb-2 font-bold uppercase tracking-widest" style={counterStyle}>
                   {slideIndex + 1} / {totalSlides}
                 </div>
-                <h2 className="mb-3" style={titleStyle}>{slide.title}</h2>
-                <p className="whitespace-pre-wrap" style={{ ...bodyStyle, opacity: 0.85 }}>{slide.body}</p>
+                {renderTitle({ marginBottom: 12 * fontScale }, "mb-3")}
+                {renderBody({ opacity: 0.85 })}
               </div>
               <div className="w-[45%] relative">
                 {slide.imageUrl ? (
-                  <div className="absolute inset-0" style={buildImageStyle(slide.imageUrl, { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} />
+                  <div className="absolute inset-0 overflow-hidden">
+                    <img 
+                      src={slide.imageUrl} 
+                      alt="" 
+                      className="absolute inset-0 w-full h-full object-cover" 
+                      style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} 
+                    />
+                  </div>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
                     <ImagePlus style={{ color: slide.accentColor, opacity: 0.4, width: 60 * fontScale, height: 60 * fontScale }} />
@@ -195,8 +270,8 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               <div className="mb-2 font-bold uppercase tracking-widest" style={counterStyle}>
                 {slideIndex + 1} / {totalSlides}
               </div>
-              <h2 className="mb-3" style={titleStyle}>{slide.title}</h2>
-              <p className="whitespace-pre-wrap flex-1" style={{ ...bodyStyle, opacity: 0.85 }}>{slide.body}</p>
+              {renderTitle({ marginBottom: 12 * fontScale }, "mb-3")}
+              {renderBody({ opacity: 0.85 }, "whitespace-pre-wrap flex-1")}
             </div>
             <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
           </>
@@ -218,8 +293,8 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                   )}
                   <span className="font-bold" style={{ color: slide.textColor, fontSize: 16 * fontScale }}>{slide.profileName || "Seu Nome"}</span>
                 </div>
-                <h2 className="mb-2" style={titleStyle}>{slide.title}</h2>
-                <p className="whitespace-pre-wrap mb-3" style={{ ...bodyStyle, opacity: 0.8 }}>{slide.body}</p>
+                {renderTitle({ marginBottom: 8 * fontScale }, "mb-2")}
+                {renderBody({ opacity: 0.8, marginBottom: 12 * fontScale }, "whitespace-pre-wrap mb-3")}
                 <div className="flex-1 grid grid-cols-2 gap-2 min-h-0" style={{ gap: 8 * fontScale }}>
                   {images.length > 0 ? (
                     images.slice(0, 4).map((url, i) => (
@@ -535,7 +610,14 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           return (
             <>
               {photoUrl ? (
-                <div className="absolute inset-0" style={buildImageStyle(photoUrl, { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} />
+                <div className="absolute inset-0 overflow-hidden">
+                  <img 
+                    src={photoUrl} 
+                    alt="" 
+                    className="absolute inset-0 w-full h-full object-cover" 
+                    style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} 
+                  />
+                </div>
               ) : (
                 <>
                   <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${slide.bgColor} 0%, rgba(0,0,0,0.55) 100%)` }} />
@@ -662,7 +744,14 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
           return (
             <>
               {photoUrl ? (
-                <div className="absolute inset-0" style={buildImageStyle(photoUrl, { positionX: slide.bgImagePositionX ?? slide.imagePositionX, positionY: slide.bgImagePositionY ?? slide.imagePositionY, scale: slide.bgImageScale ?? slide.imageScale, blur: slide.bgImageBlur ?? slide.imageBlur, brightness: slide.bgImageBrightness ?? slide.imageBrightness, contrast: slide.bgImageContrast ?? slide.imageContrast })} />
+                <div className="absolute inset-0 overflow-hidden">
+                  <img 
+                    src={photoUrl} 
+                    alt="" 
+                    className="absolute inset-0 w-full h-full object-cover" 
+                    style={buildImageStyle({ positionX: slide.bgImagePositionX ?? slide.imagePositionX, positionY: slide.bgImagePositionY ?? slide.imagePositionY, scale: slide.bgImageScale ?? slide.imageScale, blur: slide.bgImageBlur ?? slide.imageBlur, brightness: slide.bgImageBrightness ?? slide.imageBrightness, contrast: slide.bgImageContrast ?? slide.imageContrast })} 
+                  />
+                </div>
               ) : (
                 <>
                   <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${slide.bgColor} 0%, rgba(0,0,0,0.65) 100%)` }} />
@@ -771,16 +860,71 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               </div>
             )}
 
-            <div className="absolute inset-0 flex flex-col" style={{ padding: padPx, textAlign: slide.align, justifyContent: slide.verticalAlign === "top" ? "flex-start" : slide.verticalAlign === "bottom" ? "flex-end" : "center" }}>
+            <div className="absolute inset-0 flex flex-col pointer-events-none" style={{ padding: padPx, textAlign: slide.align, justifyContent: slide.verticalAlign === "top" ? "flex-start" : slide.verticalAlign === "bottom" ? "flex-end" : "center" }}>
               <div className="mb-4 font-bold uppercase tracking-widest" style={counterStyle}>
                 {slideIndex + 1} / {totalSlides}
               </div>
-              <h2 className="mb-4" style={titleStyle}>{slide.title}</h2>
-              <p className="whitespace-pre-wrap" style={bodyStyle}>{slide.body}</p>
+              {renderTitle({ marginBottom: 16 * fontScale })}
+              {renderBody({ opacity: 0.9 })}
             </div>
             <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
           </>
         )}
+        {/* =========== CUSTOM LAYERS =========== */}
+        {slide.layers?.map((layer) => (
+          <Rnd
+            key={layer.id}
+            position={{ x: layer.x * spec.width, y: layer.y * spec.height }}
+            size={{ width: layer.width * spec.width, height: layer.height * spec.height }}
+            onDragStop={(e, d) => {
+              if (!isFreeEditMode) return;
+              const newLayers = slide.layers?.map(l => l.id === layer.id ? { ...l, x: d.x / spec.width, y: d.y / spec.height } : l);
+              onUpdate?.({ layers: newLayers });
+            }}
+            onResizeStop={(e, dir, ref, delta, pos) => {
+              if (!isFreeEditMode) return;
+              const newLayers = slide.layers?.map(l => l.id === layer.id ? { 
+                ...l, 
+                x: pos.x / spec.width, 
+                y: pos.y / spec.height, 
+                width: ref.offsetWidth / spec.width, 
+                height: ref.offsetHeight / spec.height 
+              } : l);
+              onUpdate?.({ layers: newLayers });
+            }}
+            bounds="parent"
+            enableResizing={isFreeEditMode}
+            disableDragging={!isFreeEditMode}
+            className={isFreeEditMode ? "z-10" : "pointer-events-none"}
+          >
+            <div className="w-full h-full flex items-center justify-center relative group">
+              {layer.type === "text" && (
+                <div style={{ ...bodyStyle, margin: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', ...layer.style }}>
+                  {layer.content}
+                </div>
+              )}
+              {layer.type === "shape" && (
+                <div style={{ width: '100%', height: '100%', backgroundColor: slide.accentColor, ...layer.style }} />
+              )}
+              {layer.type === "sticker" && (
+                <div style={{ fontSize: layer.height * spec.height * 0.8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {layer.content}
+                </div>
+              )}
+              {isFreeEditMode && (
+                <button 
+                  className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => {
+                    const newLayers = slide.layers?.filter(l => l.id !== layer.id);
+                    onUpdate?.({ layers: newLayers });
+                  }}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </Rnd>
+        ))}
       </div>
     );
 

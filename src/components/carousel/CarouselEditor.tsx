@@ -29,6 +29,7 @@ import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import SlidePreview from "./SlidePreview";
+import CanvasElementsLibrary from "./CanvasElementsLibrary";
 import { scopedLocal } from "@/lib/userScopedKey";
 import TemplatePreviewTooltip from "./TemplatePreviewTooltip";
 import ImageAdjustPanel, { type ImageAdjustValues } from "./ImageAdjustPanel";
@@ -151,6 +152,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [giInput, setGiInput] = useState("");
   const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
   const [giLoading, setGiLoading] = useState(false);
+  const [isFreeEditMode, setIsFreeEditMode] = useState(false);
 
   // Persisted template apply mode
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
@@ -775,10 +777,21 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
       // Wait for all fonts to be loaded before capturing
       await document.fonts.ready;
       // Small delay to ensure rendering is complete
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 300));
+      
+      // Ensure all images in the element are loaded
+      const images = Array.from(el.querySelectorAll('img'));
+      await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      }));
+
       const dataUrl = await toPng(el, {
         cacheBust: true,
-        pixelRatio: 1,
+        pixelRatio: 2, // Higher quality
         width: spec.width,
         height: spec.height,
         style: { transform: 'none', position: 'static' },
@@ -829,6 +842,25 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     setCurrentSlide(Math.min(currentSlide, newSlides.length - 1));
     slideRefs.current = new Array(newSlides.length).fill(null);
     toast.success(`Slide ${index + 1} removido`);
+  };
+
+  const addElement = (type: "text" | "image" | "shape" | "sticker", content?: string, style?: any) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newLayer = {
+      id,
+      type,
+      content: content || (type === "text" ? "Novo Texto" : undefined),
+      x: 0.25,
+      y: 0.25,
+      width: 0.5,
+      height: 0.1,
+      style,
+    };
+    updateSlide(currentSlide, {
+      layers: [...(cur.layers || []), newLayer]
+    });
+    setIsFreeEditMode(true);
+    toast.success("Elemento adicionado!");
   };
 
   // ========== FULLSCREEN PRESENTATION ==========
@@ -1051,8 +1083,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                           >
                             <SlidePreview
                               slide={{
-                                title: "Título exemplo",
-                                body: "Texto de visualização do layout journaling.",
+                                ...(cur || { title: "Título exemplo", body: "Texto de visualização." }),
                                 bgColor: t.bgColor,
                                 textColor: t.textColor,
                                 accentColor: t.accentColor,
@@ -1063,8 +1094,8 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                                 bgGradient: t.bgGradient,
                                 layout: t.layout,
                                 highlightBgColor: t.highlightBgColor,
-                                profileName: "Mentora Gi",
-                                profileHandle: "@mentoragi",
+                                profileName: cur?.profileName || "Mentora Gi",
+                                profileHandle: cur?.profileHandle || "@mentoragi",
                               }}
                               aspectRatio={t.aspectRatio}
                               slideIndex={0}
@@ -1108,7 +1139,28 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     className={`p-3 rounded-lg border-2 text-left transition-all ${selectedTemplate.id === t.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="flex-1 h-8 rounded" style={{ background: t.bgGradient || t.bgColor }} />
+                      <div className="flex-1 aspect-square rounded overflow-hidden bg-background">
+                        <div style={{ transform: "scale(0.12)", transformOrigin: "top left", width: 1080, height: 1080, pointerEvents: "none" }}>
+                          <SlidePreview 
+                            slide={{
+                              ...(cur || { title: "Título", body: "Texto" }),
+                              bgColor: t.bgColor,
+                              textColor: t.textColor,
+                              accentColor: t.accentColor,
+                              titleSize: t.titleSize,
+                              bodySize: t.bodySize,
+                              fontFamily: t.fontFamily,
+                              align: t.align,
+                              bgGradient: t.bgGradient,
+                              layout: t.layout,
+                              highlightBgColor: t.highlightBgColor,
+                            }}
+                            aspectRatio={t.aspectRatio}
+                            slideIndex={0}
+                            totalSlides={1}
+                          />
+                        </div>
+                      </div>
                       <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0">{t.aspectRatio}</Badge>
                     </div>
                     <span className="text-xs font-medium text-foreground">{t.name}</span>
@@ -1319,14 +1371,32 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
             {/* Preview */}
             <div className="flex justify-center w-full overflow-hidden">
               <div className="w-full max-w-full">
-                <SlidePreview ref={setSlideRef(currentSlide)} slide={cur} slideIndex={currentSlide} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} />
+                <SlidePreview 
+                  ref={setSlideRef(currentSlide)} 
+                  slide={cur} 
+                  slideIndex={currentSlide} 
+                  totalSlides={slides.length} 
+                  aspectRatio={selectedTemplate.aspectRatio} 
+                  isFreeEditMode={isFreeEditMode}
+                  onUpdate={(updates) => updateSlide(currentSlide, updates)}
+                />
               </div>
             </div>
 
             {/* ========== EDITOR CONTROLS ========== */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2"><Paintbrush className="h-4 w-4" /> Editar Slide {currentSlide + 1}</CardTitle>
+                <CardTitle className="text-sm flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2"><Paintbrush className="h-4 w-4" /> Editar Slide {currentSlide + 1}</div>
+                  <Button 
+                    size="sm" 
+                    variant={isFreeEditMode ? "default" : "outline"} 
+                    className="h-7 text-[10px] px-2"
+                    onClick={() => setIsFreeEditMode(!isFreeEditMode)}
+                  >
+                    {isFreeEditMode ? "🔓 Edição Livre ON" : "🔒 Edição Livre OFF"}
+                  </Button>
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 max-h-[60vh] lg:max-h-[600px] overflow-y-auto">
                 {/* Title */}
@@ -1556,6 +1626,19 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* ===== ELEMENTS LIBRARY ===== */}
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      <div className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Biblioteca de Elementos</div>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4">
+                    <CanvasElementsLibrary onAddElement={addElement} />
+                  </CollapsibleContent>
+                </Collapsible>
 
                 {/* Colors */}
                 <div className="grid grid-cols-3 gap-3">
