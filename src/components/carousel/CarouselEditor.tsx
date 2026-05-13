@@ -158,6 +158,54 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
   const [giLoading, setGiLoading] = useState(false);
   const [isFreeEditMode, setIsFreeEditMode] = useState(false);
+  const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>();
+  const [activeEditorTab, setActiveEditorTab] = useState("templates");
+  const [searchParams] = useSearchParams();
+
+  // "Create from scratch" detection
+  useEffect(() => {
+    if (searchParams.get("mode") === "blank") {
+      const blankTemplate = CAROUSEL_TEMPLATES.find(t => t.id === "blank-canvas") || CAROUSEL_TEMPLATES[0];
+      setSelectedTemplate(blankTemplate);
+      const initialSlides = createSlidesFromTemplate(blankTemplate, [{ title: "Seu Título", body: "Seu subtítulo ou texto de apoio aqui." }]);
+      setSlides(initialSlides);
+      setIsFreeEditMode(true);
+      setActiveEditorTab("layers");
+    }
+  }, [searchParams]);
+
+  const applyBrandKit = useCallback((kit: BrandKit) => {
+    setSlides(prev => prev.map(s => ({
+      ...s,
+      bgColor: kit.primary_color,
+      textColor: kit.secondary_color,
+      accentColor: kit.accent_color,
+      fontFamily: kit.font_family_title,
+    })));
+    toast.success("Identidade Visual aplicada ao carrossel");
+  }, []);
+
+  const addLayer = useCallback((layerType: LayerData["type"], content?: string) => {
+    const newLayer: LayerData = {
+      id: Math.random().toString(36).substring(7),
+      type: layerType,
+      content: content || (layerType === 'text' ? 'Novo Texto' : ''),
+      x: 0.25,
+      y: 0.25,
+      width: layerType === 'image' ? 0.3 : 0.4,
+      height: layerType === 'image' ? 0.3 : 0.1,
+      style: layerType === 'shape' ? { backgroundColor: selectedTemplate.accentColor, borderRadius: '8px' } : {}
+    };
+
+    setSlides(prev => prev.map((s, i) => i === currentSlide ? {
+      ...s,
+      layers: [...(s.layers || []), newLayer]
+    } : s));
+    
+    setSelectedLayerId(newLayer.id);
+    setIsFreeEditMode(true);
+    toast.success("Camada adicionada");
+  }, [currentSlide, selectedTemplate.accentColor]);
 
   // Persisted template apply mode
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
