@@ -197,6 +197,15 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   // Mentora Gi mini-chat state — persisted
   const [giOpen, setGiOpen] = useState(sessionState.giOpen);
+  const updateSlidesWithHistory = useCallback((newSlides: SlideData[] | ((prev: SlideData[]) => SlideData[])) => {
+    setSlides(prev => {
+      const next = typeof newSlides === "function" ? newSlides(prev) : newSlides;
+      if (JSON.stringify(prev) !== JSON.stringify(next)) {
+        pushToHistory(prev);
+      }
+      return next;
+    });
+  }, [pushToHistory]);
   const [giInput, setGiInput] = useState("");
   const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
   const [giLoading, setGiLoading] = useState(false);
