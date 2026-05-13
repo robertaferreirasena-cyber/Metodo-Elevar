@@ -1883,8 +1883,11 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                 }}>
                   <Copy className="h-3 w-3 mr-1" /> Copiar formatação para todos os slides
                 </Button>
-              </CardContent>
-            </Card>
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Thumbnail strip — aspect-ratio aware */}
