@@ -5,7 +5,7 @@ import {
   AlignLeft, AlignCenter, DownloadCloud, ImagePlus, User, X, Smartphone,
   Square, Monitor, Sparkles, Send, ChevronDown, ChevronUp,
   Bold, Italic, Underline, ArrowUpFromLine, AlignVerticalSpaceAround, ArrowDownFromLine, Palette, Copy,
-  CopyPlus, Trash2, Maximize, Minimize, Undo2, CheckCircle2, LayoutGrid, Layers, MousePointer2
+  CopyPlus, Trash2, Maximize, Minimize, Undo2, CheckCircle2, LayoutGrid, Layers, MousePointer2, PlusCircle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
