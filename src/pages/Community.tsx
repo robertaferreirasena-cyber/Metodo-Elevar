@@ -197,7 +197,13 @@ export default function Community() {
       return;
     }
 
-    const result = await uploadMaterial(materialTitle, materialDescription, materialUrl, materialType);
+    // Ensure URL has protocol
+    let finalUrl = materialUrl.trim();
+    if (!finalUrl.startsWith('http') && !finalUrl.startsWith('blob:')) {
+      finalUrl = `https://${finalUrl}`;
+    }
+
+    const result = await uploadMaterial(materialTitle, materialDescription, finalUrl, materialType);
     if (result.success) {
       setMaterialDialogOpen(false);
       setMaterialTitle('');
