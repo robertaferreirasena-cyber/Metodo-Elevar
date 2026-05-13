@@ -293,8 +293,8 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                   )}
                   <span className="font-bold" style={{ color: slide.textColor, fontSize: 16 * fontScale }}>{slide.profileName || "Seu Nome"}</span>
                 </div>
-                <h2 className="mb-2" style={titleStyle}>{slide.title}</h2>
-                <p className="whitespace-pre-wrap mb-3" style={{ ...bodyStyle, opacity: 0.8 }}>{slide.body}</p>
+                {renderTitle({ marginBottom: 8 * fontScale }, "mb-2")}
+                {renderBody({ opacity: 0.8, marginBottom: 12 * fontScale }, "whitespace-pre-wrap mb-3")}
                 <div className="flex-1 grid grid-cols-2 gap-2 min-h-0" style={{ gap: 8 * fontScale }}>
                   {images.length > 0 ? (
                     images.slice(0, 4).map((url, i) => (
