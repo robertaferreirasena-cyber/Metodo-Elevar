@@ -1107,7 +1107,28 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                     className={`p-3 rounded-lg border-2 text-left transition-all ${selectedTemplate.id === t.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"}`}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="flex-1 h-8 rounded" style={{ background: t.bgGradient || t.bgColor }} />
+                      <div className="flex-1 aspect-square rounded overflow-hidden bg-background">
+                        <div style={{ transform: "scale(0.12)", transformOrigin: "top left", width: 1080, height: 1080, pointerEvents: "none" }}>
+                          <SlidePreview 
+                            slide={{
+                              ...(cur || { title: "Título", body: "Texto" }),
+                              bgColor: t.bgColor,
+                              textColor: t.textColor,
+                              accentColor: t.accentColor,
+                              titleSize: t.titleSize,
+                              bodySize: t.bodySize,
+                              fontFamily: t.fontFamily,
+                              align: t.align,
+                              bgGradient: t.bgGradient,
+                              layout: t.layout,
+                              highlightBgColor: t.highlightBgColor,
+                            }}
+                            aspectRatio={t.aspectRatio}
+                            slideIndex={0}
+                            totalSlides={1}
+                          />
+                        </div>
+                      </div>
                       <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0">{t.aspectRatio}</Badge>
                     </div>
                     <span className="text-xs font-medium text-foreground">{t.name}</span>
