@@ -5,7 +5,7 @@ import {
   AlignLeft, AlignCenter, DownloadCloud, ImagePlus, User, X, Smartphone,
   Square, Monitor, Sparkles, Send, ChevronDown, ChevronUp,
   Bold, Italic, Underline, ArrowUpFromLine, AlignVerticalSpaceAround, ArrowDownFromLine, Palette, Copy,
-  CopyPlus, Trash2, Maximize, Minimize, Undo2, CheckCircle2,
+  CopyPlus, Trash2, Maximize, Minimize, Undo2, CheckCircle2, LayoutGrid, Layers, MousePointer2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,11 +39,16 @@ import {
   JOURNAL_TEMPLATE_IDS, JOURNAL_LAYOUT_SEQUENCE, isJournalTemplate,
   JOURNAL_PALETTES, applyPaletteToSlide, buildJournalSampleSlides,
   JOURNAL_SAMPLE_THEMES, type JournalPalette,
-  type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
+  type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio, type LayerData,
 } from "./CarouselTemplates";
 import ImageLibraryPicker from "./ImageLibraryPicker";
 import JournalCollectionExporter, { type JournalExporterHandle } from "./JournalCollectionExporter";
 import JSZip from "jszip";
+import LayerList from "./LayerList";
+import UserUploads from "./UserUploads";
+import BrandKitManager, { type BrandKit } from "./BrandKitManager";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSearchParams } from "react-router-dom";
 
 const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial", "journal-photo-card", "journal-torn-paper"];
 const MULTI_IMAGE_LAYOUTS: CarouselLayout[] = ["photo-grid", "tweet-post"];
@@ -127,7 +132,7 @@ async function readStream(
 
 export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {}) {
   const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<CarouselSessionState>(
-    "session_carousel_editor", EMPTY_CAROUSEL_STATE
+    "session_carousel_editor", EMPTY_CAROUSEL_STATE, 1000, "local"
   );
 
   // Restore session FIRST. Only fall back to initialTopic when there is no saved session.
@@ -153,9 +158,71 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
   const [giLoading, setGiLoading] = useState(false);
   const [isFreeEditMode, setIsFreeEditMode] = useState(false);
+  const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>();
+  const [activeEditorTab, setActiveEditorTab] = useState("templates");
+  const [searchParams] = useSearchParams();
 
   // Persisted template apply mode
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
+
+  const applyTemplate = useCallback((template: CarouselTemplate) => {
+    if (templateApplyMode === "all") {
+      applyTemplateToAll(template);
+    } else if (templateApplyMode === "current") {
+      applyTemplateToSlide(template, currentSlide);
+    } else {
+      applyTemplatePreservingFormatting(template, currentSlide);
+    }
+    toast.success(`Template "${template.name}" aplicado`);
+  }, [templateApplyMode, currentSlide]);
+
+  // "Create from scratch" detection
+  useEffect(() => {
+    if (searchParams.get("mode") === "blank") {
+      const blankTemplate = CAROUSEL_TEMPLATES.find(t => t.id === "blank-canvas") || CAROUSEL_TEMPLATES[0];
+      setSelectedTemplate(blankTemplate);
+      const initialSlides = createSlidesFromTemplate(blankTemplate, [{ title: "Seu Título", body: "Seu subtítulo ou texto de apoio aqui." }]);
+      setSlides(initialSlides);
+      setIsFreeEditMode(true);
+      setActiveEditorTab("layers");
+    }
+  }, [searchParams]);
+
+  const applyBrandKit = useCallback((kit: BrandKit) => {
+    setSlides(prev => prev.map(s => ({
+      ...s,
+      bgColor: kit.primary_color,
+      textColor: kit.secondary_color,
+      accentColor: kit.accent_color,
+      fontFamily: kit.font_family_title,
+    })));
+    toast.success("Identidade Visual aplicada ao carrossel");
+  }, []);
+
+  const addLayer = useCallback((layerType: LayerData["type"], content?: string) => {
+    const newLayer: LayerData = {
+      id: Math.random().toString(36).substring(7),
+      type: layerType,
+      content: content || (layerType === 'text' ? 'Novo Texto' : ''),
+      x: 0.25,
+      y: 0.25,
+      width: layerType === 'image' ? 0.3 : 0.4,
+      height: layerType === 'image' ? 0.3 : 0.1,
+      style: layerType === 'shape' ? { backgroundColor: selectedTemplate.accentColor, borderRadius: '8px' } : {}
+    };
+
+    setSlides(prev => prev.map((s, i) => i === currentSlide ? {
+      ...s,
+      layers: [...(s.layers || []), newLayer]
+    } : s));
+    
+    setSelectedLayerId(newLayer.id);
+    setIsFreeEditMode(true);
+    toast.success("Camada adicionada");
+  }, [currentSlide, selectedTemplate.accentColor]);
+
+  // Persisted template apply mode
+  // templateApplyMode is already declared above
 
   // Image library + collection export state
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -1367,38 +1434,124 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
 
 
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Preview */}
-            <div className="flex justify-center w-full overflow-hidden">
-              <div className="w-full max-w-full">
-                <SlidePreview 
-                  ref={setSlideRef(currentSlide)} 
-                  slide={cur} 
-                  slideIndex={currentSlide} 
-                  totalSlides={slides.length} 
-                  aspectRatio={selectedTemplate.aspectRatio} 
-                  isFreeEditMode={isFreeEditMode}
-                  onUpdate={(updates) => updateSlide(currentSlide, updates)}
-                />
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4">
+            {/* Sidebar Tabs (Canva-like) */}
+            <div className="lg:col-span-4 flex flex-col gap-4 order-2 lg:order-1">
+              <Tabs value={activeEditorTab} onValueChange={setActiveEditorTab} className="w-full">
+                <TabsList className="grid grid-cols-5 w-full h-12">
+                  <TabsTrigger value="templates" title="Templates"><LayoutGrid className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="layers" title="Camadas"><Layers className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="brand" title="Marca"><Palette className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="uploads" title="Uploads"><DownloadCloud className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="elements" title="Elementos"><Sparkles className="h-4 w-4" /></TabsTrigger>
+                </TabsList>
+
+                <div className="mt-4 min-h-[500px] flex flex-col gap-4">
+                  <TabsContent value="templates" className="m-0 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold flex items-center gap-2"><LayoutGrid className="h-4 w-4" /> Templates</h3>
+                      <Select value={formatFilter} onValueChange={(v: any) => setFormatFilter(v)}>
+                        <SelectTrigger className="w-[100px] h-8 text-[10px]">
+                          <SelectValue placeholder="Filtro" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos</SelectItem>
+                          <SelectItem value="1:1">Quadrado</SelectItem>
+                          <SelectItem value="9:16">Stories</SelectItem>
+                          <SelectItem value="16:9">Wide</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <ScrollArea className="h-[450px]">
+                      <div className="grid grid-cols-2 gap-2 pr-4">
+                        {CAROUSEL_TEMPLATES.filter(t => formatFilter === "all" || t.aspectRatio === formatFilter).map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => applyTemplate(t)}
+                            className={`p-1 rounded-lg border-2 transition-all hover:scale-[1.02] ${selectedTemplate.id === t.id ? 'border-primary' : 'border-transparent'}`}
+                          >
+                            <TemplatePreviewTooltip template={t}>
+                              <div className="w-full aspect-square rounded-md overflow-hidden border bg-muted flex items-center justify-center text-[10px] p-2 text-center leading-tight">
+                                {t.name}
+                              </div>
+                            </TemplatePreviewTooltip>
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+
+                  <TabsContent value="layers" className="m-0 h-full flex flex-col gap-4">
+                    <LayerList 
+                      slide={cur} 
+                      onUpdate={(upd) => updateSlide(currentSlide, upd)} 
+                      selectedLayerId={selectedLayerId}
+                      onSelectLayer={setSelectedLayerId}
+                    />
+                    <div className="grid grid-cols-2 gap-2 mt-auto">
+                      <Button variant="outline" size="sm" onClick={() => addLayer('text')} className="gap-2 h-10">
+                        <Type className="h-4 w-4" /> Texto
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => addLayer('sticker', '✨')} className="gap-2 h-10">
+                        <Sparkles className="h-4 w-4" /> Sticker
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => addLayer('shape')} className="gap-2 h-10">
+                        <Square className="h-4 w-4" /> Forma
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setIsFreeEditMode(!isFreeEditMode)} className={`gap-2 h-10 ${isFreeEditMode ? 'bg-primary text-primary-foreground' : ''}`}>
+                        <MousePointer2 className="h-4 w-4" /> {isFreeEditMode ? 'Editando' : 'Visualizar'}
+                      </Button>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="brand" className="m-0">
+                    <BrandKitManager onApply={applyBrandKit} />
+                  </TabsContent>
+
+                  <TabsContent value="uploads" className="m-0">
+                    <UserUploads onSelect={(url) => {
+                      if (activeEditorTab === 'uploads') {
+                        addLayer('image', url);
+                      }
+                    }} />
+                  </TabsContent>
+
+                  <TabsContent value="elements" className="m-0">
+                    <CanvasElementsLibrary onAddElement={addLayer} />
+                  </TabsContent>
+                </div>
+              </Tabs>
             </div>
 
-            {/* ========== EDITOR CONTROLS ========== */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2"><Paintbrush className="h-4 w-4" /> Editar Slide {currentSlide + 1}</div>
-                  <Button 
-                    size="sm" 
-                    variant={isFreeEditMode ? "default" : "outline"} 
-                    className="h-7 text-[10px] px-2"
-                    onClick={() => setIsFreeEditMode(!isFreeEditMode)}
-                  >
-                    {isFreeEditMode ? "🔓 Edição Livre ON" : "🔒 Edição Livre OFF"}
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 max-h-[60vh] lg:max-h-[600px] overflow-y-auto">
+            {/* Preview & Editor Controls */}
+            <div className="lg:col-span-8 flex flex-col gap-6 order-1 lg:order-2">
+              <div className="flex justify-center w-full bg-muted/20 rounded-xl p-4 sm:p-8 relative overflow-hidden group">
+                <div className="w-full max-w-full flex justify-center shadow-2xl">
+                  <SlidePreview 
+                    ref={setSlideRef(currentSlide)} 
+                    slide={cur} 
+                    slideIndex={currentSlide} 
+                    totalSlides={slides.length} 
+                    aspectRatio={selectedTemplate.aspectRatio} 
+                    isFreeEditMode={isFreeEditMode}
+                    selectedLayerId={selectedLayerId}
+                    onSelectLayer={setSelectedLayerId}
+                    onUpdate={(updates) => updateSlide(currentSlide, updates)}
+                    onReady={() => {/* Readiness tracking for export */}}
+                  />
+                </div>
+              </div>
+
+              {/* Editor Controls Card */}
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader className="pb-3 border-b bg-muted/10">
+                  <CardTitle className="text-sm font-bold flex items-center justify-between">
+                    <div className="flex items-center gap-2"><Paintbrush className="h-4 w-4 text-primary" /> Editor Detalhado</div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <ScrollArea className="h-[400px]">
+                    <div className="p-6 space-y-6">
                 {/* Title */}
                 <div>
                   <Label className="text-xs">Título</Label>
@@ -1748,8 +1901,11 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                 }}>
                   <Copy className="h-3 w-3 mr-1" /> Copiar formatação para todos os slides
                 </Button>
-              </CardContent>
-            </Card>
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Thumbnail strip — aspect-ratio aware */}

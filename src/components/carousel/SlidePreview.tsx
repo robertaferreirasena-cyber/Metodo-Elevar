@@ -20,10 +20,15 @@ interface SlidePreviewProps {
   isFreeEditMode?: boolean;
   /** Callback when an element is moved or resized in free edit mode */
   onUpdate?: (updates: Partial<SlideData>) => void;
+  /** Callback when all assets are loaded */
+  onReady?: () => void;
+  /** ID of the layer being edited */
+  selectedLayerId?: string;
+  onSelectLayer?: (id: string | undefined) => void;
 }
 
 const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
-  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate }, ref) => {
+  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate, onReady, selectedLayerId, onSelectLayer }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
     const spec = FORMAT_SPECS[aspectRatio];
@@ -34,16 +39,32 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     const fontScale = spec.width / 480;
 
     useEffect(() => {
-      if (nativeSize) { setScale(1); return; }
       const el = containerRef.current;
       if (!el) return;
+
+      const checkAssets = async () => {
+        const imgs = Array.from(el.querySelectorAll("img"));
+        await Promise.all(imgs.map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        }));
+        onReady?.();
+      };
+
+      checkAssets();
+
+      if (nativeSize) { setScale(1); return; }
+      
       const observer = new ResizeObserver(([entry]) => {
         const cw = entry.contentRect.width;
         setScale(cw / spec.width);
       });
       observer.observe(el);
       return () => observer.disconnect();
-    }, [spec.width, nativeSize]);
+    }, [spec.width, nativeSize, slide, onReady]);
 
     const titleStyle: React.CSSProperties = {
       color: slide.titleColor || slide.textColor,
@@ -171,6 +192,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
             <img 
               src={bgUrl} 
               alt="" 
+              crossOrigin="anonymous"
               className="absolute inset-0 w-full h-full object-cover" 
               style={buildImageStyle(adj)}
             />
@@ -232,6 +254,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                     <img 
                       src={slide.imageUrl} 
                       alt="" 
+                      crossOrigin="anonymous"
                       className="absolute inset-0 w-full h-full object-cover" 
                       style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} 
                     />

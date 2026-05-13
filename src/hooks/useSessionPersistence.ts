@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { scopedSession, scopedKey } from "@/lib/userScopedKey";
+import { scopedSession, scopedLocal, scopedKey } from "@/lib/userScopedKey";
 
 const SESSION_METADATA_BASE = "session_metadata";
 const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -63,11 +63,15 @@ export function clearAllSessions(): void {
 export function useSessionPersistence<T>(
   key: string,
   initialState: T,
-  debounceMs: number = 500
+  debounceMs: number = 500,
+  storageType: "session" | "local" = "session"
 ): [T, (value: T | ((prev: T) => T)) => void, () => void, boolean] {
+  const storage = storageType === "local" ? scopedLocal : scopedSession;
+
+
   const [state, setState] = useState<T>(() => {
     try {
-      const stored = scopedSession.get(key);
+      const stored = storage.get(key);
       if (stored) {
         updateSessionMetadata(scopedKey(key));
         return JSON.parse(stored) as T;
@@ -79,7 +83,7 @@ export function useSessionPersistence<T>(
   });
 
   const [hasRestoredSession, setHasRestoredSession] = useState(() => {
-    try { return scopedSession.get(key) !== null; } catch { return false; }
+    try { return storage.get(key) !== null; } catch { return false; }
   });
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -93,7 +97,7 @@ export function useSessionPersistence<T>(
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       try {
-        scopedSession.set(key, JSON.stringify(state));
+        storage.set(key, JSON.stringify(state));
         updateSessionMetadata(scopedKey(key));
       } catch (error) {
         console.warn(`Failed to save session for ${key}:`, error);
@@ -102,18 +106,18 @@ export function useSessionPersistence<T>(
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [state, key, debounceMs]);
+  }, [state, key, debounceMs, storage]);
 
   const clearSession = useCallback(() => {
     try {
-      scopedSession.remove(key);
+      storage.remove(key);
       removeSessionMetadata(scopedKey(key));
       setState(initialState);
       setHasRestoredSession(false);
     } catch (error) {
       console.warn(`Failed to clear session for ${key}:`, error);
     }
-  }, [key, initialState]);
+  }, [key, initialState, storage]);
 
   return [state, setState, clearSession, hasRestoredSession];
 }
