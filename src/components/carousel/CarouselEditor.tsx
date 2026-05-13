@@ -1591,7 +1591,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   <Button size="sm" variant="outline" onClick={() => setSlides(prev => [...prev, { ...cur, id: Math.random().toString(36).substr(2, 9), title: "Nova Página", body: "Adicione seu texto aqui." }])} className="gap-2 hidden sm:flex">
                     <PlusCircle className="h-4 w-4" /> Adicionar Página
                   </Button>
-                  <Button size="sm" onClick={downloadCurrent} disabled={exporting} className="gap-2 bg-primary hover:bg-primary/90 shadow-md">
+                  <Button size="sm" onClick={() => exportSlide(currentSlide)} disabled={exporting} className="gap-2 bg-primary hover:bg-primary/90 shadow-md">
                     {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Exportar
                   </Button>
                </div>
