@@ -711,28 +711,37 @@ export default function Community() {
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-1 shrink-0">
+                          <div className="flex gap-2 shrink-0">
                             <Button
                               variant="default"
                               size="sm"
-                              className="gap-1"
-                              onClick={() => setVimeoMaterial({ url: material.file_url, title: material.title, type: material.file_type || 'link' })}
+                              className="gap-2"
+                              onClick={() => setVimeoMaterial({ 
+                                url: material.file_url, 
+                                title: material.title, 
+                                type: material.file_type || (material.file_url.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|svg)/i) ? 'image' : material.file_url.toLowerCase().includes('.pdf') ? 'pdf' : 'link')
+                              })}
                             >
-                              {isVimeo ? <PlayCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+                              <PlayCircle className="h-4 w-4" />
                               Visualizar
                             </Button>
                             
-                            {!isVimeo && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                asChild
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                              className="gap-2"
+                            >
+                              <a 
+                                href={material.file_url.startsWith('http') ? material.file_url : `https://${material.file_url}`} 
+                                download={material.title}
+                                target="_blank" 
+                                rel="noopener noreferrer"
                               >
-                                <a href={material.file_url} download target="_blank" rel="noopener noreferrer">
-                                  <Download className="h-4 w-4" />
-                                </a>
-                              </Button>
-                            )}
+                                <Download className="h-4 w-4" />
+                                <span className="hidden sm:inline">Baixar</span>
+                              </a>
+                            </Button>
                             {isAdmin && (
                               <Button
                                 variant="ghost"
