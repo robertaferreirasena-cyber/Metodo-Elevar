@@ -1684,6 +1684,13 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </div>
                   <div className="h-6 w-[1px] bg-border mx-2" />
                   <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={undo} disabled={history.length === 0} title="Desfazer">
+                       <Undo2 className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={redo} disabled={redoStack.length === 0} title="Refazer">
+                       <Undo2 className="h-4 w-4" style={{ transform: "scaleX(-1)" }} />
+                    </Button>
+                    <div className="h-4 w-[1px] bg-border mx-1 self-center" />
                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicateSlide(currentSlide)} title="Duplicar">
                        <CopyPlus className="h-4 w-4" />
                     </Button>
