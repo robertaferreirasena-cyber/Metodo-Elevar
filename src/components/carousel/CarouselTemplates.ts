@@ -923,8 +923,25 @@ export interface SlideData {
   imageContrast?: number;
   // Journaling-only adjustments for the floating highlight card
   highlightScale?: number;    // 0.7–1.3 (default 1)
-  highlightOffsetY?: number;  // -15 to +15 (% of slide height, default 0)
-}
+   highlightOffsetY?: number;  // -15 to +15 (% of slide height, default 0)
+   // Free edit positioning (relative to slide width/height, 0-1)
+   titlePos?: { x: number; y: number; width?: number; height?: number; rotation?: number };
+   bodyPos?: { x: number; y: number; width?: number; height?: number; rotation?: number };
+   // Custom layers for "Create from scratch"
+   layers?: LayerData[];
+ }
+ 
+ export interface LayerData {
+   id: string;
+   type: "text" | "image" | "shape" | "sticker";
+   content?: string;
+   x: number;
+   y: number;
+   width: number;
+   height: number;
+   rotation?: number;
+   style?: any;
+ }
 
 export function createSlidesFromTemplate(
   template: CarouselTemplate,
