@@ -1,5 +1,6 @@
 import { forwardRef, useRef, useEffect, useState } from "react";
 import { ImagePlus } from "lucide-react";
+import { Rnd } from "react-rnd";
 import type { SlideData } from "./CarouselTemplates";
 import { FORMAT_SPECS, type AspectRatio } from "./CarouselTemplates";
 import {
@@ -15,10 +16,14 @@ interface SlidePreviewProps {
   aspectRatio: AspectRatio;
   /** When true, render at native resolution without scaling (for export) */
   nativeSize?: boolean;
+  /** Whether we are in "Free Edit" mode (drag & resize) */
+  isFreeEditMode?: boolean;
+  /** Callback when an element is moved or resized in free edit mode */
+  onUpdate?: (updates: Partial<SlideData>) => void;
 }
 
 const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
-  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize }, ref) => {
+  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
     const spec = FORMAT_SPECS[aspectRatio];
