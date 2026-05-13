@@ -152,6 +152,48 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isMobile = useIsMobile();
   const { hasProfile, formData, raioX } = usePersonaContext();
+  const { user } = useAuth();
+  const [projectId, setProjectId] = useState<string | null>(null);
+
+  // Supabase Sync logic
+  useEffect(() => {
+    if (!user || slides.length === 0) return;
+
+    const timer = setTimeout(async () => {
+      const designData = {
+        slides,
+        topic,
+        slideCount,
+        tone,
+        selectedTemplateId: selectedTemplate.id,
+      };
+
+      try {
+        if (projectId) {
+          await supabase
+            .from("carousel_designs")
+            .update({ data: designData, updated_at: new Date().toISOString() })
+            .eq("id", projectId);
+        } else {
+          const { data, error } = await supabase
+            .from("carousel_designs")
+            .insert({
+              user_id: user.id,
+              name: topic || "Projeto de Carrossel",
+              data: designData,
+            })
+            .select("id")
+            .single();
+
+          if (data) setProjectId(data.id);
+        }
+      } catch (err) {
+        console.error("Failed to sync carousel to Supabase:", err);
+      }
+    }, 5000); // Debounce sync to Supabase every 5 seconds of inactivity
+
+    return () => clearTimeout(timer);
+  }, [slides, topic, slideCount, tone, selectedTemplate.id, user, projectId]);
 
   // Mentora Gi mini-chat state — persisted
   const [giOpen, setGiOpen] = useState(sessionState.giOpen);
