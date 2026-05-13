@@ -1355,7 +1355,17 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
             {/* ========== EDITOR CONTROLS ========== */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2"><Paintbrush className="h-4 w-4" /> Editar Slide {currentSlide + 1}</CardTitle>
+                <CardTitle className="text-sm flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2"><Paintbrush className="h-4 w-4" /> Editar Slide {currentSlide + 1}</div>
+                  <Button 
+                    size="sm" 
+                    variant={isFreeEditMode ? "default" : "outline"} 
+                    className="h-7 text-[10px] px-2"
+                    onClick={() => setIsFreeEditMode(!isFreeEditMode)}
+                  >
+                    {isFreeEditMode ? "🔓 Edição Livre ON" : "🔒 Edição Livre OFF"}
+                  </Button>
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 max-h-[60vh] lg:max-h-[600px] overflow-y-auto">
                 {/* Title */}
