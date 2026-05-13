@@ -39,16 +39,32 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     const fontScale = spec.width / 480;
 
     useEffect(() => {
-      if (nativeSize) { setScale(1); return; }
       const el = containerRef.current;
       if (!el) return;
+
+      const checkAssets = async () => {
+        const imgs = Array.from(el.querySelectorAll("img"));
+        await Promise.all(imgs.map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        }));
+        onReady?.();
+      };
+
+      checkAssets();
+
+      if (nativeSize) { setScale(1); return; }
+      
       const observer = new ResizeObserver(([entry]) => {
         const cw = entry.contentRect.width;
         setScale(cw / spec.width);
       });
       observer.observe(el);
       return () => observer.disconnect();
-    }, [spec.width, nativeSize]);
+    }, [spec.width, nativeSize, slide, onReady]);
 
     const titleStyle: React.CSSProperties = {
       color: slide.titleColor || slide.textColor,
