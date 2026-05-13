@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
+import { useAuth } from "@/hooks/useAuth";
 import SlidePreview from "./SlidePreview";
 import CanvasElementsLibrary from "./CanvasElementsLibrary";
 import { scopedLocal } from "@/lib/userScopedKey";
