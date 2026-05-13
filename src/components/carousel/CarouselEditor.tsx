@@ -833,6 +833,25 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
     toast.success(`Slide ${index + 1} removido`);
   };
 
+  const addElement = (type: "text" | "image" | "shape" | "sticker", content?: string, style?: any) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newLayer = {
+      id,
+      type,
+      content: content || (type === "text" ? "Novo Texto" : undefined),
+      x: 0.25,
+      y: 0.25,
+      width: 0.5,
+      height: 0.1,
+      style,
+    };
+    updateSlide(currentSlide, {
+      layers: [...(cur.layers || []), newLayer]
+    });
+    setIsFreeEditMode(true);
+    toast.success("Elemento adicionado!");
+  };
+
   // ========== FULLSCREEN PRESENTATION ==========
   const toggleFullscreen = () => setFullscreen(prev => !prev);
 
