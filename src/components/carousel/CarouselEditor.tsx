@@ -1340,7 +1340,15 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
             {/* Preview */}
             <div className="flex justify-center w-full overflow-hidden">
               <div className="w-full max-w-full">
-                <SlidePreview ref={setSlideRef(currentSlide)} slide={cur} slideIndex={currentSlide} totalSlides={slides.length} aspectRatio={selectedTemplate.aspectRatio} />
+                <SlidePreview 
+                  ref={setSlideRef(currentSlide)} 
+                  slide={cur} 
+                  slideIndex={currentSlide} 
+                  totalSlides={slides.length} 
+                  aspectRatio={selectedTemplate.aspectRatio} 
+                  isFreeEditMode={isFreeEditMode}
+                  onUpdate={(updates) => updateSlide(currentSlide, updates)}
+                />
               </div>
             </div>
 
