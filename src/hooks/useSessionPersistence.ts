@@ -63,8 +63,11 @@ export function clearAllSessions(): void {
 export function useSessionPersistence<T>(
   key: string,
   initialState: T,
-  debounceMs: number = 500
+  debounceMs: number = 500,
+  storageType: "session" | "local" = "session"
 ): [T, (value: T | ((prev: T) => T)) => void, () => void, boolean] {
+  const storage = storageType === "local" ? scopedLocal : scopedSession;
+
   const [state, setState] = useState<T>(() => {
     try {
       const stored = scopedSession.get(key);
