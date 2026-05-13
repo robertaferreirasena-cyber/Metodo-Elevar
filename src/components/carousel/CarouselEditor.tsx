@@ -1051,8 +1051,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                           >
                             <SlidePreview
                               slide={{
-                                title: "Título exemplo",
-                                body: "Texto de visualização do layout journaling.",
+                                ...(cur || { title: "Título exemplo", body: "Texto de visualização." }),
                                 bgColor: t.bgColor,
                                 textColor: t.textColor,
                                 accentColor: t.accentColor,
@@ -1063,8 +1062,8 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                                 bgGradient: t.bgGradient,
                                 layout: t.layout,
                                 highlightBgColor: t.highlightBgColor,
-                                profileName: "Mentora Gi",
-                                profileHandle: "@mentoragi",
+                                profileName: cur?.profileName || "Mentora Gi",
+                                profileHandle: cur?.profileHandle || "@mentoragi",
                               }}
                               aspectRatio={t.aspectRatio}
                               slideIndex={0}
