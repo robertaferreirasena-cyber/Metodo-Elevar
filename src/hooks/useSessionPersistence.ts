@@ -70,7 +70,7 @@ export function useSessionPersistence<T>(
 
   const [state, setState] = useState<T>(() => {
     try {
-      const stored = scopedSession.get(key);
+      const stored = storage.get(key);
       if (stored) {
         updateSessionMetadata(scopedKey(key));
         return JSON.parse(stored) as T;
@@ -82,7 +82,7 @@ export function useSessionPersistence<T>(
   });
 
   const [hasRestoredSession, setHasRestoredSession] = useState(() => {
-    try { return scopedSession.get(key) !== null; } catch { return false; }
+    try { return storage.get(key) !== null; } catch { return false; }
   });
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,7 +96,7 @@ export function useSessionPersistence<T>(
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       try {
-        scopedSession.set(key, JSON.stringify(state));
+        storage.set(key, JSON.stringify(state));
         updateSessionMetadata(scopedKey(key));
       } catch (error) {
         console.warn(`Failed to save session for ${key}:`, error);
@@ -105,18 +105,18 @@ export function useSessionPersistence<T>(
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [state, key, debounceMs]);
+  }, [state, key, debounceMs, storage]);
 
   const clearSession = useCallback(() => {
     try {
-      scopedSession.remove(key);
+      storage.remove(key);
       removeSessionMetadata(scopedKey(key));
       setState(initialState);
       setHasRestoredSession(false);
     } catch (error) {
       console.warn(`Failed to clear session for ${key}:`, error);
     }
-  }, [key, initialState]);
+  }, [key, initialState, storage]);
 
   return [state, setState, clearSession, hasRestoredSession];
 }
