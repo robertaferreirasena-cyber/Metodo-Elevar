@@ -162,6 +162,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [activeEditorTab, setActiveEditorTab] = useState("templates");
   const [searchParams] = useSearchParams();
 
+  // Persisted template apply mode
+  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
+
   const applyTemplate = useCallback((template: CarouselTemplate) => {
     if (templateApplyMode === "all") {
       applyTemplateToAll(template);
