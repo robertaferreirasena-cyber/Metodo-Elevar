@@ -62,27 +62,27 @@ export default function InstagramHub() {
       </div>
 
       {/* Tools Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {tools.map((tool) => (
           <Link key={tool.title} to={tool.href} className="group">
-            <Card className="h-full hover:shadow-md transition-all hover:border-primary/30">
-              <CardContent className="p-5 flex flex-col gap-3">
-                <div className={`p-3 rounded-xl ${tool.color} w-fit`}>
+            <Card className="h-full hover:shadow-lg transition-all hover:border-primary/50 border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-5 flex flex-col h-full gap-3">
+                <div className={`p-3 rounded-xl ${tool.color} w-fit group-hover:scale-110 transition-transform`}>
                   <tool.icon className={`h-6 w-6 ${tool.iconColor}`} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-foreground">{tool.title}</h3>
+                    <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{tool.title}</h3>
                     {tool.badge && (
-                      <Badge className="bg-primary text-primary-foreground text-[7px] px-1 py-0">
+                      <Badge className="bg-primary/20 text-primary border-none text-[8px] px-1.5 py-0">
                         {tool.badge}
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">{tool.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
                 </div>
-                <Button variant="outline" size="sm" className="w-full mt-auto gap-2 text-xs">
-                  Acessar <ArrowRight className="h-3.5 w-3.5" />
+                <Button variant="outline" size="sm" className="w-full mt-auto gap-2 text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                  {tool.action} <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </CardContent>
             </Card>
