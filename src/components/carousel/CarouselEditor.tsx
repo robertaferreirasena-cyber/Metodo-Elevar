@@ -39,11 +39,16 @@ import {
   JOURNAL_TEMPLATE_IDS, JOURNAL_LAYOUT_SEQUENCE, isJournalTemplate,
   JOURNAL_PALETTES, applyPaletteToSlide, buildJournalSampleSlides,
   JOURNAL_SAMPLE_THEMES, type JournalPalette,
-  type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio,
+  type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio, type LayerData,
 } from "./CarouselTemplates";
 import ImageLibraryPicker from "./ImageLibraryPicker";
 import JournalCollectionExporter, { type JournalExporterHandle } from "./JournalCollectionExporter";
 import JSZip from "jszip";
+import LayerList from "./LayerList";
+import UserUploads from "./UserUploads";
+import BrandKitManager, { type BrandKit } from "./BrandKitManager";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSearchParams } from "react-router-dom";
 
 const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial", "journal-photo-card", "journal-torn-paper"];
 const MULTI_IMAGE_LAYOUTS: CarouselLayout[] = ["photo-grid", "tweet-post"];
