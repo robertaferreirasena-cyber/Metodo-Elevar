@@ -1420,38 +1420,120 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
 
 
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Preview */}
-            <div className="flex justify-center w-full overflow-hidden">
-              <div className="w-full max-w-full">
-                <SlidePreview 
-                  ref={setSlideRef(currentSlide)} 
-                  slide={cur} 
-                  slideIndex={currentSlide} 
-                  totalSlides={slides.length} 
-                  aspectRatio={selectedTemplate.aspectRatio} 
-                  isFreeEditMode={isFreeEditMode}
-                  onUpdate={(updates) => updateSlide(currentSlide, updates)}
-                />
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4">
+            {/* Sidebar Tabs (Canva-like) */}
+            <div className="lg:col-span-4 flex flex-col gap-4 order-2 lg:order-1">
+              <Tabs value={activeEditorTab} onValueChange={setActiveEditorTab} className="w-full">
+                <TabsList className="grid grid-cols-5 w-full h-12">
+                  <TabsTrigger value="templates" title="Templates"><LayoutGrid className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="layers" title="Camadas"><Layers className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="brand" title="Marca"><Palette className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="uploads" title="Uploads"><DownloadCloud className="h-4 w-4" /></TabsTrigger>
+                  <TabsTrigger value="elements" title="Elementos"><Sparkles className="h-4 w-4" /></TabsTrigger>
+                </TabsList>
+
+                <div className="mt-4 min-h-[500px] flex flex-col gap-4">
+                  <TabsContent value="templates" className="m-0 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold flex items-center gap-2"><LayoutGrid className="h-4 w-4" /> Templates</h3>
+                      <Select value={formatFilter} onValueChange={(v: any) => setFormatFilter(v)}>
+                        <SelectTrigger className="w-[100px] h-8 text-[10px]">
+                          <SelectValue placeholder="Filtro" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos</SelectItem>
+                          <SelectItem value="1:1">Quadrado</SelectItem>
+                          <SelectItem value="9:16">Stories</SelectItem>
+                          <SelectItem value="16:9">Wide</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <ScrollArea className="h-[450px]">
+                      <div className="grid grid-cols-2 gap-2 pr-4">
+                        {CAROUSEL_TEMPLATES.filter(t => formatFilter === "all" || t.aspectRatio === formatFilter).map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => applyTemplate(t)}
+                            className={`p-1 rounded-lg border-2 transition-all hover:scale-[1.02] ${selectedTemplate.id === t.id ? 'border-primary' : 'border-transparent'}`}
+                          >
+                            <TemplatePreviewTooltip template={t} />
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+
+                  <TabsContent value="layers" className="m-0 h-full flex flex-col gap-4">
+                    <LayerList 
+                      slide={cur} 
+                      onUpdate={(upd) => updateSlide(currentSlide, upd)} 
+                      selectedLayerId={selectedLayerId}
+                      onSelectLayer={setSelectedLayerId}
+                    />
+                    <div className="grid grid-cols-2 gap-2 mt-auto">
+                      <Button variant="outline" size="sm" onClick={() => addLayer('text')} className="gap-2 h-10">
+                        <Type className="h-4 w-4" /> Texto
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => addLayer('sticker', '✨')} className="gap-2 h-10">
+                        <Sparkles className="h-4 w-4" /> Sticker
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => addLayer('shape')} className="gap-2 h-10">
+                        <Square className="h-4 w-4" /> Forma
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setIsFreeEditMode(!isFreeEditMode)} className={`gap-2 h-10 ${isFreeEditMode ? 'bg-primary text-primary-foreground' : ''}`}>
+                        <MousePointer2 className="h-4 w-4" /> {isFreeEditMode ? 'Editando' : 'Visualizar'}
+                      </Button>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="brand" className="m-0">
+                    <BrandKitManager onApply={applyBrandKit} />
+                  </TabsContent>
+
+                  <TabsContent value="uploads" className="m-0">
+                    <UserUploads onSelect={(url) => {
+                      if (activeEditorTab === 'uploads') {
+                        addLayer('image', url);
+                      }
+                    }} />
+                  </TabsContent>
+
+                  <TabsContent value="elements" className="m-0">
+                    <CanvasElementsLibrary onSelectSticker={(emoji) => addLayer('sticker', emoji)} />
+                  </TabsContent>
+                </div>
+              </Tabs>
             </div>
 
-            {/* ========== EDITOR CONTROLS ========== */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2"><Paintbrush className="h-4 w-4" /> Editar Slide {currentSlide + 1}</div>
-                  <Button 
-                    size="sm" 
-                    variant={isFreeEditMode ? "default" : "outline"} 
-                    className="h-7 text-[10px] px-2"
-                    onClick={() => setIsFreeEditMode(!isFreeEditMode)}
-                  >
-                    {isFreeEditMode ? "🔓 Edição Livre ON" : "🔒 Edição Livre OFF"}
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 max-h-[60vh] lg:max-h-[600px] overflow-y-auto">
+            {/* Preview & Editor Controls */}
+            <div className="lg:col-span-8 flex flex-col gap-6 order-1 lg:order-2">
+              <div className="flex justify-center w-full bg-muted/20 rounded-xl p-4 sm:p-8 relative overflow-hidden group">
+                <div className="w-full max-w-full flex justify-center shadow-2xl">
+                  <SlidePreview 
+                    ref={setSlideRef(currentSlide)} 
+                    slide={cur} 
+                    slideIndex={currentSlide} 
+                    totalSlides={slides.length} 
+                    aspectRatio={selectedTemplate.aspectRatio} 
+                    isFreeEditMode={isFreeEditMode}
+                    selectedLayerId={selectedLayerId}
+                    onSelectLayer={setSelectedLayerId}
+                    onUpdate={(updates) => updateSlide(currentSlide, updates)}
+                    onReady={() => {/* Readiness tracking for export */}}
+                  />
+                </div>
+              </div>
+
+              {/* Editor Controls Card */}
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader className="pb-3 border-b bg-muted/10">
+                  <CardTitle className="text-sm font-bold flex items-center justify-between">
+                    <div className="flex items-center gap-2"><Paintbrush className="h-4 w-4 text-primary" /> Editor Detalhado</div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <ScrollArea className="h-[400px]">
+                    <div className="p-6 space-y-6">
                 {/* Title */}
                 <div>
                   <Label className="text-xs">Título</Label>
