@@ -160,7 +160,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     if (!user || slides.length === 0) return;
 
     const timer = setTimeout(async () => {
-      const designData = {
+      const designData: any = {
         slides,
         topic,
         slideCount,
@@ -181,16 +181,16 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
               user_id: user.id,
               name: topic || "Projeto de Carrossel",
               data: designData,
-            })
+            } as any)
             .select("id")
             .single();
 
-          if (data) setProjectId(data.id);
+          if (data) setProjectId((data as any).id);
         }
       } catch (err) {
         console.error("Failed to sync carousel to Supabase:", err);
       }
-    }, 5000); // Debounce sync to Supabase every 5 seconds of inactivity
+    }, 5000); 
 
     return () => clearTimeout(timer);
   }, [slides, topic, slideCount, tone, selectedTemplate.id, user, projectId]);
