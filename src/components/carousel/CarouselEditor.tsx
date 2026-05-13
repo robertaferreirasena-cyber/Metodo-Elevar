@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { SessionIndicator } from "@/components/SessionIndicator";
+import { useAuth } from "@/hooks/useAuth";
 import SlidePreview from "./SlidePreview";
 import CanvasElementsLibrary from "./CanvasElementsLibrary";
 import { scopedLocal } from "@/lib/userScopedKey";
@@ -151,6 +152,48 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isMobile = useIsMobile();
   const { hasProfile, formData, raioX } = usePersonaContext();
+  const { user } = useAuth();
+  const [projectId, setProjectId] = useState<string | null>(null);
+
+  // Supabase Sync logic
+  useEffect(() => {
+    if (!user || slides.length === 0) return;
+
+    const timer = setTimeout(async () => {
+      const designData: any = {
+        slides,
+        topic,
+        slideCount,
+        tone,
+        selectedTemplateId: selectedTemplate.id,
+      };
+
+      try {
+        if (projectId) {
+          await supabase
+            .from("carousel_designs")
+            .update({ data: designData, updated_at: new Date().toISOString() })
+            .eq("id", projectId);
+        } else {
+          const { data, error } = await supabase
+            .from("carousel_designs")
+            .insert({
+              user_id: user.id,
+              name: topic || "Projeto de Carrossel",
+              data: designData,
+            } as any)
+            .select("id")
+            .single();
+
+          if (data) setProjectId((data as any).id);
+        }
+      } catch (err) {
+        console.error("Failed to sync carousel to Supabase:", err);
+      }
+    }, 5000); 
+
+    return () => clearTimeout(timer);
+  }, [slides, topic, slideCount, tone, selectedTemplate.id, user, projectId]);
 
   // Mentora Gi mini-chat state — persisted
   const [giOpen, setGiOpen] = useState(sessionState.giOpen);
@@ -162,6 +205,46 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [activeTab, setActiveTab] = useState("templates");
   const [activeEditorTab, setActiveEditorTab] = useState("templates");
   const [searchParams] = useSearchParams();
+  
+  // History state
+  const [history, setHistory] = useState<SlideData[][]>([]);
+  const [redoStack, setRedoStack] = useState<SlideData[][]>([]);
+
+  const pushToHistory = useCallback((currentSlides: SlideData[]) => {
+    setHistory(prev => [...prev.slice(-19), JSON.parse(JSON.stringify(currentSlides))]);
+    setRedoStack([]);
+  }, []);
+
+  const updateSlidesWithHistory = useCallback((newSlides: SlideData[] | ((prev: SlideData[]) => SlideData[])) => {
+    setSlides(prev => {
+      const next = typeof newSlides === "function" ? newSlides(prev) : newSlides;
+      if (JSON.stringify(prev) !== JSON.stringify(next)) {
+        pushToHistory(prev);
+      }
+      return next;
+    });
+  }, [pushToHistory]);
+
+  const undo = useCallback(() => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setRedoStack(prevStack => [...prevStack, JSON.parse(JSON.stringify(slides))]);
+    setSlides(prev);
+    setHistory(prevHistory => prevHistory.slice(0, -1));
+    toast.success("Desfeito");
+  }, [history, slides]);
+
+  const redo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setHistory(prevHistory => [...prevHistory, JSON.parse(JSON.stringify(slides))]);
+    setSlides(next);
+    setRedoStack(prevStack => prevStack.slice(0, -1));
+    toast.success("Refeito");
+  }, [redoStack, slides]);
+
+  // Persisted template apply mode
+  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
 
   const sidebarTabs = [
     { id: "templates", label: "Design", icon: LayoutGrid },
@@ -171,10 +254,6 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     { id: "uploads", label: "Uploads", icon: ArrowUpFromLine },
     { id: "layers", label: "Camadas", icon: Layers },
   ];
-
-  // Persisted template apply mode
-  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
-
   const applyTemplate = useCallback((template: CarouselTemplate) => {
     if (templateApplyMode === "all") {
       applyTemplateToAll(template);
@@ -712,7 +791,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   };
 
   const updateSlide = (index: number, updates: Partial<SlideData>) => {
-    setSlides((prev) => prev.map((s, i) => (i === index ? { ...s, ...updates } : s)));
+    updateSlidesWithHistory((prev) => prev.map((s, i) => (i === index ? { ...s, ...updates } : s)));
   };
 
   const changeFormat = (newRatio: AspectRatio) => {
@@ -918,12 +997,21 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
         zip.file(`slide-${i + 1}.png`, base64Data, { base64: true });
       }
       
+      // Add JSON metadata for later import
+      const metadata = {
+        name: topic || "Projeto de Carrossel",
+        created_at: new Date().toISOString(),
+        template: selectedTemplate.id,
+        slides: slides
+      };
+      zip.file("project_data.json", JSON.stringify(metadata, null, 2));
+
       const content = await zip.generateAsync({ type: "blob" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(content);
-      link.download = `carrossel-${topic.slice(0, 20) || 'projeto'}.zip`;
+      link.download = `carrossel-${topic.slice(0, 20).replace(/\s+/g, '-') || 'projeto'}.zip`;
       link.click();
-      
+
       toast.success("Arquivo .zip gerado com todos os slides!");
     } catch (err) {
       console.error("Export all error:", err);
@@ -1607,6 +1695,13 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </div>
                   <div className="h-6 w-[1px] bg-border mx-2" />
                   <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={undo} disabled={history.length === 0} title="Desfazer">
+                       <Undo2 className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={redo} disabled={redoStack.length === 0} title="Refazer">
+                       <Undo2 className="h-4 w-4" style={{ transform: "scaleX(-1)" }} />
+                    </Button>
+                    <div className="h-4 w-[1px] bg-border mx-1 self-center" />
                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicateSlide(currentSlide)} title="Duplicar">
                        <CopyPlus className="h-4 w-4" />
                     </Button>
