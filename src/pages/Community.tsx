@@ -712,23 +712,25 @@ export default function Community() {
                             </div>
                           </div>
                           <div className="flex gap-1 shrink-0">
-                            {isVimeo ? (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => setVimeoMaterial({ url: material.file_url, title: material.title, type: material.file_type || 'link' })}
+                            >
+                              {isVimeo ? <PlayCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+                              Visualizar
+                            </Button>
+                            
+                            {!isVimeo && (
                               <Button
-                                variant="default"
+                                variant="outline"
                                 size="sm"
-                                className="gap-1"
-                                onClick={() => setVimeoMaterial({ url: material.file_url, title: material.title })}
+                                asChild
                               >
-                                <PlayCircle className="h-4 w-4" />
-                                Assistir
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => window.open(material.file_url, '_blank')}
-                              >
-                                <Download className="h-4 w-4" />
+                                <a href={material.file_url} download target="_blank" rel="noopener noreferrer">
+                                  <Download className="h-4 w-4" />
+                                </a>
                               </Button>
                             )}
                             {isAdmin && (
