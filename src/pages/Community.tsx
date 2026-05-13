@@ -779,16 +779,18 @@ export default function Community() {
 
       {/* Vimeo Player Dialog */}
       <Dialog open={!!vimeoMaterial} onOpenChange={(open) => !open && setVimeoMaterial(null)}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl w-[95vw] p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Video className="h-4 w-4 text-primary" />
-              {vimeoMaterial?.title}
+            <DialogTitle className="flex items-center gap-2 pr-6">
+              <Video className="h-4 w-4 text-primary shrink-0" />
+              <span className="truncate">{vimeoMaterial?.title}</span>
             </DialogTitle>
           </DialogHeader>
-          {vimeoMaterial && (
-            <VimeoPlayer url={vimeoMaterial.url} title={vimeoMaterial.title} />
-          )}
+          <div className="mt-4">
+            {vimeoMaterial && (
+              <VimeoPlayer url={vimeoMaterial.url} title={vimeoMaterial.title} />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
