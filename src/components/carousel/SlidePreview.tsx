@@ -270,8 +270,8 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               <div className="mb-2 font-bold uppercase tracking-widest" style={counterStyle}>
                 {slideIndex + 1} / {totalSlides}
               </div>
-              <h2 className="mb-3" style={titleStyle}>{slide.title}</h2>
-              <p className="whitespace-pre-wrap flex-1" style={{ ...bodyStyle, opacity: 0.85 }}>{slide.body}</p>
+              {renderTitle({ marginBottom: 12 * fontScale }, "mb-3")}
+              {renderBody({ opacity: 0.85 }, "whitespace-pre-wrap flex-1")}
             </div>
             <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
           </>
