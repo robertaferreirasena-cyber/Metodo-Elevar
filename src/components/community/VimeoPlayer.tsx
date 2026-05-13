@@ -51,11 +51,11 @@ export function VimeoPlayer({ url, title }: VimeoPlayerProps) {
   const src = `https://player.vimeo.com/video/${parsed.id}${parsed.hash ? `?h=${parsed.hash}&` : '?'}dnt=1&title=0&byline=0&portrait=0`;
 
   return (
-    <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
+    <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black shadow-lg">
       <iframe
         src={src}
         title={title || 'Vimeo video player'}
-        className="w-full h-full"
+        className="absolute top-0 left-0 w-full h-full"
         frameBorder={0}
         allow="autoplay; fullscreen; picture-in-picture; clipboard-write"
         allowFullScreen
