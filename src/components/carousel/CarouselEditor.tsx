@@ -777,10 +777,21 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
       // Wait for all fonts to be loaded before capturing
       await document.fonts.ready;
       // Small delay to ensure rendering is complete
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 300));
+      
+      // Ensure all images in the element are loaded
+      const images = Array.from(el.querySelectorAll('img'));
+      await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      }));
+
       const dataUrl = await toPng(el, {
         cacheBust: true,
-        pixelRatio: 1,
+        pixelRatio: 2, // Higher quality
         width: spec.width,
         height: spec.height,
         style: { transform: 'none', position: 'static' },
