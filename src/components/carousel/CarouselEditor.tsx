@@ -197,6 +197,11 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   // Mentora Gi mini-chat state — persisted
   const [giOpen, setGiOpen] = useState(sessionState.giOpen);
+  const pushToHistory = useCallback((currentSlides: SlideData[]) => {
+    setHistory(prev => [...prev.slice(-19), currentSlides]);
+    setRedoStack([]);
+  }, []);
+
   const updateSlidesWithHistory = useCallback((newSlides: SlideData[] | ((prev: SlideData[]) => SlideData[])) => {
     setSlides(prev => {
       const next = typeof newSlides === "function" ? newSlides(prev) : newSlides;
@@ -206,21 +211,6 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       return next;
     });
   }, [pushToHistory]);
-  const [giInput, setGiInput] = useState("");
-  const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
-  const [giLoading, setGiLoading] = useState(false);
-  const [isFreeEditMode, setIsFreeEditMode] = useState(false);
-  const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>();
-  const [activeTab, setActiveTab] = useState("templates");
-  const [activeEditorTab, setActiveEditorTab] = useState("templates");
-  const [searchParams] = useSearchParams();
-  const [history, setHistory] = useState<SlideData[][]>([]);
-  const [redoStack, setRedoStack] = useState<SlideData[][]>([]);
-
-  const pushToHistory = useCallback((currentSlides: SlideData[]) => {
-    setHistory(prev => [...prev.slice(-19), currentSlides]);
-    setRedoStack([]);
-  }, []);
 
   const undo = useCallback(() => {
     if (history.length === 0) return;
