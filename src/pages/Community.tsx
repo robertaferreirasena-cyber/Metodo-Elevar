@@ -71,8 +71,8 @@ export default function Community() {
   // Poll dialog state
   const [pollDialogOpen, setPollDialogOpen] = useState(false);
 
-  // Vimeo player dialog
-  const [vimeoMaterial, setVimeoMaterial] = useState<{ url: string; title: string } | null>(null);
+  // Vimeo player and Universal Viewer dialog
+  const [vimeoMaterial, setVimeoMaterial] = useState<{ url: string; title: string; type?: string } | null>(null);
 
   // Tab via query string + mark materials seen
   const [searchParams, setSearchParams] = useSearchParams();
@@ -712,23 +712,25 @@ export default function Community() {
                             </div>
                           </div>
                           <div className="flex gap-1 shrink-0">
-                            {isVimeo ? (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => setVimeoMaterial({ url: material.file_url, title: material.title, type: material.file_type || 'link' })}
+                            >
+                              {isVimeo ? <PlayCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+                              Visualizar
+                            </Button>
+                            
+                            {!isVimeo && (
                               <Button
-                                variant="default"
+                                variant="outline"
                                 size="sm"
-                                className="gap-1"
-                                onClick={() => setVimeoMaterial({ url: material.file_url, title: material.title })}
+                                asChild
                               >
-                                <PlayCircle className="h-4 w-4" />
-                                Assistir
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => window.open(material.file_url, '_blank')}
-                              >
-                                <Download className="h-4 w-4" />
+                                <a href={material.file_url} download target="_blank" rel="noopener noreferrer">
+                                  <Download className="h-4 w-4" />
+                                </a>
                               </Button>
                             )}
                             {isAdmin && (
@@ -777,18 +779,54 @@ export default function Community() {
         </DialogContent>
       </Dialog>
 
-      {/* Vimeo Player Dialog */}
+      {/* Universal Content Viewer (Vimeo, PDF, Images) */}
       <Dialog open={!!vimeoMaterial} onOpenChange={(open) => !open && setVimeoMaterial(null)}>
-        <DialogContent className="max-w-4xl w-[95vw] p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 pr-6">
-              <Video className="h-4 w-4 text-primary shrink-0" />
-              <span className="truncate">{vimeoMaterial?.title}</span>
+        <DialogContent className="max-w-4xl w-[95vw] p-4 sm:p-6 overflow-hidden flex flex-col max-h-[90vh]">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="flex items-center justify-between gap-2 pr-6">
+              <div className="flex items-center gap-2 truncate">
+                {vimeoMaterial?.type === 'vimeo' || isVimeoUrl(vimeoMaterial?.url || '') ? (
+                  <Video className="h-4 w-4 text-primary shrink-0" />
+                ) : (
+                  <FileText className="h-4 w-4 text-primary shrink-0" />
+                )}
+                <span className="truncate">{vimeoMaterial?.title}</span>
+              </div>
+              {vimeoMaterial && !isVimeoUrl(vimeoMaterial.url) && (
+                <Button variant="outline" size="sm" asChild className="ml-auto mr-4">
+                  <a href={vimeoMaterial.url} download target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                    <Download className="h-4 w-4" /> Baixar
+                  </a>
+                </Button>
+              )}
             </DialogTitle>
           </DialogHeader>
-          <div className="mt-4">
+          <div className="mt-4 flex-1 min-h-0 overflow-auto flex items-center justify-center bg-black/5 rounded-lg">
             {vimeoMaterial && (
-              <VimeoPlayer url={vimeoMaterial.url} title={vimeoMaterial.title} />
+              isVimeoUrl(vimeoMaterial.url) ? (
+                <VimeoPlayer url={vimeoMaterial.url} title={vimeoMaterial.title} />
+              ) : vimeoMaterial.type === 'pdf' || vimeoMaterial.url.toLowerCase().endsWith('.pdf') ? (
+                <iframe 
+                  src={`${vimeoMaterial.url}#toolbar=0`} 
+                  className="w-full h-[60vh] rounded-lg border-none"
+                  title={vimeoMaterial.title}
+                />
+              ) : vimeoMaterial.type === 'image' || vimeoMaterial.url.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) ? (
+                <img 
+                  src={vimeoMaterial.url} 
+                  alt={vimeoMaterial.title} 
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg" 
+                />
+              ) : (
+                <div className="p-12 text-center">
+                  <p className="mb-4 text-muted-foreground">Este conteúdo não pode ser visualizado diretamente.</p>
+                  <Button asChild>
+                    <a href={vimeoMaterial.url} target="_blank" rel="noopener noreferrer">
+                      Abrir em nova aba
+                    </a>
+                  </Button>
+                </div>
+              )
             )}
           </div>
         </DialogContent>
