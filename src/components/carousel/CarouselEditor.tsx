@@ -890,15 +890,47 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   const exportAll = async () => {
     setExporting(true);
     try {
-      // Pre-load fonts
       await document.fonts.ready;
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 500));
+      
+      const zip = new JSZip();
+      
       for (let i = 0; i < slides.length; i++) {
-        await exportSlide(i);
-        await new Promise((r) => setTimeout(r, 500));
+        const el = exportRefs.current[i] || slideRefs.current[i];
+        if (!el) continue;
+        
+        // Wait for images in this slide
+        const imgs = Array.from(el.querySelectorAll("img"));
+        await Promise.all(imgs.map(img => 
+          img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
+        ));
+
+        const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
+        const dataUrl = await toPng(el, {
+          cacheBust: true,
+          pixelRatio: 2,
+          width: spec.width,
+          height: spec.height,
+          style: { transform: 'none', position: 'static' },
+        });
+        
+        const base64Data = dataUrl.split(',')[1];
+        zip.file(`slide-${i + 1}.png`, base64Data, { base64: true });
       }
-      toast.success("Todos os slides exportados!");
-    } finally { setExporting(false); }
+      
+      const content = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(content);
+      link.download = `carrossel-${topic.slice(0, 20) || 'projeto'}.zip`;
+      link.click();
+      
+      toast.success("Arquivo .zip gerado com todos os slides!");
+    } catch (err) {
+      console.error("Export all error:", err);
+      toast.error("Erro ao gerar ZIP");
+    } finally {
+      setExporting(false);
+    }
   };
 
   // ========== SLIDE MANAGEMENT ==========
