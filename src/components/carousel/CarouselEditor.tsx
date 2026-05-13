@@ -1616,6 +1616,19 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                   </Select>
                 </div>
 
+                {/* ===== ELEMENTS LIBRARY ===== */}
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      <div className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Biblioteca de Elementos</div>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4">
+                    <CanvasElementsLibrary onAddElement={addElement} />
+                  </CollapsibleContent>
+                </Collapsible>
+
                 {/* Colors */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
