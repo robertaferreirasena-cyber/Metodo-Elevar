@@ -223,8 +223,8 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
                 <div className="mb-2 font-bold uppercase tracking-widest" style={counterStyle}>
                   {slideIndex + 1} / {totalSlides}
                 </div>
-                <h2 className="mb-3" style={titleStyle}>{slide.title}</h2>
-                <p className="whitespace-pre-wrap" style={{ ...bodyStyle, opacity: 0.85 }}>{slide.body}</p>
+                {renderTitle({ marginBottom: 12 * fontScale }, "mb-3")}
+                {renderBody({ opacity: 0.85 })}
               </div>
               <div className="w-[45%] relative">
                 {slide.imageUrl ? (
