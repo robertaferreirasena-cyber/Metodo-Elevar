@@ -799,10 +799,12 @@ export default function Community() {
         <DialogContent className="max-w-4xl w-[95vw] p-4 sm:p-6 overflow-hidden flex flex-col max-h-[90vh]">
           {(() => {
             if (!vimeoMaterial) return null;
-            const normalizedUrl = vimeoMaterial.url.startsWith('http') || vimeoMaterial.url.startsWith('blob:') 
+            const normalizedUrl = vimeoMaterial.url.startsWith('http') || vimeoMaterial.url.startsWith('blob:') || vimeoMaterial.url.startsWith('data:')
               ? vimeoMaterial.url 
-              : `https://${vimeoMaterial.url}`;
-            
+              : vimeoMaterial.url.startsWith('/') 
+                ? `${window.location.origin}${vimeoMaterial.url}`
+                : `https://${vimeoMaterial.url}`;
+
             return (
               <>
                 <DialogHeader className="shrink-0">
