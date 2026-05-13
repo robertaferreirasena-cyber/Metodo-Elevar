@@ -151,6 +151,60 @@ export default function BrandKitManager({ onApply }: { onApply: (kit: BrandKit) 
           </div>
         </div>
       </div>
+      
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+          <ImageIcon className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold">Logo da Marca</h3>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded border bg-muted flex items-center justify-center overflow-hidden">
+            {brandKit.logo_url ? (
+              <img src={brandKit.logo_url} alt="Logo" className="max-w-full max-h-full object-contain" />
+            ) : (
+              <ImageIcon className="h-6 w-6 text-muted-foreground" />
+            )}
+          </div>
+          <div className="flex-1 space-y-2">
+            <Input 
+              type="file" 
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file || !user) return;
+                
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}-logo-${Date.now()}.${fileExt}`;
+                
+                setSaving(true);
+                const { error: uploadError } = await supabase.storage
+                  .from('brand-assets')
+                  .upload(fileName, file);
+                  
+                if (uploadError) {
+                  toast.error("Erro no upload do logo");
+                  setSaving(false);
+                  return;
+                }
+                
+                const { data: urlData } = supabase.storage
+                  .from('brand-assets')
+                  .getPublicUrl(fileName);
+                  
+                setBrandKit({ ...brandKit, logo_url: urlData.publicUrl });
+                setSaving(false);
+                toast.success("Logo carregado!");
+              }}
+              className="text-xs"
+            />
+            {brandKit.logo_url && (
+              <Button variant="ghost" size="sm" onClick={() => setBrandKit({ ...brandKit, logo_url: null })} className="text-[10px] h-6 px-2 text-destructive">
+                Remover Logo
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="flex flex-col gap-2 pt-2">
         <Button onClick={() => onApply(brandKit)} variant="default" className="w-full gap-2">
