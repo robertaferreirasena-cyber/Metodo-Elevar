@@ -864,40 +864,8 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
               <div className="mb-4 font-bold uppercase tracking-widest" style={counterStyle}>
                 {slideIndex + 1} / {totalSlides}
               </div>
-              
-              {isFreeEditMode ? (
-                <Rnd
-                  className="pointer-events-auto"
-                  position={slide.titlePos ? { x: slide.titlePos.x * spec.width, y: slide.titlePos.y * spec.height } : undefined}
-                  size={slide.titlePos?.width ? { width: slide.titlePos.width * spec.width, height: slide.titlePos.height * spec.height } : undefined}
-                  onDragStop={(e, d) => onUpdate?.({ titlePos: { ...slide.titlePos, x: d.x / spec.width, y: d.y / spec.height } })}
-                  onResizeStop={(e, dir, ref, delta, pos) => onUpdate?.({ titlePos: { ...slide.titlePos, x: pos.x / spec.width, y: pos.y / spec.height, width: ref.offsetWidth / spec.width, height: ref.offsetHeight / spec.height } })}
-                  bounds="parent"
-                  enableResizing={isFreeEditMode}
-                  disableDragging={!isFreeEditMode}
-                >
-                  <h2 style={{ ...titleStyle, margin: 0 }}>{slide.title}</h2>
-                </Rnd>
-              ) : (
-                <h2 className="mb-4" style={{ ...titleStyle, ...(slide.titlePos ? { position: 'absolute', left: `${slide.titlePos.x * 100}%`, top: `${slide.titlePos.y * 100}%`, width: slide.titlePos.width ? `${slide.titlePos.width * 100}%` : undefined } : {}) }}>{slide.title}</h2>
-              )}
-
-              {isFreeEditMode ? (
-                <Rnd
-                  className="pointer-events-auto"
-                  position={slide.bodyPos ? { x: slide.bodyPos.x * spec.width, y: slide.bodyPos.y * spec.height } : undefined}
-                  size={slide.bodyPos?.width ? { width: slide.bodyPos.width * spec.width, height: slide.bodyPos.height * spec.height } : undefined}
-                  onDragStop={(e, d) => onUpdate?.({ bodyPos: { ...slide.bodyPos, x: d.x / spec.width, y: d.y / spec.height } })}
-                  onResizeStop={(e, dir, ref, delta, pos) => onUpdate?.({ bodyPos: { ...slide.bodyPos, x: pos.x / spec.width, y: pos.y / spec.height, width: ref.offsetWidth / spec.width, height: ref.offsetHeight / spec.height } })}
-                  bounds="parent"
-                  enableResizing={isFreeEditMode}
-                  disableDragging={!isFreeEditMode}
-                >
-                  <p className="whitespace-pre-wrap" style={{ ...bodyStyle, margin: 0 }}>{slide.body}</p>
-                </Rnd>
-              ) : (
-                <p className="whitespace-pre-wrap" style={{ ...bodyStyle, opacity: 0.9, ...(slide.bodyPos ? { position: 'absolute', left: `${slide.bodyPos.x * 100}%`, top: `${slide.bodyPos.y * 100}%`, width: slide.bodyPos.width ? `${slide.bodyPos.width * 100}%` : undefined } : {}) }}>{slide.body}</p>
-              )}
+              {renderTitle({ marginBottom: 16 * fontScale })}
+              {renderBody({ opacity: 0.9 })}
             </div>
             <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
           </>
