@@ -197,8 +197,21 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   // Mentora Gi mini-chat state — persisted
   const [giOpen, setGiOpen] = useState(sessionState.giOpen);
+  const [giInput, setGiInput] = useState("");
+  const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
+  const [giLoading, setGiLoading] = useState(false);
+  const [isFreeEditMode, setIsFreeEditMode] = useState(false);
+  const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useState("templates");
+  const [activeEditorTab, setActiveEditorTab] = useState("templates");
+  const [searchParams] = useSearchParams();
+  
+  // History state
+  const [history, setHistory] = useState<SlideData[][]>([]);
+  const [redoStack, setRedoStack] = useState<SlideData[][]>([]);
+
   const pushToHistory = useCallback((currentSlides: SlideData[]) => {
-    setHistory(prev => [...prev.slice(-19), currentSlides]);
+    setHistory(prev => [...prev.slice(-19), JSON.parse(JSON.stringify(currentSlides))]);
     setRedoStack([]);
   }, []);
 
@@ -215,7 +228,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const undo = useCallback(() => {
     if (history.length === 0) return;
     const prev = history[history.length - 1];
-    setRedoStack(prevStack => [...prevStack, slides]);
+    setRedoStack(prevStack => [...prevStack, JSON.parse(JSON.stringify(slides))]);
     setSlides(prev);
     setHistory(prevHistory => prevHistory.slice(0, -1));
     toast.success("Desfeito");
@@ -224,20 +237,11 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const redo = useCallback(() => {
     if (redoStack.length === 0) return;
     const next = redoStack[redoStack.length - 1];
-    setHistory(prevHistory => [...prevHistory, slides]);
+    setHistory(prevHistory => [...prevHistory, JSON.parse(JSON.stringify(slides))]);
     setSlides(next);
     setRedoStack(prevStack => prevStack.slice(0, -1));
     toast.success("Refeito");
   }, [redoStack, slides]);
-
-  const sidebarTabs = [
-    { id: "templates", label: "Design", icon: LayoutGrid },
-    { id: "elements", label: "Elementos", icon: Square },
-    { id: "text", label: "Texto", icon: Type },
-    { id: "brand", label: "Marca", icon: Palette },
-    { id: "uploads", label: "Uploads", icon: ArrowUpFromLine },
-    { id: "layers", label: "Camadas", icon: Layers },
-  ];
 
   // Persisted template apply mode
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
