@@ -28,7 +28,7 @@ interface SlidePreviewProps {
 }
 
 const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
-  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate }, ref) => {
+  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate, onReady, selectedLayerId, onSelectLayer }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
     const spec = FORMAT_SPECS[aspectRatio];
