@@ -132,7 +132,7 @@ async function readStream(
 
 export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {}) {
   const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<CarouselSessionState>(
-    "session_carousel_editor", EMPTY_CAROUSEL_STATE
+    "session_carousel_editor", EMPTY_CAROUSEL_STATE, 1000, "local"
   );
 
   // Restore session FIRST. Only fall back to initialTopic when there is no saved session.
