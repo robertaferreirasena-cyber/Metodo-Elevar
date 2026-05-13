@@ -789,7 +789,7 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
   };
 
   const updateSlide = (index: number, updates: Partial<SlideData>) => {
-    setSlides((prev) => prev.map((s, i) => (i === index ? { ...s, ...updates } : s)));
+    updateSlidesWithHistory((prev) => prev.map((s, i) => (i === index ? { ...s, ...updates } : s)));
   };
 
   const changeFormat = (newRatio: AspectRatio) => {
