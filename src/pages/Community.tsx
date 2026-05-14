@@ -96,19 +96,38 @@ export default function Community() {
     let normalizedUrl = rawUrl.trim();
     if (!normalizedUrl) return '';
     
+    // Remote spaces and common invalid characters for a URL
+    normalizedUrl = normalizedUrl.replace(/\s+/g, '');
+    
     if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://') || normalizedUrl.startsWith('blob:') || normalizedUrl.startsWith('data:')) {
-      return normalizedUrl;
+      // Valid protocol
     } else if (normalizedUrl.startsWith('//')) {
-      return `https:${normalizedUrl}`;
+      normalizedUrl = `https:${normalizedUrl}`;
     } else if (normalizedUrl.startsWith('/')) {
-      return `${window.location.origin}${normalizedUrl}`;
+      normalizedUrl = `${window.location.origin}${normalizedUrl}`;
     } else {
-      const domainMatch = normalizedUrl.match(/^[a-zA-Z0-0][a-zA-Z0-9-]{1,61}[a-zA-Z0-0]\.[a-zA-Z]{2,}/);
+      const domainMatch = normalizedUrl.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+/);
       if (domainMatch || (normalizedUrl.includes('.') && !normalizedUrl.includes(' '))) {
-        return `https://${normalizedUrl}`;
+        normalizedUrl = `https://${normalizedUrl}`;
       }
     }
-    return normalizedUrl;
+
+    try {
+      new URL(normalizedUrl);
+      return normalizedUrl;
+    } catch (e) {
+      console.warn("URL inválida após normalização:", normalizedUrl);
+      return normalizedUrl; // Fallback to raw normalized if URL constructor fails (e.g. relative paths in dev)
+    }
+  };
+
+  const handleOpenUrl = (url: string) => {
+    const finalUrl = normalizeUrl(url);
+    if (!finalUrl) {
+      toast.error("URL inválida ou vazia");
+      return;
+    }
+    window.open(finalUrl, '_blank', 'noopener,noreferrer');
   };
 
   const scrollToBottom = () => {
@@ -757,15 +776,13 @@ export default function Community() {
                               asChild
                               className="gap-2"
                             >
-                              <a 
-                                href={normalizeUrl(material.file_url)} 
-                                download={material.title}
-                                target="_blank" 
-                                rel="noopener noreferrer"
+                              <button 
+                                onClick={() => handleOpenUrl(material.file_url)}
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
                               >
                                 <Download className="h-4 w-4" />
                                 <span className="hidden sm:inline">Baixar</span>
-                              </a>
+                              </button>
                             </Button>
                             {isAdmin && (
                               <Button
@@ -833,10 +850,8 @@ export default function Community() {
                       <span className="truncate">{vimeoMaterial.title}</span>
                     </div>
                     {!isVimeoUrl(normalizedUrl) && (
-                      <Button variant="outline" size="sm" asChild className="ml-auto mr-4">
-                        <a href={normalizedUrl} download target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                          <Download className="h-4 w-4" /> Baixar
-                        </a>
+                      <Button variant="outline" size="sm" onClick={() => handleOpenUrl(normalizedUrl)} className="ml-auto mr-4 flex items-center gap-2">
+                        <Download className="h-4 w-4" /> Baixar
                       </Button>
                     )}
                   </DialogTitle>
@@ -859,29 +874,22 @@ export default function Community() {
                         alt={vimeoMaterial.title} 
                         className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg" 
                       />
-                      <a 
-                        href={normalizedUrl} 
-                        download 
-                        target="_blank" 
-                        rel="noopener noreferrer"
+                      <button 
+                        onClick={() => handleOpenUrl(normalizedUrl)}
                         className="absolute top-4 right-4 bg-background/80 hover:bg-background p-2 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100"
                       >
                         <Download className="h-5 w-5" />
-                      </a>
+                      </button>
                     </div>
                   ) : (
                     <div className="p-12 text-center">
                       <p className="mb-4 text-muted-foreground font-medium">Este conteúdo pode exigir abertura em nova aba para visualização completa.</p>
                       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <Button asChild variant="default">
-                          <a href={normalizedUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                            <LinkIcon className="h-4 w-4" /> Abrir em nova aba
-                          </a>
+                        <Button variant="default" onClick={() => handleOpenUrl(normalizedUrl)} className="flex items-center gap-2">
+                          <LinkIcon className="h-4 w-4" /> Abrir em nova aba
                         </Button>
-                        <Button asChild variant="outline">
-                          <a href={normalizedUrl} download className="flex items-center gap-2">
-                            <Download className="h-4 w-4" /> Baixar arquivo
-                          </a>
+                        <Button variant="outline" onClick={() => handleOpenUrl(normalizedUrl)} className="flex items-center gap-2">
+                          <Download className="h-4 w-4" /> Baixar arquivo
                         </Button>
                       </div>
                     </div>

@@ -25,6 +25,14 @@ const DEFAULTS: Required<ImageAdjustValues> = {
   positionX: 50, positionY: 50, scale: 1, blur: 0, brightness: 100, contrast: 100,
 };
 
+const PRESETS: { label: string; values: Partial<ImageAdjustValues> }[] = [
+  { label: "Nitidez", values: { contrast: 125, brightness: 105 } },
+  { label: "Brilho +", values: { brightness: 130 } },
+  { label: "Forte", values: { contrast: 140, brightness: 90 } },
+  { label: "Fundo", values: { blur: 8, brightness: 80 } },
+  { label: "PB", values: { contrast: 120, brightness: 110, blur: 0 } }, // Desaturate would need grayscale filter, but staying within defined props
+];
+
 export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRatio = 1 }: Props) {
   const previewRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
@@ -86,6 +94,21 @@ export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRat
         <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={reset}>
           <RotateCcw className="h-3 w-3 mr-1" /> Resetar
         </Button>
+      </div>
+
+      {/* Presets */}
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        {PRESETS.map((p) => (
+          <Button
+            key={p.label}
+            size="sm"
+            variant="outline"
+            className="h-7 text-[10px] px-2 py-0 bg-background/50"
+            onClick={() => onChange({ ...values, ...p.values })}
+          >
+            {p.label}
+          </Button>
+        ))}
       </div>
 
       {/* Drag preview */}
