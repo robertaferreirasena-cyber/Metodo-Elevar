@@ -34,6 +34,8 @@ import ImageLibraryPicker from "./ImageLibraryPicker";
 import JSZip from "jszip";
 import { toPng } from "html-to-image";
 import UserUploads from "./UserUploads";
+import ImageAdjustPanel from "./ImageAdjustPanel";
+import { User } from "lucide-react";
 
 type FormatFilter = "all" | "1:1" | "4:5" | "16:9" | "9:16";
 
