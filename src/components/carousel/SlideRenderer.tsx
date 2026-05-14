@@ -172,8 +172,28 @@ export const SlideRenderer = React.memo(({
             <div className="mb-4 font-bold uppercase tracking-widest" style={counterStyle}>
               {slideIndex + 1} / {totalSlides}
             </div>
-            {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-            {renderText(slide.body, bodyStyle, slide.bodyPos)}
+            
+            <div className="flex-1 flex flex-col" style={{ 
+              justifyContent: slide.verticalAlign === "top" ? "flex-start" : slide.verticalAlign === "bottom" ? "flex-end" : "center" 
+            }}>
+              <div style={{ 
+                flex: slide.titleVerticalAlign === "top" ? "0 0 auto" : slide.titleVerticalAlign === "bottom" ? "1 1 auto" : "0 0 auto",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: slide.titleVerticalAlign === "bottom" ? "flex-end" : "flex-start"
+              }}>
+                {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+              </div>
+              
+              <div style={{ 
+                flex: slide.bodyVerticalAlign === "bottom" ? "0 0 auto" : slide.bodyVerticalAlign === "top" ? "1 1 auto" : "0 0 auto",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: slide.bodyVerticalAlign === "top" ? "flex-start" : "flex-end"
+              }}>
+                {renderText(slide.body, bodyStyle, slide.bodyPos)}
+              </div>
+            </div>
           </div>
           <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
         </>
