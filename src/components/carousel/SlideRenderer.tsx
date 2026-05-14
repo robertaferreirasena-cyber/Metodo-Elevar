@@ -34,10 +34,11 @@ export const SlideRenderer = React.memo(({
     fontSize: `${slide.titleSize * fontScale}px`,
     fontWeight: slide.titleBold !== false ? "bold" : "normal",
     fontStyle: slide.titleItalic ? "italic" : "normal",
+    textDecoration: slide.titleUnderline ? "underline" : "none",
     textShadow: slide.textShadow || undefined,
     lineHeight: 1.15,
     fontFamily: slide.fontFamily,
-    textAlign: slide.align || "center",
+    textAlign: slide.titleAlign || slide.align || "center",
   };
 
   const bodyStyle: React.CSSProperties = {
@@ -50,7 +51,8 @@ export const SlideRenderer = React.memo(({
     textShadow: slide.textShadow || undefined,
     lineHeight: 1.5,
     fontFamily: slide.fontFamily,
-    textAlign: slide.align || "center",
+    textAlign: slide.bodyAlign || slide.align || "center",
+    marginTop: slide.gap ? `${slide.gap * fontScale}px` : undefined,
   };
 
   const counterStyle: React.CSSProperties = {
@@ -98,7 +100,7 @@ export const SlideRenderer = React.memo(({
     );
   };
 
-  const renderStaticText = (text: string, style: React.CSSProperties, pos?: any, className?: string) => {
+  const renderText = (text: string, style: React.CSSProperties, pos?: any, className?: string) => {
     if (!text) return null;
     const posStyle: React.CSSProperties = pos ? { 
       position: 'absolute', 
@@ -108,7 +110,13 @@ export const SlideRenderer = React.memo(({
       height: pos.height ? `${pos.height * 100}%` : undefined,
       margin: 0
     } : {};
-    return <div className={className} style={{ ...style, ...posStyle }}>{text}</div>;
+    return (
+      <div 
+        className={className} 
+        style={{ ...style, ...posStyle }}
+        dangerouslySetInnerHTML={{ __html: text.replace(/\n/g, '<br/>') }}
+      />
+    );
   };
 
   const journal = getJournalScale(aspectRatio, (slide.title || "").length, (slide.body || "").length);
