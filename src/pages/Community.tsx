@@ -885,15 +885,11 @@ export default function Community() {
                     <div className="p-12 text-center">
                       <p className="mb-4 text-muted-foreground font-medium">Este conteúdo pode exigir abertura em nova aba para visualização completa.</p>
                       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <Button asChild variant="default">
-                          <a href={normalizedUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                            <LinkIcon className="h-4 w-4" /> Abrir em nova aba
-                          </a>
+                        <Button variant="default" onClick={() => handleOpenUrl(normalizedUrl)} className="flex items-center gap-2">
+                          <LinkIcon className="h-4 w-4" /> Abrir em nova aba
                         </Button>
-                        <Button asChild variant="outline">
-                          <a href={normalizedUrl} download className="flex items-center gap-2">
-                            <Download className="h-4 w-4" /> Baixar arquivo
-                          </a>
+                        <Button variant="outline" onClick={() => handleOpenUrl(normalizedUrl)} className="flex items-center gap-2">
+                          <Download className="h-4 w-4" /> Baixar arquivo
                         </Button>
                       </div>
                     </div>
