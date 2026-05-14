@@ -683,6 +683,7 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"...","caption":"..."}]
       <ImageLibraryPicker 
         open={libraryOpen} 
         onOpenChange={setLibraryOpen} 
+        defaultTab={libraryDefaultTab}
         onSelect={(url) => {
           updateSlide(currentSlide, libraryTarget === "bg" ? { bgImageUrl: url } : { imageUrl: url });
           setLibraryOpen(false);
