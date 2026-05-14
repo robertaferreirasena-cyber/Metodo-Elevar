@@ -96,38 +96,37 @@ export default function Community() {
     let normalizedUrl = rawUrl.trim();
     if (!normalizedUrl) return '';
     
-    // Remote spaces and common invalid characters for a URL
-    normalizedUrl = normalizedUrl.replace(/\s+/g, '');
+    // Remove invisible characters and spaces
+    normalizedUrl = normalizedUrl.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, '');
     
     if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://') || normalizedUrl.startsWith('blob:') || normalizedUrl.startsWith('data:')) {
-      // Valid protocol
+      // Protocol present
     } else if (normalizedUrl.startsWith('//')) {
       normalizedUrl = `https:${normalizedUrl}`;
     } else if (normalizedUrl.startsWith('/')) {
       normalizedUrl = `${window.location.origin}${normalizedUrl}`;
     } else {
-      const domainMatch = normalizedUrl.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+/);
+      // Improved domain detection
+      const domainMatch = normalizedUrl.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-0](?:\.[a-zA-Z]{2,})+/);
       if (domainMatch || (normalizedUrl.includes('.') && !normalizedUrl.includes(' '))) {
         normalizedUrl = `https://${normalizedUrl}`;
       }
     }
 
-    try {
-      new URL(normalizedUrl);
-      return normalizedUrl;
-    } catch (e) {
-      console.warn("URL inválida após normalização:", normalizedUrl);
-      return normalizedUrl; // Fallback to raw normalized if URL constructor fails (e.g. relative paths in dev)
-    }
+    return normalizedUrl;
   };
 
   const handleOpenUrl = (url: string) => {
     const finalUrl = normalizeUrl(url);
     if (!finalUrl) {
-      toast.error("URL inválida ou vazia");
+      toast.error("URL inválida");
       return;
     }
-    window.open(finalUrl, '_blank', 'noopener,noreferrer');
+    
+    const newWindow = window.open(finalUrl, '_blank', 'noopener,noreferrer');
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      toast.warning("Pop-up bloqueado. Por favor, permita pop-ups para este site.");
+    }
   };
 
   const scrollToBottom = () => {
