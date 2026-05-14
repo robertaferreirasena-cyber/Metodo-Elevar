@@ -874,15 +874,12 @@ export default function Community() {
                         alt={vimeoMaterial.title} 
                         className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg" 
                       />
-                      <a 
-                        href={normalizedUrl} 
-                        download 
-                        target="_blank" 
-                        rel="noopener noreferrer"
+                      <button 
+                        onClick={() => handleOpenUrl(normalizedUrl)}
                         className="absolute top-4 right-4 bg-background/80 hover:bg-background p-2 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100"
                       >
                         <Download className="h-5 w-5" />
-                      </a>
+                      </button>
                     </div>
                   ) : (
                     <div className="p-12 text-center">
