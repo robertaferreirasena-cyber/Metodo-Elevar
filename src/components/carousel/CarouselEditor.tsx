@@ -85,7 +85,12 @@ async function readStream(resp: Response, onContent: (full: string) => void): Pr
   return full;
 }
 
-export default function CarouselEditor() {
+interface CarouselEditorProps {
+  initialTopic?: string;
+}
+
+export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {}) {
+
   const [sessionState, setSessionState] = useSessionPersistence<CarouselSessionState>(
     "session_carousel_editor", EMPTY_CAROUSEL_STATE, 1000, "local"
   );
