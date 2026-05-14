@@ -1861,7 +1861,7 @@ REGRAS OBRIGATÓRIAS:
                 maxScale={5}
                 centerOnInit={true}
                 limitToBounds={false}
-                onTransformed={(ref) => setZoomScale(ref.state.scale)}
+                onTransform={(ref) => setZoomScale(ref.state.scale)}
                 doubleClick={{ disabled: true }}
                 panning={{ activationKeys: [" "], disabled: false }}
                 wheel={{ disabled: false }}
