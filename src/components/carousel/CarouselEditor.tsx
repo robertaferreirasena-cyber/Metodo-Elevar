@@ -657,7 +657,7 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"><ArrowUpDown className="h-3 w-3" /> Espaçamento Vertical</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"><ArrowUpDown className="h-3 w-3" /> Espaçamento Título/Corpo</Label>
                         <span className="text-[10px] font-mono">{cur.gap || 0}px</span>
                       </div>
                       <Slider value={[cur.gap || 0]} min={-20} max={100} step={1} onValueChange={([v]) => updateSlide(currentSlide, { gap: v })} />
