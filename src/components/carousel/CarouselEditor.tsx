@@ -192,6 +192,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       titleSize: template.titleSize,
       bodySize: template.bodySize,
       fontFamily: template.fontFamily,
+      titleFontFamily: template.fontFamily,
+      bodyFontFamily: template.fontFamily,
       align: template.align,
       bgGradient: template.bgGradient,
       layout: isJournal ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length] : template.layout,
