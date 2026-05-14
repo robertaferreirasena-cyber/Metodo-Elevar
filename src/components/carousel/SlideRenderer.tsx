@@ -5,6 +5,7 @@ import {
   PAPER_TEXTURES, WashiTape, WaxSeal, GoldStamp, SpiralBinder,
   TornPaperPath, EnvelopeShape, HandDrawnArrow,
 } from "./journalDecorations";
+import { getJournalScale } from "./journalScaleHelpers";
 
 interface SlideRendererProps {
   slide: SlideData;
@@ -36,6 +37,7 @@ export const SlideRenderer = React.memo(({
     textShadow: slide.textShadow || undefined,
     lineHeight: 1.15,
     fontFamily: slide.fontFamily,
+    textAlign: slide.align || "center",
   };
 
   const bodyStyle: React.CSSProperties = {
@@ -48,6 +50,7 @@ export const SlideRenderer = React.memo(({
     textShadow: slide.textShadow || undefined,
     lineHeight: 1.5,
     fontFamily: slide.fontFamily,
+    textAlign: slide.align || "center",
   };
 
   const counterStyle: React.CSSProperties = {
@@ -96,6 +99,7 @@ export const SlideRenderer = React.memo(({
   };
 
   const renderStaticText = (text: string, style: React.CSSProperties, pos?: any, className?: string) => {
+    if (!text) return null;
     const posStyle: React.CSSProperties = pos ? { 
       position: 'absolute', 
       left: `${pos.x * 100}%`, 
@@ -106,6 +110,8 @@ export const SlideRenderer = React.memo(({
     } : {};
     return <div className={className} style={{ ...style, ...posStyle }}>{text}</div>;
   };
+
+  const journal = getJournalScale(aspectRatio, (slide.title || "").length, (slide.body || "").length);
 
   return (
     <div
@@ -149,39 +155,64 @@ export const SlideRenderer = React.memo(({
         </>
       )}
 
-      {layout === "editorial" && (
-        <>
-          <div className="absolute inset-0 flex">
-            <div className="flex-1 flex flex-col justify-center" style={{ padding: padPx, textAlign: slide.align }}>
-              <div className="mb-2 font-bold uppercase tracking-widest" style={counterStyle}>
-                {slideIndex + 1} / {totalSlides}
-              </div>
-              {renderStaticText(slide.title, titleStyle, slide.titlePos, "mb-3")}
-              {renderStaticText(slide.body, bodyStyle, slide.bodyPos)}
+      {layout === "profile-post" && (
+        <div className="absolute inset-0 flex flex-col p-8" style={{ textAlign: slide.align }}>
+          <div className="flex items-center gap-3 mb-6" style={{ justifyContent: slide.align === 'center' ? 'center' : 'flex-start' }}>
+            <div className="w-12 h-12 rounded-full bg-muted overflow-hidden">
+              {slide.profileImageUrl && <img src={slide.profileImageUrl} className="w-full h-full object-cover" crossOrigin="anonymous" />}
             </div>
-            <div className="w-[45%] relative">
-              {slide.imageUrl ? (
-                <div className="absolute inset-0 overflow-hidden">
-                  <img 
-                    src={slide.imageUrl} 
-                    alt="" 
-                    crossOrigin="anonymous"
-                    className="absolute inset-0 w-full h-full object-cover" 
-                    style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })} 
-                  />
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <ImagePlus style={{ color: slide.accentColor, opacity: 0.4, width: 60 * fontScale, height: 60 * fontScale }} />
-                </div>
-              )}
+            <div style={{ textAlign: 'left' }}>
+              <div className="font-bold" style={{ color: slide.textColor }}>{slide.profileName || "Seu Nome"}</div>
+              <div className="text-xs opacity-60" style={{ color: slide.textColor }}>{slide.profileHandle || "@seuusuario"}</div>
             </div>
           </div>
-          <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
-        </>
+          {renderStaticText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+          {renderStaticText(slide.body, bodyStyle, slide.bodyPos)}
+        </div>
+      )}
+
+      {layout === "editorial" && (
+        <div className="absolute inset-0 flex p-12 gap-8">
+          <div className="flex-1 flex flex-col justify-center">
+            {renderStaticText(slide.title, titleStyle, slide.titlePos, "mb-6")}
+            {renderStaticText(slide.body, bodyStyle, slide.bodyPos)}
+          </div>
+          <div className="w-1/3 bg-muted rounded-lg overflow-hidden relative">
+            {slide.imageUrl ? (
+              <img 
+                src={slide.imageUrl} 
+                className="w-full h-full object-cover" 
+                crossOrigin="anonymous"
+                style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                 <ImagePlus className="w-12 h-12" />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {layout === "journal-photo-card" && (
+        <div className="absolute inset-0 flex items-center justify-center p-12">
+           {renderBgImage()}
+           <div className="relative z-10 p-10 shadow-2xl rounded-sm" style={{ backgroundColor: slide.bgColor, width: '80%', height: '70%', textAlign: slide.align }}>
+              {renderStaticText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+              {renderStaticText(slide.body, bodyStyle, slide.bodyPos)}
+              <div className="absolute top-4 right-4"><WashiTape width={120 * fontScale} color={slide.accentColor} rotate={-15} /></div>
+           </div>
+        </div>
+      )}
+
+      {/* Default footer accent line for non-journaling */}
+      {!layout.startsWith('journal-') && (
+        <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: slide.accentColor }} />
       )}
     </div>
   );
 });
 
 SlideRenderer.displayName = "SlideRenderer";
+
+
