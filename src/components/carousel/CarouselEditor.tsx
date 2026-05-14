@@ -113,6 +113,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [exportSlideIndex, setExportSlideIndex] = useState<number | null>(null);
   const { user } = useAuth();
   const { hasProfile, formData } = usePersonaContext();
 
