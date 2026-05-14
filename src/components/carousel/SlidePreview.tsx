@@ -186,7 +186,7 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
                   } : l)
                 });
               }}
-              onClick={() => onSelectLayer?.(layer.id)}
+              onMouseDown={() => onSelectLayer?.(layer.id)}
               bounds="parent"
               enableResizing={isFreeEditMode}
               disableDragging={!isFreeEditMode}
@@ -204,6 +204,7 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
                )}
             </Rnd>
           ))}
+
         </div>
       </div>
     );
