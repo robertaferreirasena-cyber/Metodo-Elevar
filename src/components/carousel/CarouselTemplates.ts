@@ -1031,10 +1031,13 @@ export function createSlidesFromTemplate(
     align: template.align,
     bgGradient: template.bgGradient,
     // Journaling templates: distribute the 6 narrative layouts across slides
-    // so the user's AI-generated text renders inside the full collection look.
     layout: isJournal
       ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length]
       : template.layout,
     highlightBgColor: template.highlightBgColor,
+    // Ensure default positions are set so changes are visible instantly
+    titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.1 },
+    bodyPos: { x: 0.1, y: 0.25, width: 0.8, height: 0.3 },
   }));
 }
+
