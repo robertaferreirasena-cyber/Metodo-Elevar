@@ -68,10 +68,12 @@ export const SlideRenderer = React.memo(({
     const blur = opts.blur ?? 0;
     const bright = opts.brightness ?? 100;
     const contrast = opts.contrast ?? 100;
+    const opacity = (opts.opacity ?? 100) / 100;
     return {
       objectPosition: `${posX}% ${posY}%`,
       transform: `scale(${scl})`,
       filter: `blur(${blur}px) brightness(${bright}%) contrast(${contrast}%)`,
+      opacity,
     };
   };
 
