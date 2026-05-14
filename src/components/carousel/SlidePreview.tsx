@@ -1,5 +1,5 @@
-import { forwardRef, useRef, useEffect, useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { forwardRef, useRef, useEffect, useState, useImperativeHandle } from "react";
+import { ImagePlus, X, MousePointer2, Move } from "lucide-react";
 import { Rnd } from "react-rnd";
 import type { SlideData } from "./CarouselTemplates";
 import { FORMAT_SPECS, type AspectRatio } from "./CarouselTemplates";
@@ -8,6 +8,11 @@ import {
   TornPaperPath, EnvelopeShape, NotebookLines, HandDrawnArrow, PaperClip,
 } from "./journalDecorations";
 import { getJournalScale } from "./journalScaleHelpers";
+
+export interface SlidePreviewRef {
+  resetTransform: () => void;
+  container: HTMLDivElement | null;
+}
 
 interface SlidePreviewProps {
   slide: SlideData;
@@ -25,10 +30,12 @@ interface SlidePreviewProps {
   /** ID of the layer being edited */
   selectedLayerId?: string;
   onSelectLayer?: (id: string | undefined) => void;
+  /** Current Zoom level from parent */
+  zoom?: number;
 }
 
-const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
-  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate, onReady, selectedLayerId, onSelectLayer }, ref) => {
+const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
+  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate, onReady, selectedLayerId, onSelectLayer, zoom = 1 }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
     const spec = FORMAT_SPECS[aspectRatio];
