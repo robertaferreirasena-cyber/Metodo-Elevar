@@ -1046,7 +1046,7 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
         open={libraryOpen} 
         onOpenChange={setLibraryOpen} 
         defaultTab={libraryDefaultTab}
-        orientation={libraryTarget === "bg" ? selectedTemplate.aspectRatio : "1:1"}
+        orientation={libraryTarget === "bg" && selectedTemplate.aspectRatio !== "4:5" ? selectedTemplate.aspectRatio : "1:1"}
         onSelect={(url) => {
           if (libraryTarget === "bg") {
             updateSlide(currentSlide, { bgImageUrl: url });
