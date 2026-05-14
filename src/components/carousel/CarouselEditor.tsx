@@ -1245,9 +1245,9 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Banco de Imagens</h3>
                 <div className="flex gap-2">
                   <Button 
-                    variant={libraryTarget === "fg" ? "default" : "outline"} 
+                    variant={libraryTarget === "image" ? "default" : "outline"} 
                     className="flex-1 text-xs" 
-                    onClick={() => { setLibraryTarget("fg"); setLibraryOpen(true); }}
+                    onClick={() => { setLibraryTarget("image"); setLibraryOpen(true); }}
                   >
                     Imagem Principal
                   </Button>
