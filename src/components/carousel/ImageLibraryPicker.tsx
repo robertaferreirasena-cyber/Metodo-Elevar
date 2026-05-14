@@ -131,7 +131,7 @@ function pruneCache() {
 }
 
 export default function ImageLibraryPicker({
-  open, onOpenChange, orientation = "1:1", suggestedQuery = "", onSelect,
+  open, onOpenChange, orientation = "1:1", suggestedQuery = "", onSelect, defaultTab = "search",
 }: Props) {
   const [query, setQuery] = useState(suggestedQuery);
   const [results, setResults] = useState<ImageItem[]>([]);
