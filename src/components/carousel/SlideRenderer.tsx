@@ -348,21 +348,24 @@ export const SlideRenderer = React.memo(({
         <div className="absolute inset-0">
            {renderBgImage()}
            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative w-[85%] h-[75%] bg-white p-12 shadow-2xl overflow-hidden" style={{ clipPath: TornPaperPath }}>
-                 <div className="absolute top-0 left-0 w-full h-4 bg-muted/20" />
+              <TornPaperPath width={spec.width * 0.85} height={spec.height * 0.75} fill={slide.bgColor}>
                  {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
                  {renderText(slide.body, bodyStyle, slide.bodyPos)}
-              </div>
+              </TornPaperPath>
            </div>
         </div>
       )}
 
       {layout === "journal-envelope" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-12" style={{ backgroundColor: slide.bgColor }}>
-           <div className="relative w-full aspect-video bg-[#fdfaf6] shadow-inner p-8 flex flex-col items-center justify-center text-center">
-              <div className="absolute inset-0 border-[20px] border-white/40 pointer-events-none" />
-              {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-              {renderText(slide.body, bodyStyle, slide.bodyPos)}
+           <div className="relative w-full aspect-video flex flex-col items-center justify-center text-center">
+              <div className="absolute inset-0">
+                 <EnvelopeShape width={spec.width * 0.7} height={spec.width * 0.5} color={slide.bgColor} flapColor={slide.accentColor} />
+              </div>
+              <div className="relative z-10 px-12">
+                {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+                {renderText(slide.body, bodyStyle, slide.bodyPos)}
+              </div>
               <div className="absolute -bottom-8"><WaxSeal color={slide.accentColor} size={70 * fontScale} /></div>
            </div>
            <div className="mt-16"><HandDrawnArrow color={slide.accentColor} width={60 * fontScale} rotate={180} /></div>
