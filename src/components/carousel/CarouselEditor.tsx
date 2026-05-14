@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   ChevronLeft, ChevronRight, Download, Wand2, Loader2, Type,
-  AlignCenter, DownloadCloud, ImagePlus, X,
+  AlignCenter, DownloadCloud, ImagePlus, X, Check,
   Square, Monitor, Sparkles, Undo2, LayoutGrid, Layers, Trash2,
   CopyPlus, ZoomIn, ZoomOut, Maximize2, Move, AlignLeft, AlignRight,
   Bold, Italic, Underline, Palette, Search, Settings2, Image as ImageIcon,
