@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePersonaContext } from "@/contexts/PersonaContext";
@@ -111,6 +112,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [selectedSlides, setSelectedSlides] = useState<number[]>([]);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportSlideIndex, setExportSlideIndex] = useState<number | null>(null);
   const { user } = useAuth();
   const { hasProfile, formData } = usePersonaContext();
 
@@ -184,6 +187,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       bgGradient: template.bgGradient,
       layout: isJournal ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length] : template.layout,
       highlightBgColor: template.highlightBgColor,
+      gap: template.gap || 20,
       titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.1 },
       bodyPos: { x: 0.1, y: 0.25, width: 0.8, height: 0.3 },
     });
@@ -232,7 +236,8 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       const data = JSON.parse(jsonMatch[0]);
       const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
       setSlides(newSlides);
-      setSelectedSlides([]); // Clear selection when generating new content
+      // Mantemos a seleção atual se os índices ainda existirem (útil para regenerar mantendo filtros)
+      setSelectedSlides(prev => prev.filter(idx => idx < newSlides.length));
       setCurrentSlide(0);
       toast.success(isStatic ? "Post estático gerado!" : "Carrossel gerado!");
     } catch (err) {
@@ -245,96 +250,74 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
   const exportSlides = async (indices: number[]) => {
     if (indices.length === 0) { toast.error("Selecione pelo menos um slide"); return; }
     setExporting(true);
+    setExportProgress(0);
     try {
       const zip = new JSZip();
       toast.info(`Iniciando exportação de ${indices.length} slides...`);
       
-      // Hidden container to render slides for export
-      const exportContainer = document.createElement("div");
-      exportContainer.style.position = "fixed";
-      exportContainer.style.left = "-10000px";
-      exportContainer.style.top = "0";
-      document.body.appendChild(exportContainer);
+      const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
 
       for (let i = 0; i < indices.length; i++) {
         const idx = indices[i];
-        const slide = slides[idx];
-        const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
+        setExportProgress(Math.round((i / indices.length) * 100));
+        setExportSlideIndex(idx);
         
-        // Create a wrapper div for html-to-image
-        const slideDiv = document.createElement("div");
-        slideDiv.style.width = `${spec.width}px`;
-        slideDiv.style.height = `${spec.height}px`;
-        slideDiv.style.position = "relative";
-        slideDiv.style.overflow = "hidden";
-        exportContainer.appendChild(slideDiv);
+        // Espera o React renderizar o slide oculto e as imagens carregarem
+        // O SlideRenderer já tem lógica de esperar imagens se usarmos o onReady do SlidePreview
+        // Mas aqui vamos fazer um polling simples ou esperar um tempo seguro
+        await new Promise(r => setTimeout(r, 800)); 
 
-        // We'll use a hidden root for SlideRenderer
-        // But html-to-image needs real DOM elements.
-        // For a true multi-export, we'd ideally have a way to render a React component to a DOM node.
-        // For now, let's at least implement the logic for the current slide or sequentially if visible.
-        
-        // Fallback for single or sequential export using the visible preview
-        if (indices.length === 1 || idx === currentSlide) {
-          const el = document.querySelector(".slide-content-root");
-          if (el) {
+        const el = document.querySelector(".export-slide-root .slide-content-root");
+        if (el) {
+          try {
             const dataUrl = await toPng(el as HTMLElement, { 
               width: spec.width, 
               height: spec.height,
-              pixelRatio: 1
+              pixelRatio: 2, // Melhor qualidade para exportação
+              skipFonts: false,
+              cacheBust: true,
             });
             const base64Data = dataUrl.split(',')[1];
             zip.file(`slide-${idx + 1}.png`, base64Data, { base64: true });
+          } catch (pngErr) {
+            console.error(`Erro ao capturar slide ${idx + 1}:`, pngErr);
+            toast.error(`Erro no slide ${idx + 1}`);
           }
         } else {
-          // If not the current slide, we'd need to switch currentSlide and wait, or use a separate renderer.
-          // Since switching slides triggers state updates, sequential export is safer.
-          setCurrentSlide(idx);
-          await new Promise(r => setTimeout(r, 500)); // Wait for render
-          const el = document.querySelector(".slide-content-root");
-          if (el) {
-            const dataUrl = await toPng(el as HTMLElement, { 
-              width: spec.width, 
-              height: spec.height,
-              pixelRatio: 1
-            });
-            const base64Data = dataUrl.split(',')[1];
-            zip.file(`slide-${idx + 1}.png`, base64Data, { base64: true });
-          }
+          console.error(`Elemento de exportação não encontrado para o slide ${idx + 1}`);
         }
       }
 
+      setExportProgress(100);
       const content = await zip.generateAsync({ type: "blob" });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(content);
-      link.download = indices.length === 1 ? `slide-${indices[0] + 1}.png` : "carrossel.zip";
+      link.download = indices.length === 1 ? `slide-${indices[0] + 1}.png` : `carrossel-${Date.now()}.zip`;
       
-      // If single file and zipped, we might want just the PNG, but ZIP is safer for multiple.
       if (indices.length === 1) {
-        // Special case for single PNG
-        const el = document.querySelector(".slide-content-root");
+        // Se for só um, baixamos o PNG direto se possível
+        const el = document.querySelector(".export-slide-root .slide-content-root");
         if (el) {
-          const dataUrl = await toPng(el as HTMLElement, { 
-            width: FORMAT_SPECS[selectedTemplate.aspectRatio].width, 
-            height: FORMAT_SPECS[selectedTemplate.aspectRatio].height,
-            pixelRatio: 1
-          });
-          const singleLink = document.createElement('a');
-          singleLink.href = dataUrl;
-          singleLink.download = `slide-${indices[0] + 1}.png`;
-          singleLink.click();
+           const dataUrl = await toPng(el as HTMLElement, { width: spec.width, height: spec.height, pixelRatio: 2 });
+           const singleLink = document.createElement('a');
+           singleLink.href = dataUrl;
+           singleLink.download = `slide-${indices[0] + 1}.png`;
+           singleLink.click();
+        } else {
+          link.click();
         }
       } else {
         link.click();
       }
       
-      document.body.removeChild(exportContainer);
       toast.success("Exportação concluída!");
     } catch (err) {
       console.error("Export error:", err);
       toast.error("Erro ao exportar slides");
     } finally {
       setExporting(false);
+      setExportSlideIndex(null);
+      setExportProgress(0);
     }
   };
 
@@ -675,7 +658,7 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"><ArrowUpDown className="h-3 w-3" /> Espaçamento Vertical</Label>
+                        <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"><ArrowUpDown className="h-3 w-3" /> Espaçamento Título/Corpo</Label>
                         <span className="text-[10px] font-mono">{cur.gap || 0}px</span>
                       </div>
                       <Slider value={[cur.gap || 0]} min={-20} max={100} step={1} onValueChange={([v]) => updateSlide(currentSlide, { gap: v })} />
@@ -792,10 +775,23 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
              </div>
           </div>
 
-          {/* Centered Preview */}
-          <div className="flex-1 overflow-hidden flex items-center justify-center p-2 md:p-6 bg-[#f5f7f9] dark:bg-zinc-950">
-             <div className="relative w-full h-full flex items-center justify-center">
-                {cur ? (
+           {/* Centered Preview */}
+           <div className="flex-1 overflow-hidden flex items-center justify-center p-2 md:p-6 bg-[#f5f7f9] dark:bg-zinc-950">
+              {/* Progress Bar for Export */}
+              {exporting && (
+                <div className="absolute top-0 left-0 right-0 z-50 p-3 bg-background/95 backdrop-blur-sm border-b shadow-sm animate-in fade-in slide-in-from-top-2">
+                  <div className="max-w-md mx-auto space-y-2">
+                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-primary">
+                      <span className="flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> Gerando imagens...</span>
+                      <span>{exportProgress}%</span>
+                    </div>
+                    <Progress value={exportProgress} className="h-1.5" />
+                  </div>
+                </div>
+              )}
+
+              <div className="relative w-full h-full flex items-center justify-center">
+                 {cur ? (
                   <div className="shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-zinc-900 border transition-all duration-300 w-full h-full flex items-center justify-center relative">
                     <SlidePreview 
                       slide={cur} 
@@ -885,6 +881,19 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
           setLibraryOpen(false);
         }} 
       />
+
+      {/* Hidden container for high-quality export rendering */}
+      {exportSlideIndex !== null && (
+        <div className="export-slide-root fixed left-[-9999px] top-0 pointer-events-none" style={{ width: FORMAT_SPECS[selectedTemplate.aspectRatio].width, height: FORMAT_SPECS[selectedTemplate.aspectRatio].height }}>
+          <SlidePreview 
+            slide={slides[exportSlideIndex]} 
+            slideIndex={exportSlideIndex} 
+            totalSlides={slides.length} 
+            aspectRatio={selectedTemplate.aspectRatio}
+            nativeSize={true}
+          />
+        </div>
+      )}
     </div>
   );
 }

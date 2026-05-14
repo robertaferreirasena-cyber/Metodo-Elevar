@@ -44,6 +44,10 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
       if (!el) return;
       
       const updateScale = () => {
+        if (nativeSize) {
+          setScale(1);
+          return;
+        }
         const cw = el.clientWidth - 32; // Standard padding
         const ch = el.clientHeight - 32;
         if (cw > 0 && ch > 0) {

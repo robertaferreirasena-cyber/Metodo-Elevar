@@ -95,6 +95,7 @@ export interface CarouselTemplate {
   bgGradient?: string;
   layout: CarouselLayout;
   highlightBgColor?: string;
+  gap?: number;
 }
 
  export const CAROUSEL_TEMPLATES: CarouselTemplate[] = [
