@@ -758,7 +758,7 @@ export default function Community() {
                               className="gap-2"
                             >
                               <a 
-                                href={material.file_url.startsWith('http') ? material.file_url : `https://${material.file_url}`} 
+                                href={normalizeUrl(material.file_url)} 
                                 download={material.title}
                                 target="_blank" 
                                 rel="noopener noreferrer"
