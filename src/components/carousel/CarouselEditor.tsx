@@ -759,15 +759,16 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                     variant={selectedTemplate.aspectRatio === ratio ? 'secondary' : 'ghost'}
                     size="sm"
                     className="h-7 text-[10px] px-2"
-                    onClick={() => {
-                      const newT = { ...selectedTemplate, aspectRatio: ratio };
-                      setSelectedTemplate(newT);
-                      // Update all slides aspect ratio if needed, or just let the preview handle it
-                      toast.success(`Formato ${ratio} selecionado`);
-                    }}
-                   >
-                    {ratio}
-                   </Button>
+                     onClick={() => {
+                       const currentSelectedIndices = [...selectedSlides];
+                       const newT = { ...selectedTemplate, aspectRatio: ratio };
+                       setSelectedTemplate(newT);
+                       setSelectedSlides(currentSelectedIndices);
+                       toast.success(`Formato ${ratio} selecionado`);
+                     }}
+                    >
+                     {ratio}
+                    </Button>
                  ))}
                </div>
              </div>
