@@ -93,6 +93,9 @@ export const SlideRenderer = React.memo(({
             crossOrigin="anonymous"
             className="absolute inset-0 w-full h-full object-cover" 
             style={buildImageStyle(adj)}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
           />
         </div>
         <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(0,0,0,${opacity})` }} />
