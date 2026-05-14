@@ -246,7 +246,12 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       const jsonMatch = fullText.match(/\{[\s\S]*"slides"[\s\S]*\}/);
       if (!jsonMatch) throw new Error("Resposta inválida");
       const data = JSON.parse(jsonMatch[0]);
-      const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
+      const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides).map(s => ({
+        ...s,
+        profileName: profileInfo.name,
+        profileHandle: profileInfo.handle,
+        profileImageUrl: profileInfo.image
+      }));
       const oldSelectedIndices = [...selectedSlides];
       setSlides(newSlides);
       // Mantemos a seleção atual se os índices ainda existirem
