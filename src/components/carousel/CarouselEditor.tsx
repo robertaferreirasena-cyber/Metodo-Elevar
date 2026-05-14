@@ -101,6 +101,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [topic, setTopic] = useState(sessionState.topic || "");
   const [slideCount, setSlideCount] = useState(sessionState.slideCount);
   const [tone, setTone] = useState(sessionState.tone);
+  const [postType, setPostType] = useState<"static" | "carousel">(sessionState.postType || "carousel");
   const [formatFilter, setFormatFilter] = useState<FormatFilter>(sessionState.formatFilter);
   const [selectedTemplate, setSelectedTemplate] = useState<CarouselTemplate>(
     CAROUSEL_TEMPLATES.find(t => t.id === sessionState.selectedTemplateId) || CAROUSEL_TEMPLATES[0]
@@ -109,8 +110,6 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [zoomScale, setZoomScale] = useState(1);
-  const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const { user } = useAuth();
   const { hasProfile, formData, raioX } = usePersonaContext();
 
