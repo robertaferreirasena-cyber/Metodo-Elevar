@@ -867,16 +867,18 @@ export default function Community() {
                       className="w-full h-[70vh] rounded-lg border-none bg-white"
                       title={vimeoMaterial.title}
                     />
-                  ) : ( (normalizedUrl.toLowerCase().includes('vini.') || normalizedUrl.toLowerCase().includes('vini.video')) ) ? (
-                    <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black shadow-lg">
-                      <iframe
-                        src={normalizedUrl.replace('vini.video/', 'vini.video/embed/')}
-                        title={vimeoMaterial.title || 'Vini Video player'}
-                        className="absolute top-0 left-0 w-full h-full"
-                        frameBorder={0}
-                        allow="autoplay; fullscreen; picture-in-picture; clipboard-write"
-                        allowFullScreen
-                      />
+                  ) : (normalizedUrl.toLowerCase().includes('vini.video') || normalizedUrl.toLowerCase().includes('vini.')) ? (
+                    <div className="w-full flex items-center justify-center p-4">
+                      <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black shadow-lg">
+                        <iframe
+                          src={normalizedUrl.includes('/embed/') ? normalizedUrl : normalizedUrl.replace('vini.video/', 'vini.video/embed/')}
+                          title={vimeoMaterial.title || 'Vini Video player'}
+                          className="absolute top-0 left-0 w-full h-full"
+                          frameBorder={0}
+                          allow="autoplay; fullscreen; picture-in-picture; clipboard-write"
+                          allowFullScreen
+                        />
+                      </div>
                     </div>
                   ) : vimeoMaterial.type === 'image' || normalizedUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) ? (
                     <div className="relative w-full h-full flex items-center justify-center p-4">
