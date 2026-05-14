@@ -43,32 +43,33 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
       const el = containerRef.current;
       if (!el) return;
       
+      const updateScale = () => {
+        const cw = el.offsetWidth;
+        const ch = el.offsetHeight;
+        if (cw > 0 && ch > 0) {
+          // Leave some padding
+          const padding = 40;
+          const s = Math.min((cw - padding) / spec.width, (ch - padding) / spec.height);
+          setScale(s);
+        }
+      };
+
+      updateScale();
+      const obs = new ResizeObserver(updateScale);
+      obs.observe(el);
+      return () => obs.disconnect();
+    }, [spec.width, spec.height, nativeSize, slide]);
+
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el) return;
       const checkAssets = async () => {
         const imgs = Array.from(el.querySelectorAll("img"));
         await Promise.all(imgs.map(img => img.complete ? Promise.resolve() : new Promise((r) => { img.onload = r; img.onerror = r; })));
         onReady?.();
       };
       checkAssets();
-
-      if (nativeSize) {
-        setScale(1);
-        return;
-      }
-
-      const updateScale = () => {
-        if (!el) return;
-        const cw = el.offsetWidth;
-        const ch = el.offsetHeight;
-        if (cw > 0 && ch > 0) {
-          const s = Math.min(cw / spec.width, ch / spec.height);
-          setScale(s);
-        }
-      };
-      updateScale();
-      const obs = new ResizeObserver(updateScale);
-      obs.observe(el);
-      return () => obs.disconnect();
-    }, [spec.width, nativeSize, slide, onReady]);
+    }, [slide, onReady]);
 
     const updateGuides = useCallback((x: number, y: number, w: number, h: number) => {
       const centerX = x + w / 2;
