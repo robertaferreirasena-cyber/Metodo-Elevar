@@ -111,7 +111,7 @@ export const SlideRenderer = React.memo(({
     return <div className={className} style={{ ...style, ...posStyle }}>{text}</div>;
   };
 
-  const journalScale = getJournalScale(aspectRatio);
+  const journal = getJournalScale(aspectRatio, (slide.title || "").length, (slide.body || "").length);
 
   return (
     <div
@@ -200,7 +200,7 @@ export const SlideRenderer = React.memo(({
            <div className="relative z-10 p-10 shadow-2xl rounded-sm" style={{ backgroundColor: slide.bgColor, width: '80%', height: '70%', textAlign: slide.align }}>
               {renderStaticText(slide.title, titleStyle, slide.titlePos, "mb-4")}
               {renderStaticText(slide.body, bodyStyle, slide.bodyPos)}
-              <div className="absolute top-4 right-4"><WashiTape color={slide.accentColor} rotate={-15} scale={journalScale * 0.8} /></div>
+              <div className="absolute top-4 right-4"><WashiTape width={120 * fontScale} color={slide.accentColor} rotate={-15} /></div>
            </div>
         </div>
       )}
@@ -214,4 +214,5 @@ export const SlideRenderer = React.memo(({
 });
 
 SlideRenderer.displayName = "SlideRenderer";
+
 
