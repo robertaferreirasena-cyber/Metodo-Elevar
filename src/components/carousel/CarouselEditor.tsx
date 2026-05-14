@@ -306,7 +306,34 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
                     </button>
                   ))}
                 </div>
+
+                {/* Journaling Collection Sub-section */}
+                {(isJournalTemplate(selectedTemplate.id) || slides.some(s => (s.layout || "").startsWith("journal-"))) && (
+                  <div className="mt-3 p-3 rounded-lg border border-amber-200/60 bg-amber-50/30 dark:bg-amber-950/10 space-y-3">
+                    <Label className="text-[11px] font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1">📓 Coleção Journaling</Label>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {JOURNAL_PALETTES.map((p) => (
+                        <button
+                          key={p.id}
+                          title={p.name}
+                          onClick={() => {
+                            setCurrentJournalPaletteId(p.id);
+                            updateSlidesWithHistory(prev => prev.map(s => ({
+                              ...s,
+                              bgColor: p.bgColor,
+                              textColor: p.textColor,
+                              accentColor: p.accentColor,
+                            })));
+                          }}
+                          className={`w-6 h-6 rounded-full border ${currentJournalPaletteId === p.id ? "ring-2 ring-primary" : ""}`}
+                          style={{ background: p.swatch }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </section>
+
 
               <hr />
 
