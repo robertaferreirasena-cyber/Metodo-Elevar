@@ -340,6 +340,11 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
           </div>
         </div>
         <div className="flex items-center gap-2">
+           {selectedSlides.length > 0 && (
+             <Button variant="outline" size="sm" onClick={exportSelected} disabled={exporting} className="border-green-500/50 text-green-600 hover:bg-green-50">
+               <Download className="h-4 w-4 mr-2" /> Baixar Selecionados ({selectedSlides.length})
+             </Button>
+           )}
            <Button variant="outline" size="sm" onClick={exportAll} disabled={exporting || slides.length === 0}>
              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 mr-2" />} Exportar Tudo
            </Button>
