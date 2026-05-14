@@ -1832,6 +1832,10 @@ REGRAS OBRIGATÓRIAS:
                     <Button size="icon" variant="ghost" className={`h-8 w-8 ${isFreeEditMode ? 'text-primary bg-primary/10' : ''}`} onClick={() => setIsFreeEditMode(!isFreeEditMode)} title={isFreeEditMode ? 'Sair do Modo Edição Livre' : 'Modo Edição Livre'}>
                        <MousePointer2 className="h-4 w-4" />
                     </Button>
+                    <div className="h-4 w-[1px] bg-border mx-1 self-center" />
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => transformRef.current?.resetTransform()} title="Centralizar Visualização">
+                       <Move className="h-4 w-4" />
+                    </Button>
                   </div>
                </div>
 
