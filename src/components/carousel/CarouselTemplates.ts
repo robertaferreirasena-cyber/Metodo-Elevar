@@ -1052,12 +1052,13 @@ export interface SlideData {
 
 export function createSlidesFromTemplate(
   template: CarouselTemplate,
-  content: { title: string; body: string }[]
+  content: { title: string; body: string; caption?: string }[]
 ): SlideData[] {
   const isJournal = isJournalTemplate(template.id);
   return content.map((c, i) => ({
     title: c.title,
     body: c.body,
+    caption: c.caption,
     bgColor: template.bgColor,
     textColor: template.textColor,
     accentColor: template.accentColor,
