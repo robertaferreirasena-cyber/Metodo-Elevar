@@ -1002,6 +1002,7 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
       transform: `scale(${scale})`,
       transformOrigin: "center center",
       flexShrink: 0,
+      boxShadow: "0 20px 50px rgba(0,0,0,0.2)",
     };
 
     return (
