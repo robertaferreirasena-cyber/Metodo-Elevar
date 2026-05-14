@@ -84,7 +84,7 @@ export interface CarouselTemplate {
   id: string;
   name: string;
   description: string;
-  aspectRatio: "1:1" | "16:9" | "9:16";
+  aspectRatio: "1:1" | "4:5" | "16:9" | "9:16";
   bgColor: string;
   textColor: string;
   accentColor: string;
