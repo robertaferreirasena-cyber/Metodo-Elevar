@@ -1,10 +1,10 @@
 import { forwardRef, useImperativeHandle, useRef } from "react";
-import SlidePreview from "./SlidePreview";
+import SlidePreview, { type SlidePreviewRef } from "./SlidePreview";
 import { buildJournalSampleSlides, JOURNAL_LAYOUT_SEQUENCE, type JournalPalette } from "./CarouselTemplates";
 
 export interface JournalExporterHandle {
   /** Returns the array of native-size DOM nodes (one per layout) for capture. */
-  getNodes: () => (HTMLDivElement | null)[];
+  getNodes: () => (HTMLElement | null)[];
 }
 
 interface Props {
