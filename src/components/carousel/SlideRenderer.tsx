@@ -311,8 +311,9 @@ export const SlideRenderer = React.memo(({
       )}
 
       {layout === "journal-note" && (
-        <div className="absolute inset-0 flex flex-col p-16" style={{ backgroundImage: `url(${PAPER_TEXTURES.white})`, backgroundSize: 'cover' }}>
-           <div className="border-l-4 border-primary/20 pl-8 h-full flex flex-col justify-center">
+        <div className="absolute inset-0 flex flex-col p-16" style={{ background: slide.bgColor }}>
+           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: PAPER_TEXTURES.notebook }} />
+           <div className="border-l-4 border-primary/20 pl-8 h-full flex flex-col justify-center relative z-10">
               {renderText(slide.title, { ...titleStyle, fontFamily: "'Playfair Display', serif" }, slide.titlePos, "mb-6")}
               {renderText(slide.body, { ...bodyStyle, fontFamily: "'DM Sans', sans-serif" }, slide.bodyPos)}
            </div>
