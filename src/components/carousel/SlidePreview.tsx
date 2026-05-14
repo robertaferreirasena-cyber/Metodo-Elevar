@@ -34,9 +34,10 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     const spec = FORMAT_SPECS[aspectRatio];
     const layout = slide.layout || "text-only";
 
-    // Font scale factor: native resolution is much larger than preview container
-    // so font sizes in SlideData (designed for ~480px preview) need to be scaled up
-    const fontScale = spec.width / 480;
+    // Re-calculate the relative font scale based on current container size
+    // We target a base width of 480px for standard preview proportions
+    const basePreviewWidth = 480;
+    const fontScale = (spec.width / basePreviewWidth);
 
     useEffect(() => {
       const el = containerRef.current;
@@ -56,11 +57,23 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
 
       checkAssets();
 
-      if (nativeSize) { setScale(1); return; }
+      if (nativeSize) { 
+        setScale(1); 
+        return; 
+      }
       
-      const observer = new ResizeObserver(([entry]) => {
-        const cw = entry.contentRect.width;
-        setScale(cw / spec.width);
+      const updateScale = () => {
+        if (!el) return;
+        const cw = el.offsetWidth;
+        if (cw > 0) {
+          setScale(cw / spec.width);
+        }
+      };
+
+      updateScale();
+      
+      const observer = new ResizeObserver(() => {
+        updateScale();
       });
       observer.observe(el);
       return () => observer.disconnect();
@@ -954,28 +967,33 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     // For export: render at native resolution
     if (nativeSize) return slideContent;
 
-    // For preview: scale down to fit container
+    // Final container styling to ensure the slide is centered and fits
+    const outerStyle: React.CSSProperties = {
+      maxWidth: aspectRatio === "9:16" ? 360 : aspectRatio === "16:9" ? 640 : 480,
+      aspectRatio: `${spec.width} / ${spec.height}`,
+      overflow: "hidden",
+      position: "relative",
+      width: "100%",
+      margin: "0 auto",
+      transition: "transform 0.15s ease-out"
+    };
+
+    const scaledInnerStyle: React.CSSProperties = {
+      width: spec.width,
+      height: spec.height,
+      transform: `scale(${scale})`,
+      transformOrigin: "top left",
+      position: "absolute",
+      top: 0,
+      left: 0,
+    };
+
     return (
-      <div
-        ref={containerRef}
-        className="w-full relative"
-        style={{
-          maxWidth: aspectRatio === "9:16" ? 360 : aspectRatio === "16:9" ? 640 : 480,
-          aspectRatio: `${spec.width} / ${spec.height}`,
-          overflow: "hidden",
-        }}
+      <div 
+        ref={containerRef} 
+        style={outerStyle}
       >
-        <div
-          style={{
-            width: spec.width,
-            height: spec.height,
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-            position: "absolute",
-            top: 0,
-            left: 0,
-          }}
-        >
+        <div style={scaledInnerStyle}>
           {slideContent}
         </div>
       </div>
