@@ -19,7 +19,7 @@ interface Props {
  */
 const JournalCollectionExporter = forwardRef<JournalExporterHandle, Props>(
   ({ palette, profileHandle }, ref) => {
-    const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const nodeRefs = useRef<(HTMLElement | null)[]>([]);
     const slides = buildJournalSampleSlides(palette, profileHandle);
 
     useImperativeHandle(ref, () => ({
