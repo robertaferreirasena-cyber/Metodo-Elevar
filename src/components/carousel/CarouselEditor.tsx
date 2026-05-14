@@ -880,6 +880,19 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
           setLibraryOpen(false);
         }} 
       />
+
+      {/* Hidden container for high-quality export rendering */}
+      {exportSlideIndex !== null && (
+        <div className="export-slide-root fixed left-[-9999px] top-0 pointer-events-none" style={{ width: FORMAT_SPECS[selectedTemplate.aspectRatio].width, height: FORMAT_SPECS[selectedTemplate.aspectRatio].height }}>
+          <SlidePreview 
+            slide={slides[exportSlideIndex]} 
+            slideIndex={exportSlideIndex} 
+            totalSlides={slides.length} 
+            aspectRatio={selectedTemplate.aspectRatio}
+            nativeSize={true}
+          />
+        </div>
+      )}
     </div>
   );
 }
