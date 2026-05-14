@@ -632,10 +632,6 @@ export interface CarouselTemplate {
     align: "left",
     layout: "text-only",
   },
-    align: "center",
-    bgGradient: "linear-gradient(180deg, #3d1f0a 0%, #0e0905 100%)",
-    layout: "text-only",
-  },
   {
     id: "stories-cta",
     name: "Stories CTA",
