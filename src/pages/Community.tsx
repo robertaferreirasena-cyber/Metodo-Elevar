@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useCommunity, CommunityMessage } from '@/hooks/useCommunity';
 import { VimeoPlayer, isVimeoUrl } from '@/components/community/VimeoPlayer';
 import { useCommunityNewMaterials } from '@/hooks/useCommunityNewMaterials';
-import { PlayCircle, Video, Download, X, Loader2, FileText, Link as LinkIcon, Plus, Send, Pin, Trash2, Paperclip, Reply, BarChart3, ImageIcon, Search, ExternalLink, Play, Lock, AlertCircle, Heart, Share2 } from 'lucide-react';
+import { PlayCircle, Video, Download, X, Loader2, FileText, Link as LinkIcon, Plus, Send, Pin, Trash2, Paperclip, Reply, BarChart3, ImageIcon, Search, ExternalLink, Play, Lock, AlertCircle, Heart, Share2, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -200,10 +200,9 @@ export default function Community() {
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                            <EmojiReactions 
-                             messageId={msg.id} 
                              reactions={msg.reactions || []} 
-                             onAdd={(emoji) => addReaction(msg.id, emoji)}
-                             onRemove={(emoji) => removeReaction(msg.id, emoji)}
+                             onReact={(emoji) => addReaction(msg.id, emoji)}
+                             onRemoveReaction={(emoji) => removeReaction(msg.id, emoji)}
                            />
                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReplyTo({ id: msg.id, content: msg.content, authorName: msg.profile?.full_name || 'Usuário' })}>
                              <Reply className="h-3 w-3" />
@@ -223,8 +222,7 @@ export default function Community() {
               <div className="p-4 border-t space-y-2">
                 {replyTo && (
                   <ReplyPreview 
-                    authorName={replyTo.authorName} 
-                    content={replyTo.content} 
+                    replyTo={replyTo}
                     onCancel={() => setReplyTo(null)} 
                   />
                 )}
@@ -244,10 +242,18 @@ export default function Community() {
           </Card>
           {isAdmin && (
             <div className="flex justify-end gap-2">
-               <CreatePollDialog onCreate={createPoll} />
+               <Button onClick={() => setPollDialogOpen(true)} variant="outline" className="gap-2">
+                 <BarChart3 className="h-4 w-4" /> Criar Enquete
+               </Button>
+               <CreatePollDialog 
+                 open={pollDialogOpen} 
+                 onOpenChange={setPollDialogOpen} 
+                 onCreatePoll={async (q, o) => { await createPoll(q, o); }} 
+               />
             </div>
           )}
         </TabsContent>
+
 
         <TabsContent value="materials" className="space-y-4">
           <Card>
