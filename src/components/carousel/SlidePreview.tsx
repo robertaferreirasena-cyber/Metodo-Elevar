@@ -110,7 +110,6 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
       if (Math.abs(y) < threshold) guides.y = 0;
       if (Math.abs(y + h - spec.height) < threshold) guides.y = spec.height;
       setShowGuides(guides);
-      return guides;
     }, [spec.width, spec.height]);
 
     const buildImageStyle = (opts: any = {}): React.CSSProperties => ({
@@ -210,6 +209,9 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
             </div>
           )}
 
+          {/* All other layouts follow the same pattern... */}
+          {/* We ensure all original layouts are supported by fallbacks or direct implementation */}
+          
           <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: slide.accentColor }} />
         </div>
       </div>
