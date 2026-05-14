@@ -150,7 +150,7 @@ export const SlideRenderer = React.memo(({
             <div className="mb-2 font-bold uppercase tracking-widest" style={counterStyle}>
               {slideIndex + 1} / {totalSlides}
             </div>
-            {renderText(slide.title, titleStyle, slide.titlePos, "mb-2")}
+            {renderText(slide.title, titleStyle, slide.titlePos, "mb-1")}
             {renderText(slide.body, bodyStyle, slide.bodyPos)}
           </div>
           <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
