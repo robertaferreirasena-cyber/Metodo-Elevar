@@ -235,9 +235,10 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       if (!jsonMatch) throw new Error("Resposta inválida");
       const data = JSON.parse(jsonMatch[0]);
       const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
+      const oldSelectedIndices = [...selectedSlides];
       setSlides(newSlides);
-      // Mantemos a seleção atual se os índices ainda existirem (útil para regenerar mantendo filtros)
-      setSelectedSlides(prev => prev.filter(idx => idx < newSlides.length));
+      // Mantemos a seleção atual se os índices ainda existirem
+      setSelectedSlides(oldSelectedIndices.filter(idx => idx < newSlides.length));
       setCurrentSlide(0);
       toast.success(isStatic ? "Post estático gerado!" : "Carrossel gerado!");
     } catch (err) {
