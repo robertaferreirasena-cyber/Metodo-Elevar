@@ -1239,9 +1239,97 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
         );
       case "uploads":
         return (
-          <ScrollArea className="h-[600px]">
-            <div className="p-4">
-              <UserUploads onSelect={(url) => addLayer("image", url)} />
+          <ScrollArea className="h-[calc(100vh-120px)]">
+            <div className="p-4 space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Banco de Imagens</h3>
+                <div className="flex gap-2">
+                  <Button 
+                    variant={libraryTarget === "fg" ? "default" : "outline"} 
+                    className="flex-1 text-xs" 
+                    onClick={() => { setLibraryTarget("fg"); setLibraryOpen(true); }}
+                  >
+                    Imagem Principal
+                  </Button>
+                  <Button 
+                    variant={libraryTarget === "bg" ? "default" : "outline"} 
+                    className="flex-1 text-xs" 
+                    onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}
+                  >
+                    Fundo
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h3 className="text-xs font-semibold mb-3 uppercase tracking-wider text-muted-foreground">Seus Uploads</h3>
+                <UserUploads onSelect={(url) => {
+                  if (libraryTarget === "bg") {
+                    snapshotSlideForUndo(currentSlide, "Upload aplicado ao fundo");
+                    updateSlide(currentSlide, { bgImageUrl: url });
+                  } else {
+                    addLayer("image", url);
+                  }
+                }} />
+              </div>
+
+              {(cur.imageUrl || cur.bgImageUrl) && (
+                <div className="pt-4 border-t space-y-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ajustes da Imagem</h3>
+                  
+                  {cur.imageUrl && (
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold">Ajustar Imagem Principal</Label>
+                      <ImageAdjustPanel 
+                        imageUrl={cur.imageUrl}
+                        aspectRatio={FORMAT_SPECS[selectedTemplate.aspectRatio].width / FORMAT_SPECS[selectedTemplate.aspectRatio].height}
+                        values={{
+                          positionX: cur.imagePositionX,
+                          positionY: cur.imagePositionY,
+                          scale: cur.imageScale,
+                          blur: cur.imageBlur,
+                          brightness: cur.imageBrightness,
+                          contrast: cur.imageContrast
+                        }}
+                        onChange={(vals) => updateSlide(currentSlide, {
+                          imagePositionX: vals.positionX,
+                          imagePositionY: vals.positionY,
+                          imageScale: vals.scale,
+                          imageBlur: vals.blur,
+                          imageBrightness: vals.brightness,
+                          imageContrast: vals.contrast
+                        })}
+                      />
+                    </div>
+                  )}
+
+                  {cur.bgImageUrl && (
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold">Ajustar Fundo</Label>
+                      <ImageAdjustPanel 
+                        imageUrl={cur.bgImageUrl}
+                        aspectRatio={FORMAT_SPECS[selectedTemplate.aspectRatio].width / FORMAT_SPECS[selectedTemplate.aspectRatio].height}
+                        values={{
+                          positionX: cur.bgImagePositionX,
+                          positionY: cur.bgImagePositionY,
+                          scale: cur.bgImageScale,
+                          blur: cur.bgImageBlur,
+                          brightness: cur.bgImageBrightness,
+                          contrast: cur.bgImageContrast
+                        }}
+                        onChange={(vals) => updateSlide(currentSlide, {
+                          bgImagePositionX: vals.positionX,
+                          bgImagePositionY: vals.positionY,
+                          bgImageScale: vals.scale,
+                          bgImageBlur: vals.blur,
+                          bgImageBrightness: vals.brightness,
+                          bgImageContrast: vals.contrast
+                        })}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </ScrollArea>
         );
