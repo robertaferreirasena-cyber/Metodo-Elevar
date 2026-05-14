@@ -77,11 +77,14 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
         return; 
       }
       
-      const updateScale = () => {
+    const updateScale = () => {
         if (!el) return;
         const cw = el.offsetWidth;
-        if (cw > 0) {
-          setScale(cw / spec.width);
+        const ch = el.offsetHeight;
+        if (cw > 0 && ch > 0) {
+          const scaleW = cw / spec.width;
+          const scaleH = ch / spec.height;
+          setScale(Math.min(scaleW, scaleH));
         }
       };
 
