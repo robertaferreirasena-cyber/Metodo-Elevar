@@ -850,10 +850,8 @@ export default function Community() {
                       <span className="truncate">{vimeoMaterial.title}</span>
                     </div>
                     {!isVimeoUrl(normalizedUrl) && (
-                      <Button variant="outline" size="sm" asChild className="ml-auto mr-4">
-                        <a href={normalizedUrl} download target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                          <Download className="h-4 w-4" /> Baixar
-                        </a>
+                      <Button variant="outline" size="sm" onClick={() => handleOpenUrl(normalizedUrl)} className="ml-auto mr-4 flex items-center gap-2">
+                        <Download className="h-4 w-4" /> Baixar
                       </Button>
                     )}
                   </DialogTitle>
