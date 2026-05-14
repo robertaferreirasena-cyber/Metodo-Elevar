@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCommunity, CommunityMessage } from '@/hooks/useCommunity';
 import { VimeoPlayer, isVimeoUrl } from '@/components/community/VimeoPlayer';
 import { useCommunityNewMaterials } from '@/hooks/useCommunityNewMaterials';
-import { PlayCircle, Video } from 'lucide-react';
+import { PlayCircle, Video, Download, X, Loader2, FileText, Link as LinkIcon, Plus, Send, Pin, Trash2, Paperclip, Reply, BarChart3, ImageIcon, Search, ExternalLink, Play, Lock, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Send, Pin, Trash2, FileText, Link as LinkIcon, Download, Plus, Paperclip, X, Loader2, Reply, BarChart3, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -27,6 +26,12 @@ import { EmojiReactions } from '@/components/community/EmojiReactions';
 import { PollMessage } from '@/components/community/PollMessage';
 import { CreatePollDialog } from '@/components/community/CreatePollDialog';
 import { ReplyPreview } from '@/components/community/ReplyPreview';
+import { logPopupBlocked, logInvalidUrl, logViniPlayerError } from "@/lib/appLogs";
+
+function formatDate(date: string) {
+  const d = new Date(date);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
 
 export default function Community() {
   const { 
@@ -50,31 +55,21 @@ export default function Community() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Material dialog state
   const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
   const [materialTitle, setMaterialTitle] = useState('');
   const [materialDescription, setMaterialDescription] = useState('');
   const [materialUrl, setMaterialUrl] = useState('');
   const [materialType, setMaterialType] = useState('link');
   
-  // File upload state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Lightbox state
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
-  
-  // Reply state
   const [replyTo, setReplyTo] = useState<{ id: string; content: string; authorName: string } | null>(null);
-  
-  // Poll dialog state
   const [pollDialogOpen, setPollDialogOpen] = useState(false);
-
-  // Vimeo player and Universal Viewer dialog
   const [vimeoMaterial, setVimeoMaterial] = useState<{ url: string; title: string; type?: string } | null>(null);
 
-  // Tab via query string + mark materials seen
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'materials' ? 'materials' : 'chat';
   const [activeTab, setActiveTab] = useState<string>(initialTab);
@@ -86,7 +81,6 @@ export default function Community() {
     }
   }, [activeTab, markAllSeen]);
 
-  // Auto-detect Vimeo URL in the add-material dialog
   const detectedVimeo = useMemo(() => isVimeoUrl(materialUrl), [materialUrl]);
   useEffect(() => {
     if (detectedVimeo && materialType !== 'vimeo') setMaterialType('vimeo');
@@ -95,50 +89,24 @@ export default function Community() {
   const normalizeUrl = (rawUrl: string) => {
     let normalizedUrl = rawUrl.trim();
     if (!normalizedUrl) return '';
-    
-    // Remove invisible characters and spaces
     normalizedUrl = normalizedUrl.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, '');
-    
-    if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://') || normalizedUrl.startsWith('blob:') || normalizedUrl.startsWith('data:')) {
-      // Protocol present
-    } else if (normalizedUrl.startsWith('//')) {
-      normalizedUrl = `https:${normalizedUrl}`;
-    } else if (normalizedUrl.startsWith('/')) {
-      normalizedUrl = `${window.location.origin}${normalizedUrl}`;
-    } else {
-      // Improved domain detection
-      const domainMatch = normalizedUrl.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-0](?:\.[a-zA-Z]{2,})+/);
-      if (domainMatch || (normalizedUrl.includes('.') && !normalizedUrl.includes(' '))) {
-        normalizedUrl = `https://${normalizedUrl}`;
-      }
+    if (!normalizedUrl.startsWith('http') && !normalizedUrl.startsWith('//')) {
+      normalizedUrl = 'https://' + normalizedUrl;
     }
-
     return normalizedUrl;
   };
 
-  const handleOpenUrl = (url: string) => {
-    const finalUrl = normalizeUrl(url);
-    if (!finalUrl) {
-      console.error("[Community] URL Inválida bloqueada:", url);
-      toast.error("A URL fornecida é inválida ou está malformada.");
+  const handleOpenUrl = useCallback((url: string) => {
+    const normalized = normalizeUrl(url);
+    if (!normalized) {
+      logInvalidUrl(url);
       return;
     }
-    
-    console.log("[Community] Tentando abrir URL:", finalUrl);
-    
-    try {
-      const newWindow = window.open(finalUrl, '_blank', 'noopener,noreferrer');
-      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        console.warn("[Community] Pop-up bloqueado pelo navegador:", finalUrl);
-        toast.warning("O seu navegador bloqueou a abertura do conteúdo. Por favor, autorize pop-ups para este site.");
-      } else {
-        console.log("[Community] Janela aberta com sucesso");
-      }
-    } catch (err) {
-      console.error("[Community] Erro fatal ao abrir URL:", err);
-      toast.error("Não foi possível abrir o link devido a uma restrição do navegador.");
+    const win = window.open(normalized, '_blank');
+    if (!win) {
+      logPopupBlocked();
     }
-  };
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -384,11 +352,9 @@ export default function Community() {
     });
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit'
-    });
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
   if (loading) {
