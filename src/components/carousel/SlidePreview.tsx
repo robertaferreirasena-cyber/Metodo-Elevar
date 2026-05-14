@@ -37,9 +37,17 @@ interface SlidePreviewProps {
 const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
   ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate, onReady, selectedLayerId, onSelectLayer, zoom = 1 }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const innerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
     const spec = FORMAT_SPECS[aspectRatio];
     const layout = slide.layout || "text-only";
+
+    useImperativeHandle(ref, () => ({
+      resetTransform: () => {
+        // This will be handled by the parent zoom provider
+      },
+      container: innerRef.current
+    }));
 
     // Re-calculate the relative font scale based on current container size
     // We target a base width of 480px for standard preview proportions
