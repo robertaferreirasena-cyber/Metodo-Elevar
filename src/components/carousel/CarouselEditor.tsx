@@ -740,19 +740,44 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
           </div>
 
           {/* Bottom Navigator */}
-          <div className="h-[140px] border-t bg-card flex items-center px-4 overflow-x-auto gap-4 shrink-0 pb-2">
-             {slides.map((s, i) => (
-               <button 
-                 key={i} 
-                 onClick={() => setCurrentSlide(i)}
-                 className={`relative h-[90px] aspect-square rounded-md border-2 transition-all shrink-0 flex flex-col items-center justify-center bg-muted/20 ${currentSlide === i ? 'border-primary shadow-lg ring-2 ring-primary/20' : 'border-transparent hover:border-primary/40'}`}
-               >
-                 <div style={{ transform: "scale(0.083)", transformOrigin: "top left", width: 1080, height: 1080, pointerEvents: "none" }}>
-                    <SlidePreview slide={s} aspectRatio={selectedTemplate.aspectRatio} slideIndex={i} totalSlides={slides.length} nativeSize />
+          <div className="h-[140px] border-t bg-card flex items-center px-4 overflow-x-auto gap-4 shrink-0 pb-2 custom-scrollbar">
+             {slides.map((s, i) => {
+               const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
+               const thumbScale = Math.min(80 / spec.width, 80 / spec.height);
+               const isSelected = selectedSlides.includes(i);
+               
+               return (
+                 <div key={i} className="flex flex-col items-center gap-1 shrink-0">
+                   <button 
+                     onClick={() => setCurrentSlide(i)}
+                     className={`relative h-[90px] w-[90px] rounded-md border-2 transition-all flex items-center justify-center bg-muted/20 ${currentSlide === i ? 'border-primary shadow-lg ring-2 ring-primary/20' : 'border-transparent hover:border-primary/40'}`}
+                   >
+                     <div style={{ 
+                       transform: `scale(${thumbScale})`, 
+                       width: spec.width, 
+                       height: spec.height, 
+                       pointerEvents: "none",
+                       display: 'flex',
+                       alignItems: 'center',
+                       justifyContent: 'center'
+                     }}>
+                        <SlidePreview slide={s} aspectRatio={selectedTemplate.aspectRatio} slideIndex={i} totalSlides={slides.length} nativeSize />
+                     </div>
+                     <div className="absolute -top-2 -left-2 bg-primary text-primary-foreground text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center shadow-md z-10">{i + 1}</div>
+                     
+                     <div 
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         setSelectedSlides(prev => isSelected ? prev.filter(idx => idx !== i) : [...prev, i]);
+                       }}
+                       className={`absolute -top-2 -right-2 h-5 w-5 rounded-full flex items-center justify-center border shadow-sm cursor-pointer z-10 transition-colors ${isSelected ? 'bg-green-500 border-green-600 text-white' : 'bg-white border-gray-300 text-transparent'}`}
+                     >
+                       <Check className="h-3 w-3" />
+                     </div>
+                   </button>
                  </div>
-                 <div className="absolute -top-2 -left-2 bg-primary text-primary-foreground text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center shadow-md">{i + 1}</div>
-               </button>
-             ))}
+               );
+             })}
              <Button variant="outline" className="h-[90px] aspect-square flex flex-col gap-1 shrink-0 rounded-md border-dashed" onClick={() => {
                 const newSlide = createSlidesFromTemplate(selectedTemplate, [{ title: "Novo Slide", body: "Edite este conteúdo clicando no texto." }])[0];
                 updateSlidesWithHistory(prev => [...prev, newSlide]);
