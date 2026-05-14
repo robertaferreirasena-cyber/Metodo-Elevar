@@ -183,7 +183,7 @@ export interface CarouselTemplate {
     titleSize: 28,
     bodySize: 18,
     align: "left",
-    layout: "text-only",
+    layout: "tweet-post",
   },
   {
     id: "instagram-educativo",
