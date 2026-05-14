@@ -211,9 +211,10 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
       const prompt = `Crie um ${isStatic ? "post estático (1 slide)" : `carrossel de ${finalSlideCount} slides`} sobre: "${topic}"
 Tom de voz: ${tone}
-${isStatic ? "O post deve ter uma headline forte e um texto de apoio convincente." : "Distribua o conteúdo de forma lógica entre os slides."}
+${isStatic ? "O post deve ter uma headline forte e um texto de apoio convincente." : "Distribua o conteúdo de forma lógica entre os slides. Cada slide deve ter um título curto e impactante e um texto de apoio."}
 ${personaCtx}
-Retorne APENAS um JSON: {"slides":[{"title":"...","body":"...","caption":"..."}]}`;
+Retorne EXATAMENTE um JSON neste formato: {"slides":[{"title":"...","body":"...","caption":"..."}]}
+Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Instagram (apenas no primeiro slide). Nos outros slides pode ser vazio.`;
 
       const resp = await fetch(CHAT_URL, {
         method: "POST",
