@@ -969,11 +969,15 @@ export interface SlideData {
   // Advanced formatting
   titleBold?: boolean;
   titleItalic?: boolean;
+  titleUnderline?: boolean;
   bodyBold?: boolean;
   bodyItalic?: boolean;
   bodyUnderline?: boolean;
   titleColor?: string;
   bodyColor?: string;
+  titleAlign?: "left" | "center" | "right";
+  bodyAlign?: "left" | "center" | "right";
+  gap?: number; // spacing between title and body
   textShadow?: string;
   overlayOpacity?: number;
   bgImageUrl?: string;
