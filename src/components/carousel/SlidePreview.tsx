@@ -987,22 +987,21 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
 
     // Final container styling to ensure the slide is centered and fits
     const outerStyle: React.CSSProperties = {
-      width: spec.width * scale,
-      height: spec.height * scale,
-      overflow: "hidden",
+      width: "100%",
+      height: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "visible",
       position: "relative",
-      margin: "0 auto",
-      transition: isFreeEditMode ? "none" : "transform 0.15s ease-out"
     };
 
     const scaledInnerStyle: React.CSSProperties = {
       width: spec.width,
       height: spec.height,
       transform: `scale(${scale})`,
-      transformOrigin: "top left",
-      position: "absolute",
-      top: 0,
-      left: 0,
+      transformOrigin: "center center",
+      flexShrink: 0,
     };
 
     return (
