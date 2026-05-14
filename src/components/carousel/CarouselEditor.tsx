@@ -193,8 +193,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     } else {
       updateSlide(currentSlide, applyToSlide(cur, currentSlide));
     }
+    setSelectedSlides(currentSelectedIndices);
     toast.success(`Template "${template.name}" aplicado`);
-  }, [templateApplyMode, currentSlide, cur, updateSlidesWithHistory]);
+  }, [templateApplyMode, currentSlide, cur, updateSlidesWithHistory, selectedSlides]);
 
   const generateContent = async () => {
     if (!topic.trim()) { toast.error("Informe o tema do conteúdo"); return; }
