@@ -39,6 +39,7 @@ interface CarouselSessionState {
   topic: string;
   slideCount: number;
   tone: string;
+  postType: "static" | "carousel";
   formatFilter: FormatFilter;
   selectedTemplateId: string;
   slides: SlideData[];
@@ -48,7 +49,7 @@ interface CarouselSessionState {
 }
 
 const EMPTY_CAROUSEL_STATE: CarouselSessionState = {
-  topic: "", slideCount: 5, tone: "profissional", formatFilter: "all",
+  topic: "", slideCount: 5, tone: "profissional", postType: "carousel", formatFilter: "all",
   selectedTemplateId: CAROUSEL_TEMPLATES[0].id, slides: [], currentSlide: 0,
   templateApplyMode: "all",
   currentJournalPaletteId: "terracota",
