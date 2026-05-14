@@ -1521,23 +1521,6 @@ REGRAS OBRIGATÓRIAS:
             )}
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                <Card 
-                  className="cursor-pointer hover:border-primary transition-all overflow-hidden bg-primary/5 border-primary/20"
-                  onClick={() => {
-                    const blankTemplate = CAROUSEL_TEMPLATES.find(t => t.id === "blank-canvas") || CAROUSEL_TEMPLATES[0];
-                    setSelectedTemplate(blankTemplate);
-                    const initialSlides = createSlidesFromTemplate(blankTemplate, [{ title: "Seu Título", body: "Adicione seu conteúdo" }]);
-                    updateSlidesWithHistory(initialSlides);
-                    setIsFreeEditMode(true);
-                    setActiveTab("layers");
-                    toast.success("Começando do zero!");
-                  }}
-                >
-                  <CardContent className="p-2 flex flex-col items-center justify-center h-full min-h-[80px] text-center gap-1">
-                    <PlusCircle className="h-6 w-6 text-primary" />
-                    <span className="text-[10px] font-bold">Criar do Zero</span>
-                  </CardContent>
-                </Card>
               {filteredTemplates.map((t) => (
                 <TemplatePreviewTooltip key={t.id} template={t}>
                   <button
