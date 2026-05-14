@@ -1,11 +1,11 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import {
   ChevronLeft, ChevronRight, Download, Wand2, Loader2, Type,
   AlignCenter, DownloadCloud, ImagePlus, X,
   Square, Monitor, Sparkles, Undo2, LayoutGrid, Layers, Trash2,
-  CopyPlus, ZoomIn, ZoomOut, Maximize2, Move, AlignLeft,
-  Bold, Italic, Underline, Palette, Search
+  CopyPlus, ZoomIn, ZoomOut, Maximize2, Move, AlignLeft, AlignRight,
+  Bold, Italic, Underline, Palette, Search, Settings2, Image as ImageIcon,
+  MessageSquare, FileText, ChevronDown
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
