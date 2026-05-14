@@ -369,9 +369,7 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
 
               {/* Templates Section */}
               <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-bold flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-primary" /> Estilos Disponíveis</Label>
-                </div>
+                <Label className="text-sm font-bold flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-primary" /> Templates</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {CAROUSEL_TEMPLATES.filter(t => t.id !== 'blank-canvas').map(t => (
                     <button 
@@ -381,14 +379,26 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
                     >
                        <div className="aspect-square bg-muted rounded overflow-hidden">
                          <div style={{ transform: "scale(0.15)", transformOrigin: "top left", width: 1080, height: 1080, pointerEvents: "none" }}>
-                            <SlidePreview slide={{...t, title: "Título", body: "Texto"}} aspectRatio={t.aspectRatio} slideIndex={0} totalSlides={1} nativeSize />
+                            <SlidePreview slide={{...t, title: "Título", body: "Texto"}} aspectRatio={t.aspectRatio} slideIndex={0} totalSlides={1} />
                          </div>
-                       </div>
-                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 rounded transition-opacity">
-                          <span className="text-[10px] text-white font-bold">{t.name}</span>
                        </div>
                     </button>
                   ))}
+                </div>
+              </section>
+
+              <hr />
+
+              {/* Media Section */}
+              <section className="space-y-3">
+                <Label className="text-sm font-bold flex items-center gap-2 text-primary"><ImageIcon className="h-4 w-4" /> Mídia</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" className="gap-2 text-xs" onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}>
+                     <Search className="h-3 w-3" /> Buscar
+                  </Button>
+                  <Button variant="outline" className="gap-2 text-xs" onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}>
+                     <Upload className="h-3 w-3" /> Upload
+                  </Button>
                 </div>
               </section>
 
