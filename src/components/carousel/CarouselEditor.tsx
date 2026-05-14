@@ -356,9 +356,27 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
                       <Button variant="outline" size="sm" onClick={() => { setLibraryTarget("image"); setLibraryOpen(true); }} className="w-full text-[10px]">Biblioteca</Button>
                       <Button variant="outline" size="sm" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })} className="w-full text-[10px] text-destructive">Remover</Button>
                    </div>
-                   <UserUploads onSelect={(url) => updateSlide(currentSlide, { imageUrl: url })} />
+                  <UserUploads onSelect={(url) => updateSlide(currentSlide, { imageUrl: url })} />
                 </section>
               )}
+
+              <hr />
+
+              {/* Brand Kit Section */}
+              <section className="space-y-3">
+                 <Label className="text-sm font-bold flex items-center gap-2"><Palette className="h-4 w-4 text-primary" /> Identidade Visual</Label>
+                 <BrandKitManager onApply={(kit) => {
+                    updateSlidesWithHistory(prev => prev.map(s => ({
+                      ...s,
+                      bgColor: kit.primary_color,
+                      textColor: kit.secondary_color,
+                      accentColor: kit.accent_color,
+                      fontFamily: kit.font_family_title,
+                    })));
+                    toast.success("Marca aplicada");
+                 }} />
+              </section>
+
             </div>
           </ScrollArea>
         </div>
