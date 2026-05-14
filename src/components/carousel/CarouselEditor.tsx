@@ -576,10 +576,28 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
         <div className="flex-1 bg-muted/40 relative flex flex-col overflow-hidden">
           {/* Workspace Header */}
           <div className="h-12 border-b bg-card flex items-center justify-between px-4 z-10 shrink-0">
-             <div className="flex items-center gap-2">
+             <div className="flex items-center gap-4">
                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                  {selectedTemplate.aspectRatio} • {slides.length} Slides
                </Badge>
+               <div className="flex items-center gap-1.5 border rounded-md p-1 bg-muted/50">
+                 {(['1:1', '4:5', '9:16', '16:9'] as AspectRatio[]).map((ratio) => (
+                   <Button 
+                    key={ratio}
+                    variant={selectedTemplate.aspectRatio === ratio ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-7 text-[10px] px-2"
+                    onClick={() => {
+                      const newT = { ...selectedTemplate, aspectRatio: ratio };
+                      setSelectedTemplate(newT);
+                      // Update all slides aspect ratio if needed, or just let the preview handle it
+                      toast.success(`Formato ${ratio} selecionado`);
+                    }}
+                   >
+                    {ratio}
+                   </Button>
+                 ))}
+               </div>
              </div>
              <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" className="text-xs gap-2" onClick={() => {
