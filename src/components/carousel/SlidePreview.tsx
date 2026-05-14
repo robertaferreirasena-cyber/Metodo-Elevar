@@ -984,13 +984,12 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
 
     // Final container styling to ensure the slide is centered and fits
     const outerStyle: React.CSSProperties = {
-      maxWidth: aspectRatio === "9:16" ? 360 : aspectRatio === "16:9" ? 640 : 480,
-      aspectRatio: `${spec.width} / ${spec.height}`,
+      width: spec.width * scale,
+      height: spec.height * scale,
       overflow: "hidden",
       position: "relative",
-      width: "100%",
       margin: "0 auto",
-      transition: "transform 0.15s ease-out"
+      transition: isFreeEditMode ? "none" : "transform 0.15s ease-out"
     };
 
     const scaledInnerStyle: React.CSSProperties = {
