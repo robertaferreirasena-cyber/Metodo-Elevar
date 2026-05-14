@@ -221,7 +221,7 @@ export default function ImageLibraryPicker({
           </DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="search" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="search" className="gap-2"><Search className="h-4 w-4" /> Banco de Imagens</TabsTrigger>
             <TabsTrigger value="uploads" className="gap-2"><Upload className="h-4 w-4" /> Meus Uploads</TabsTrigger>
