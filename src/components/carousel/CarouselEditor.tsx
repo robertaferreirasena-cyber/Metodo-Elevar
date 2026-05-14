@@ -368,6 +368,9 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                <Download className="h-4 w-4 mr-2" /> Baixar Selecionados ({selectedSlides.length})
              </Button>
            )}
+           <Button variant="outline" size="sm" onClick={() => exportSlides([currentSlide])} disabled={exporting || slides.length === 0} title="Baixar apenas o slide atual">
+             <ImageIcon className="h-4 w-4 mr-2" /> Baixar PNG (Atual)
+           </Button>
            <Button variant="outline" size="sm" onClick={exportAll} disabled={exporting || slides.length === 0}>
              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 mr-2" />} Exportar Tudo
            </Button>
