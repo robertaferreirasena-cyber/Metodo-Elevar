@@ -721,6 +721,30 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'i')}><Italic className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'u')}><Underline className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'mark')}><Highlighter className="h-3 w-3" /></Button>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6"><Palette className="h-3 w-3" /></Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-44 p-3 bg-card border-border">
+                            <div className="space-y-3">
+                              <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Cor Global do Título</Label>
+                                <div className="flex gap-2 items-center">
+                                  <input type="color" className="w-8 h-8 rounded cursor-pointer overflow-hidden border-none" value={cur.titleColor || cur.textColor} onChange={(e) => updateSlide(currentSlide, { titleColor: e.target.value })} />
+                                  <span className="text-[10px] font-mono uppercase">{cur.titleColor || cur.textColor}</span>
+                                </div>
+                              </div>
+                              <div className="space-y-1.5 pt-2 border-t">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Colorir Palavras Selecionadas</Label>
+                                <div className="grid grid-cols-6 gap-1.5">
+                                  {PRESET_COLORS.map(c => (
+                                    <button key={c} className="w-5 h-5 rounded-full border border-black/10 hover:scale-110 transition-transform" style={{ backgroundColor: c }} onClick={() => insertColorTag('title', c)} title="Aplicar ao texto selecionado" />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                     <Textarea 
@@ -729,6 +753,18 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                       onChange={(e) => updateSlide(currentSlide, { title: e.target.value })} 
                       className="min-h-[60px] text-sm bg-background" 
                     />
+                    <div className="space-y-2">
+                       <Label className="text-[10px] text-muted-foreground uppercase">Fonte do Título</Label>
+                       <select 
+                         value={cur.titleFontFamily || cur.fontFamily} 
+                         onChange={(e) => updateSlide(currentSlide, { titleFontFamily: e.target.value })}
+                         className="w-full h-8 bg-background border rounded px-2 text-xs outline-none"
+                       >
+                         {FONT_OPTIONS.map(f => (
+                           <option key={f.name} value={f.family}>{f.name}</option>
+                         ))}
+                       </select>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Tamanho</Label>
