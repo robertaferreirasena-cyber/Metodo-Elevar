@@ -96,19 +96,38 @@ export default function Community() {
     let normalizedUrl = rawUrl.trim();
     if (!normalizedUrl) return '';
     
+    // Remote spaces and common invalid characters for a URL
+    normalizedUrl = normalizedUrl.replace(/\s+/g, '');
+    
     if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://') || normalizedUrl.startsWith('blob:') || normalizedUrl.startsWith('data:')) {
-      return normalizedUrl;
+      // Valid protocol
     } else if (normalizedUrl.startsWith('//')) {
-      return `https:${normalizedUrl}`;
+      normalizedUrl = `https:${normalizedUrl}`;
     } else if (normalizedUrl.startsWith('/')) {
-      return `${window.location.origin}${normalizedUrl}`;
+      normalizedUrl = `${window.location.origin}${normalizedUrl}`;
     } else {
-      const domainMatch = normalizedUrl.match(/^[a-zA-Z0-0][a-zA-Z0-9-]{1,61}[a-zA-Z0-0]\.[a-zA-Z]{2,}/);
+      const domainMatch = normalizedUrl.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+/);
       if (domainMatch || (normalizedUrl.includes('.') && !normalizedUrl.includes(' '))) {
-        return `https://${normalizedUrl}`;
+        normalizedUrl = `https://${normalizedUrl}`;
       }
     }
-    return normalizedUrl;
+
+    try {
+      new URL(normalizedUrl);
+      return normalizedUrl;
+    } catch (e) {
+      console.warn("URL inválida após normalização:", normalizedUrl);
+      return normalizedUrl; // Fallback to raw normalized if URL constructor fails (e.g. relative paths in dev)
+    }
+  };
+
+  const handleOpenUrl = (url: string) => {
+    const finalUrl = normalizeUrl(url);
+    if (!finalUrl) {
+      toast.error("URL inválida ou vazia");
+      return;
+    }
+    window.open(finalUrl, '_blank', 'noopener,noreferrer');
   };
 
   const scrollToBottom = () => {
