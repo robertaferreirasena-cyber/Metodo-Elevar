@@ -1171,7 +1171,7 @@ REGRAS OBRIGATÓRIAS:
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  {CAROUSEL_TEMPLATES.filter(t => formatFilter === "all" || t.aspectRatio === formatFilter).map((t) => (
+                  {CAROUSEL_TEMPLATES.filter(t => t.id !== 'blank-canvas' && (formatFilter === "all" || t.aspectRatio === formatFilter)).map((t) => (
                     <button
                       key={t.id}
                       onClick={() => applyTemplate(t)}
