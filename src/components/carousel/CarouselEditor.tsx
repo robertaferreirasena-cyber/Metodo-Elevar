@@ -294,7 +294,7 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <div className="w-[380px] border-r bg-card flex flex-col shrink-0">
+        <div className="w-full lg:w-[400px] border-r bg-card flex flex-col shrink-0">
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-6">
               {/* Generation Section */}
