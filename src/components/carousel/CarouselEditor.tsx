@@ -235,9 +235,10 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       if (!jsonMatch) throw new Error("Resposta inválida");
       const data = JSON.parse(jsonMatch[0]);
       const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
+      const oldSelectedIndices = [...selectedSlides];
       setSlides(newSlides);
-      // Mantemos a seleção atual se os índices ainda existirem (útil para regenerar mantendo filtros)
-      setSelectedSlides(prev => prev.filter(idx => idx < newSlides.length));
+      // Mantemos a seleção atual se os índices ainda existirem
+      setSelectedSlides(oldSelectedIndices.filter(idx => idx < newSlides.length));
       setCurrentSlide(0);
       toast.success(isStatic ? "Post estático gerado!" : "Carrossel gerado!");
     } catch (err) {
@@ -262,20 +263,24 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
         setExportProgress(Math.round((i / indices.length) * 100));
         setExportSlideIndex(idx);
         
-        // Espera o React renderizar o slide oculto e as imagens carregarem
-        // O SlideRenderer já tem lógica de esperar imagens se usarmos o onReady do SlidePreview
-        // Mas aqui vamos fazer um polling simples ou esperar um tempo seguro
-        await new Promise(r => setTimeout(r, 800)); 
+        // Espera o React renderizar o slide e as imagens carregarem
+        // Aumentamos o tempo para garantir que fontes e imagens complexas carreguem
+        await new Promise(r => setTimeout(r, 1500)); 
 
         const el = document.querySelector(".export-slide-root .slide-content-root");
         if (el) {
           try {
+            // Tentamos capturar com alta qualidade
             const dataUrl = await toPng(el as HTMLElement, { 
               width: spec.width, 
               height: spec.height,
-              pixelRatio: 2, // Melhor qualidade para exportação
+              pixelRatio: 2, 
               skipFonts: false,
               cacheBust: true,
+              style: {
+                transform: 'scale(1)',
+                transformOrigin: 'top left'
+              }
             });
             const base64Data = dataUrl.split(',')[1];
             zip.file(`slide-${idx + 1}.png`, base64Data, { base64: true });
@@ -289,24 +294,22 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       }
 
       setExportProgress(100);
-      const content = await zip.generateAsync({ type: "blob" });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(content);
-      link.download = indices.length === 1 ? `slide-${indices[0] + 1}.png` : `carrossel-${Date.now()}.zip`;
       
       if (indices.length === 1) {
-        // Se for só um, baixamos o PNG direto se possível
-        const el = document.querySelector(".export-slide-root .slide-content-root");
-        if (el) {
-           const dataUrl = await toPng(el as HTMLElement, { width: spec.width, height: spec.height, pixelRatio: 2 });
-           const singleLink = document.createElement('a');
-           singleLink.href = dataUrl;
-           singleLink.download = `slide-${indices[0] + 1}.png`;
-           singleLink.click();
-        } else {
+        // Para um único slide, baixamos o arquivo PNG diretamente
+        const content = await zip.generateAsync({ type: "blob" });
+        const zipFile = await zip.file(`slide-${indices[0] + 1}.png`)?.async("blob");
+        if (zipFile) {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(zipFile);
+          link.download = `slide-${indices[0] + 1}.png`;
           link.click();
         }
       } else {
+        const content = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = `carrossel-${Date.now()}.zip`;
         link.click();
       }
       
@@ -320,6 +323,7 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       setExportProgress(0);
     }
   };
+
 
   const exportAll = () => exportSlides(slides.map((_, i) => i));
   const exportSelected = () => exportSlides(selectedSlides);
@@ -368,6 +372,9 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                <Download className="h-4 w-4 mr-2" /> Baixar Selecionados ({selectedSlides.length})
              </Button>
            )}
+           <Button variant="outline" size="sm" onClick={() => exportSlides([currentSlide])} disabled={exporting || slides.length === 0} title="Baixar apenas o slide atual">
+             <ImageIcon className="h-4 w-4 mr-2" /> Baixar PNG (Atual)
+           </Button>
            <Button variant="outline" size="sm" onClick={exportAll} disabled={exporting || slides.length === 0}>
              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 mr-2" />} Exportar Tudo
            </Button>
@@ -472,39 +479,55 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
               <hr />
 
               {/* Media Section */}
-              <section className="space-y-3">
+              <section className="space-y-4">
                 <Label className="text-sm font-bold flex items-center gap-2 text-primary"><ImageIcon className="h-4 w-4" /> Imagens e Fundo</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-[10px] uppercase">Imagem de Fundo</Label>
-                    <div className="flex gap-1">
-                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
-                        <Search className="h-3 w-3 mr-1" /> Banco
-                      </Button>
-                      {cur?.bgImageUrl && (
-                        <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => updateSlide(currentSlide, { bgImageUrl: undefined })}>
-                          <Trash2 className="h-3 w-3" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Fundo (Background)</Label>
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex gap-1.5">
+                        <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
+                          <Search className="h-3 w-3 mr-1" /> Banco
                         </Button>
+                        <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
+                          <Upload className="h-3 w-3 mr-1" /> Subir
+                        </Button>
+                      </div>
+                      {cur?.bgImageUrl && (
+                        <div className="flex items-center gap-2 p-1 bg-muted rounded border group">
+                          <img src={cur.bgImageUrl} className="h-6 w-6 object-cover rounded" />
+                          <span className="text-[8px] flex-1 truncate opacity-60">Fundo ativo</span>
+                          <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:bg-destructive/10" onClick={() => updateSlide(currentSlide, { bgImageUrl: undefined })}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] uppercase">Imagem Template</Label>
-                    <div className="flex gap-1">
-                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
-                        <Search className="h-3 w-3 mr-1" /> Banco
-                      </Button>
-                      {cur?.imageUrl && (
-                        <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })}>
-                          <Trash2 className="h-3 w-3" />
+
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Elemento (Template)</Label>
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex gap-1.5">
+                        <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
+                          <Search className="h-3 w-3 mr-1" /> Banco
                         </Button>
+                        <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
+                          <Upload className="h-3 w-3 mr-1" /> Subir
+                        </Button>
+                      </div>
+                      {cur?.imageUrl && (
+                        <div className="flex items-center gap-2 p-1 bg-muted rounded border group">
+                          <img src={cur.imageUrl} className="h-6 w-6 object-cover rounded" />
+                          <span className="text-[8px] flex-1 truncate opacity-60">Imagem ativa</span>
+                          <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:bg-destructive/10" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full gap-2 text-xs h-8 border-dashed" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
-                   <Upload className="h-3 w-3" /> Meus Uploads
-                </Button>
               </section>
 
               <hr />
@@ -729,7 +752,21 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
 
         {/* Main Workspace (Simplified) */}
         <div className="flex-1 bg-muted/40 relative flex flex-col overflow-hidden">
-          {/* Workspace Header */}
+          {exporting && (
+            <div className="absolute top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md p-4 border-b shadow-lg animate-in slide-in-from-top duration-300">
+              <div className="max-w-md mx-auto space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Processando Slides ({Math.round(exportProgress)}%)
+                  </span>
+                  <span className="text-[10px] font-mono text-muted-foreground">Não feche esta aba</span>
+                </div>
+                <Progress value={exportProgress} className="h-1.5" />
+              </div>
+            </div>
+          )}
+
           <div className="h-12 border-b bg-card flex items-center justify-between px-4 z-10 shrink-0">
              <div className="flex items-center gap-4">
                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">

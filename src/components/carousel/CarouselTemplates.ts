@@ -980,10 +980,22 @@ export function buildJournalSampleSlides(
   }));
 }
 
+export interface LayerData {
+  id: string;
+  type: "text" | "image" | "shape" | "sticker";
+  content?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+  style?: any;
+}
+
 export interface SlideData {
   title: string;
   body: string;
-  caption?: string; // Legenda sugerida para o post
+  caption?: string;
   bgColor: string;
   textColor: string;
   accentColor: string;
@@ -999,7 +1011,6 @@ export interface SlideData {
   profileHandle?: string;
   profileImageUrl?: string;
   highlightBgColor?: string;
-  // Advanced formatting
   titleBold?: boolean;
   titleItalic?: boolean;
   titleUnderline?: boolean;
@@ -1010,48 +1021,31 @@ export interface SlideData {
   bodyColor?: string;
   titleAlign?: "left" | "center" | "right";
   bodyAlign?: "left" | "center" | "right";
-  gap?: number; // spacing between title and body
+  gap?: number;
   textShadow?: string;
   overlayOpacity?: number;
   bgImageUrl?: string;
   verticalAlign?: "top" | "center" | "bottom";
   titleVerticalAlign?: "top" | "center" | "bottom";
   bodyVerticalAlign?: "top" | "center" | "bottom";
-  // Background image adjustments (per slide)
-  bgImagePositionX?: number;  // 0–100 (%) – default 50
-  bgImagePositionY?: number;  // 0–100 (%) – default 50
-  bgImageScale?: number;      // 1–3 (zoom) – default 1
-  bgImageBlur?: number;       // 0–20 (px) – default 0
-  bgImageBrightness?: number; // 50–150 (%) – default 100
-  bgImageContrast?: number;   // 50–150 (%) – default 100
-  // Layout image (image-bg / editorial) adjustments
+  bgImagePositionX?: number;
+  bgImagePositionY?: number;
+  bgImageScale?: number;
+  bgImageBlur?: number;
+  bgImageBrightness?: number;
+  bgImageContrast?: number;
   imagePositionX?: number;
   imagePositionY?: number;
   imageScale?: number;
   imageBlur?: number;
   imageBrightness?: number;
   imageContrast?: number;
-  // Journaling-only adjustments for the floating highlight card
-  highlightScale?: number;    // 0.7–1.3 (default 1)
-   highlightOffsetY?: number;  // -15 to +15 (% of slide height, default 0)
-   // Free edit positioning (relative to slide width/height, 0-1)
-   titlePos?: { x: number; y: number; width?: number; height?: number; rotation?: number };
-   bodyPos?: { x: number; y: number; width?: number; height?: number; rotation?: number };
-   // Custom layers for "Create from scratch"
-   layers?: LayerData[];
- }
- 
- export interface LayerData {
-   id: string;
-   type: "text" | "image" | "shape" | "sticker";
-   content?: string;
-   x: number;
-   y: number;
-   width: number;
-   height: number;
-   rotation?: number;
-   style?: any;
- }
+  highlightScale?: number;
+  highlightOffsetY?: number;
+  titlePos?: { x: number; y: number; width?: number; height?: number; rotation?: number };
+  bodyPos?: { x: number; y: number; width?: number; height?: number; rotation?: number };
+  layers?: LayerData[];
+}
 
 export function createSlidesFromTemplate(
   template: CarouselTemplate,
@@ -1070,14 +1064,14 @@ export function createSlidesFromTemplate(
     fontFamily: template.fontFamily,
     align: template.align,
     bgGradient: template.bgGradient,
-    // Journaling templates: distribute the 6 narrative layouts across slides
     layout: isJournal
       ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length]
       : template.layout,
     highlightBgColor: template.highlightBgColor,
-    // Ensure default positions are set so changes are visible instantly
-    titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.1 },
-    bodyPos: { x: 0.1, y: 0.25, width: 0.8, height: 0.3 },
+    gap: template.gap || 20,
+    titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.15 },
+    bodyPos: { x: 0.1, y: 0.3, width: 0.8, height: 0.4 },
   }));
 }
+
 
