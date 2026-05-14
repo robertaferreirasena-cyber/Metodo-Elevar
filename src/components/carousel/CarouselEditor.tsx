@@ -648,7 +648,8 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                             scale: cur.imageScale,
                             blur: cur.imageBlur,
                             brightness: cur.imageBrightness,
-                            contrast: cur.imageContrast
+                            contrast: cur.imageContrast,
+                            opacity: cur.imageOpacity
                           }}
                           onChange={(vals) => updateSlide(currentSlide, {
                             imagePositionX: vals.positionX,
@@ -656,7 +657,8 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                             imageScale: vals.scale,
                             imageBlur: vals.blur,
                             imageBrightness: vals.brightness,
-                            imageContrast: vals.contrast
+                            imageContrast: vals.contrast,
+                            imageOpacity: vals.opacity
                           })}
                         />
                       </div>
