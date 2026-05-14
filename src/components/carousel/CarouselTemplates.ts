@@ -982,6 +982,7 @@ export function buildJournalSampleSlides(
 export interface SlideData {
   title: string;
   body: string;
+  caption?: string; // Legenda sugerida para o post
   bgColor: string;
   textColor: string;
   accentColor: string;
