@@ -1108,7 +1108,8 @@ REGRAS OBRIGATÓRIAS:
         });
       });
     } catch (err: any) {
-      toast.error(err.message || "Erro ao consultar Mentora Gi");
+      console.error("Erro na Mentora Gi:", err);
+      toast.error(err.message || "Erro ao consultar Mentora Gi. Tente novamente em instantes.");
     } finally { setGiLoading(false); }
   };
 
