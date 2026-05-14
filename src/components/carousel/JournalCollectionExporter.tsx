@@ -1,10 +1,10 @@
 import { forwardRef, useImperativeHandle, useRef } from "react";
-import SlidePreview from "./SlidePreview";
+import SlidePreview, { type SlidePreviewRef } from "./SlidePreview";
 import { buildJournalSampleSlides, JOURNAL_LAYOUT_SEQUENCE, type JournalPalette } from "./CarouselTemplates";
 
 export interface JournalExporterHandle {
   /** Returns the array of native-size DOM nodes (one per layout) for capture. */
-  getNodes: () => (HTMLDivElement | null)[];
+  getNodes: () => (HTMLElement | null)[];
 }
 
 interface Props {
@@ -19,7 +19,7 @@ interface Props {
  */
 const JournalCollectionExporter = forwardRef<JournalExporterHandle, Props>(
   ({ palette, profileHandle }, ref) => {
-    const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const nodeRefs = useRef<(HTMLElement | null)[]>([]);
     const slides = buildJournalSampleSlides(palette, profileHandle);
 
     useImperativeHandle(ref, () => ({
@@ -51,7 +51,7 @@ const JournalCollectionExporter = forwardRef<JournalExporterHandle, Props>(
             }}
           >
             <SlidePreview
-              ref={(el) => { nodeRefs.current[i] = el; }}
+              ref={(ref) => { nodeRefs.current[i] = ref?.container || null; }}
               slide={s}
               slideIndex={i}
               totalSlides={slides.length}

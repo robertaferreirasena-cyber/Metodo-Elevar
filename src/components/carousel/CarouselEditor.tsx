@@ -1,11 +1,13 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { toPng } from "html-to-image";
+import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import {
   ChevronLeft, ChevronRight, Download, Wand2, Loader2, Paintbrush, Type,
   AlignLeft, AlignCenter, DownloadCloud, ImagePlus, User, X, Smartphone,
   Square, Monitor, Sparkles, Send, ChevronDown, ChevronUp,
   Bold, Italic, Underline, ArrowUpFromLine, AlignVerticalSpaceAround, ArrowDownFromLine, Palette, Copy,
-  CopyPlus, Trash2, Maximize, Minimize, Undo2, CheckCircle2, LayoutGrid, Layers, MousePointer2, PlusCircle
+  CopyPlus, Trash2, Maximize, Minimize, Undo2, CheckCircle2, LayoutGrid, Layers, MousePointer2, PlusCircle,
+  Search, ZoomIn, ZoomOut, Maximize2, Move
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -154,6 +156,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const { hasProfile, formData, raioX } = usePersonaContext();
   const { user } = useAuth();
   const [projectId, setProjectId] = useState<string | null>(null);
+  const transformRef = useRef<ReactZoomPanPinchRef>(null);
+  const [zoomScale, setZoomScale] = useState(1);
 
   // Supabase Sync logic
   useEffect(() => {
@@ -1828,6 +1832,10 @@ REGRAS OBRIGATÓRIAS:
                     <Button size="icon" variant="ghost" className={`h-8 w-8 ${isFreeEditMode ? 'text-primary bg-primary/10' : ''}`} onClick={() => setIsFreeEditMode(!isFreeEditMode)} title={isFreeEditMode ? 'Sair do Modo Edição Livre' : 'Modo Edição Livre'}>
                        <MousePointer2 className="h-4 w-4" />
                     </Button>
+                    <div className="h-4 w-[1px] bg-border mx-1 self-center" />
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => transformRef.current?.resetTransform()} title="Centralizar Visualização">
+                       <Move className="h-4 w-4" />
+                    </Button>
                   </div>
                </div>
 
@@ -1849,24 +1857,75 @@ REGRAS OBRIGATÓRIAS:
             </div>
 
             {/* Canvas Area */}
-            <div className="flex-1 p-4 lg:p-12 overflow-auto flex items-center justify-center bg-[#f0f2f5] dark:bg-[#111111]">
-               <div className={`relative shadow-[0_20px_50px_rgba(0,0,0,0.2)] transition-all duration-500 ${fullscreen ? 'max-h-full' : ''}`}>
-                 <SlidePreview 
-                    ref={(el) => { slideRefs.current[currentSlide] = el; }}
-                    slide={cur} 
-                    slideIndex={currentSlide} 
-                    totalSlides={slides.length} 
-                    aspectRatio={selectedTemplate.aspectRatio} 
-                    isFreeEditMode={isFreeEditMode}
-                    selectedLayerId={selectedLayerId}
-                    onSelectLayer={setSelectedLayerId}
-                    onUpdate={(updates) => {
-                      updateSlidesWithHistory(prev => prev.map((s, i) => 
-                        i === currentSlide ? { ...s, ...updates } : s
-                      ));
-                    }}
-                 />
-               </div>
+            <div className="flex-1 overflow-hidden bg-[#f0f2f5] dark:bg-[#111111] relative">
+              <TransformWrapper
+                ref={transformRef}
+                initialScale={1}
+                minScale={0.1}
+                maxScale={5}
+                centerOnInit={true}
+                limitToBounds={false}
+                onTransform={(ref) => setZoomScale(ref.state.scale)}
+                doubleClick={{ disabled: true }}
+                panning={{ activationKeys: [" "], disabled: false }}
+                wheel={{ disabled: false }}
+              >
+                {({ zoomIn, zoomOut, resetTransform }) => (
+                  <>
+                    <div className="absolute bottom-4 right-4 z-30 flex items-center gap-2 bg-background/80 backdrop-blur-md p-2 rounded-full shadow-lg border border-border/50">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => zoomOut()}>
+                        <ZoomOut className="h-4 w-4" />
+                      </Button>
+                      <span className="text-[10px] font-bold min-w-[40px] text-center">{Math.round(zoomScale * 100)}%</span>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => zoomIn()}>
+                        <ZoomIn className="h-4 w-4" />
+                      </Button>
+                      <div className="h-4 w-[1px] bg-border mx-1" />
+                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => resetTransform()} title="Ajustar">
+                        <Maximize2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <TransformComponent
+                      wrapperStyle={{
+                        width: "100%",
+                        height: "100%",
+                        backgroundColor: "#f0f2f5"
+                      }}
+                      contentStyle={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <div className={`relative transition-shadow duration-500 ${isFreeEditMode ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}>
+                        <SlidePreview 
+                            ref={(ref) => { 
+                              if (ref && slideRefs.current) {
+                                slideRefs.current[currentSlide] = ref.container as any; 
+                              }
+                            }}
+                            slide={cur} 
+                            slideIndex={currentSlide} 
+                            totalSlides={slides.length} 
+                            aspectRatio={selectedTemplate.aspectRatio} 
+                            isFreeEditMode={isFreeEditMode}
+                            selectedLayerId={selectedLayerId}
+                            onSelectLayer={setSelectedLayerId}
+                            onUpdate={(updates) => {
+                              updateSlidesWithHistory(prev => prev.map((s, i) => 
+                                i === currentSlide ? { ...s, ...updates } : s
+                              ));
+                            }}
+                            zoom={zoomScale}
+                        />
+                      </div>
+                    </TransformComponent>
+                  </>
+                )}
+              </TransformWrapper>
             </div>
 
             {/* Bottom Timeline */}

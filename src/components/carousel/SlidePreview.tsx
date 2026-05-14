@@ -1,5 +1,5 @@
-import { forwardRef, useRef, useEffect, useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { forwardRef, useRef, useEffect, useState, useImperativeHandle } from "react";
+import { ImagePlus, X, MousePointer2, Move } from "lucide-react";
 import { Rnd } from "react-rnd";
 import type { SlideData } from "./CarouselTemplates";
 import { FORMAT_SPECS, type AspectRatio } from "./CarouselTemplates";
@@ -8,6 +8,11 @@ import {
   TornPaperPath, EnvelopeShape, NotebookLines, HandDrawnArrow, PaperClip,
 } from "./journalDecorations";
 import { getJournalScale } from "./journalScaleHelpers";
+
+export interface SlidePreviewRef {
+  resetTransform: () => void;
+  container: HTMLDivElement | null;
+}
 
 interface SlidePreviewProps {
   slide: SlideData;
@@ -25,14 +30,24 @@ interface SlidePreviewProps {
   /** ID of the layer being edited */
   selectedLayerId?: string;
   onSelectLayer?: (id: string | undefined) => void;
+  /** Current Zoom level from parent */
+  zoom?: number;
 }
 
-const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
-  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate, onReady, selectedLayerId, onSelectLayer }, ref) => {
+const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
+  ({ slide, slideIndex, totalSlides, aspectRatio, nativeSize, isFreeEditMode, onUpdate, onReady, selectedLayerId, onSelectLayer, zoom = 1 }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const innerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
     const spec = FORMAT_SPECS[aspectRatio];
     const layout = slide.layout || "text-only";
+
+    useImperativeHandle(ref, () => ({
+      resetTransform: () => {
+        // This will be handled by the parent zoom provider
+      },
+      container: innerRef.current
+    }));
 
     // Re-calculate the relative font scale based on current container size
     // We target a base width of 480px for standard preview proportions
@@ -62,11 +77,14 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
         return; 
       }
       
-      const updateScale = () => {
+    const updateScale = () => {
         if (!el) return;
         const cw = el.offsetWidth;
-        if (cw > 0) {
-          setScale(cw / spec.width);
+        const ch = el.offsetHeight;
+        if (cw > 0 && ch > 0) {
+          const scaleW = cw / spec.width;
+          const scaleH = ch / spec.height;
+          setScale(Math.min(scaleW, scaleH));
         }
       };
 
@@ -218,7 +236,7 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     // The inner slide at native resolution
     const slideContent = (
       <div
-        ref={ref}
+        ref={innerRef}
         style={{
           width: spec.width,
           height: spec.height,
@@ -969,23 +987,22 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
 
     // Final container styling to ensure the slide is centered and fits
     const outerStyle: React.CSSProperties = {
-      maxWidth: aspectRatio === "9:16" ? 360 : aspectRatio === "16:9" ? 640 : 480,
-      aspectRatio: `${spec.width} / ${spec.height}`,
-      overflow: "hidden",
-      position: "relative",
       width: "100%",
-      margin: "0 auto",
-      transition: "transform 0.15s ease-out"
+      height: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "visible",
+      position: "relative",
     };
 
     const scaledInnerStyle: React.CSSProperties = {
       width: spec.width,
       height: spec.height,
       transform: `scale(${scale})`,
-      transformOrigin: "top left",
-      position: "absolute",
-      top: 0,
-      left: 0,
+      transformOrigin: "center center",
+      flexShrink: 0,
+      boxShadow: "0 20px 50px rgba(0,0,0,0.2)",
     };
 
     return (
