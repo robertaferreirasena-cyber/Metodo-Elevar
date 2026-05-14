@@ -1,6 +1,6 @@
-import { Instagram, Palette, LayoutGrid, Bot, ArrowRight, PlusCircle, Sparkles, MessageSquare } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Instagram, Palette, LayoutGrid, Bot, ArrowRight, PlusCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -38,7 +38,7 @@ const tools = [
   {
     title: "Automação Instagram",
     description: "Fluxos ManyChat de alta conversão para DMs automáticas e funis",
-    icon: MessageSquare,
+    icon: Bot,
     color: "bg-emerald-500/10",
     iconColor: "text-emerald-500",
     href: "/automacao-instagram",
