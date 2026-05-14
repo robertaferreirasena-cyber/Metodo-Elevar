@@ -5,7 +5,8 @@ import {
   Square, Monitor, Sparkles, Undo2, LayoutGrid, Layers, Trash2,
   CopyPlus, ZoomIn, ZoomOut, Maximize2, Move, AlignLeft, AlignRight,
   Bold, Italic, Underline, Palette, Search, Settings2, Image as ImageIcon,
-  MessageSquare, FileText, ChevronDown, Highlighter, ArrowUpDown
+  MessageSquare, FileText, ChevronDown, Highlighter, ArrowUpDown,
+  Upload, Cloud, RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePersonaContext } from "@/contexts/PersonaContext";
@@ -31,7 +33,7 @@ import ImageLibraryPicker from "./ImageLibraryPicker";
 import JSZip from "jszip";
 import UserUploads from "./UserUploads";
 
-type FormatFilter = "all" | "1:1" | "16:9" | "9:16";
+type FormatFilter = "all" | "1:1" | "4:5" | "16:9" | "9:16";
 
 interface CarouselSessionState {
   topic: string;
@@ -149,6 +151,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryTarget, setLibraryTarget] = useState<"image" | "bg">("bg");
+  const [libraryDefaultTab, setLibraryDefaultTab] = useState<"search" | "uploads">("search");
 
   const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(() => {
     const candidate = sessionState.currentJournalPaletteId || "terracota";
@@ -208,7 +211,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 Tom de voz: ${tone}
 ${isStatic ? "O post deve ter uma headline forte e um texto de apoio convincente." : "Distribua o conteúdo de forma lógica entre os slides."}
 ${personaCtx}
-Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
+Retorne APENAS um JSON: {"slides":[{"title":"...","body":"...","caption":"..."}]}`;
 
       const resp = await fetch(CHAT_URL, {
         method: "POST",
@@ -292,7 +295,7 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <div className="w-[380px] border-r bg-card flex flex-col shrink-0">
+        <div className="w-full lg:w-[400px] border-r bg-card flex flex-col shrink-0">
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-6">
               {/* Generation Section */}
@@ -367,9 +370,7 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
 
               {/* Templates Section */}
               <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-bold flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-primary" /> Estilos Disponíveis</Label>
-                </div>
+                <Label className="text-sm font-bold flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-primary" /> Templates</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {CAROUSEL_TEMPLATES.filter(t => t.id !== 'blank-canvas').map(t => (
                     <button 
@@ -379,15 +380,50 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
                     >
                        <div className="aspect-square bg-muted rounded overflow-hidden">
                          <div style={{ transform: "scale(0.15)", transformOrigin: "top left", width: 1080, height: 1080, pointerEvents: "none" }}>
-                            <SlidePreview slide={{...t, title: "Título", body: "Texto"}} aspectRatio={t.aspectRatio} slideIndex={0} totalSlides={1} nativeSize />
+                            <SlidePreview slide={{...t, title: "Título", body: "Texto"}} aspectRatio={t.aspectRatio} slideIndex={0} totalSlides={1} />
                          </div>
-                       </div>
-                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 rounded transition-opacity">
-                          <span className="text-[10px] text-white font-bold">{t.name}</span>
                        </div>
                     </button>
                   ))}
                 </div>
+              </section>
+
+              <hr />
+
+              {/* Media Section */}
+              <section className="space-y-3">
+                <Label className="text-sm font-bold flex items-center gap-2 text-primary"><ImageIcon className="h-4 w-4" /> Imagens e Fundo</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Imagem de Fundo</Label>
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
+                        <Search className="h-3 w-3 mr-1" /> Banco
+                      </Button>
+                      {cur?.bgImageUrl && (
+                        <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => updateSlide(currentSlide, { bgImageUrl: undefined })}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Imagem Template</Label>
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
+                        <Search className="h-3 w-3 mr-1" /> Banco
+                      </Button>
+                      {cur?.imageUrl && (
+                        <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Button variant="outline" className="w-full gap-2 text-xs h-8 border-dashed" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
+                   <Upload className="h-3 w-3" /> Meus Uploads
+                </Button>
               </section>
 
               <hr />
@@ -466,6 +502,17 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
                     </div>
                   </div>
 
+                  {/* Caption Controls (if static or specific slide) */}
+                  <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
+                    <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"><FileText className="h-3 w-3" /> Legenda Sugerida</Label>
+                    <Textarea 
+                      value={cur.caption || ""} 
+                      onChange={(e) => updateSlide(currentSlide, { caption: e.target.value })} 
+                      placeholder="Legenda para o post..."
+                      className="min-h-[100px] text-xs bg-background" 
+                    />
+                  </div>
+
                   {/* Spacing Control */}
                   <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
                     <div className="flex justify-between items-center">
@@ -541,10 +588,28 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
         <div className="flex-1 bg-muted/40 relative flex flex-col overflow-hidden">
           {/* Workspace Header */}
           <div className="h-12 border-b bg-card flex items-center justify-between px-4 z-10 shrink-0">
-             <div className="flex items-center gap-2">
+             <div className="flex items-center gap-4">
                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                  {selectedTemplate.aspectRatio} • {slides.length} Slides
                </Badge>
+               <div className="flex items-center gap-1.5 border rounded-md p-1 bg-muted/50">
+                 {(['1:1', '4:5', '9:16', '16:9'] as AspectRatio[]).map((ratio) => (
+                   <Button 
+                    key={ratio}
+                    variant={selectedTemplate.aspectRatio === ratio ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-7 text-[10px] px-2"
+                    onClick={() => {
+                      const newT = { ...selectedTemplate, aspectRatio: ratio };
+                      setSelectedTemplate(newT);
+                      // Update all slides aspect ratio if needed, or just let the preview handle it
+                      toast.success(`Formato ${ratio} selecionado`);
+                    }}
+                   >
+                    {ratio}
+                   </Button>
+                 ))}
+               </div>
              </div>
              <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" className="text-xs gap-2" onClick={() => {
@@ -567,20 +632,21 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
           </div>
 
           {/* Centered Preview */}
-          <div className="flex-1 overflow-auto flex items-center justify-center p-8 bg-[#f5f7f9] dark:bg-zinc-950">
-             <div className="relative group">
+          <div className="flex-1 overflow-hidden flex items-center justify-center p-4 md:p-8 bg-[#f5f7f9] dark:bg-zinc-950">
+             <div className="relative w-full h-full max-w-[800px] max-h-[800px] flex items-center justify-center">
                 {cur ? (
-                  <div className="shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-zinc-900 border">
+                  <div className="shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-zinc-900 border transition-all duration-300 w-full h-full flex items-center justify-center">
                     <SlidePreview 
                       slide={cur} 
                       slideIndex={currentSlide} 
                       totalSlides={slides.length} 
                       aspectRatio={selectedTemplate.aspectRatio}
                       onUpdate={(upd) => updateSlide(currentSlide, upd)}
+                      isFreeEditMode={false} // Default to false for "normal" simplified view
                     />
                   </div>
                 ) : (
-                  <div className="w-[400px] h-[400px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
+                  <div className="w-full h-full max-w-[400px] max-h-[400px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg bg-card/50">
                     <Wand2 className="h-12 w-12 mb-4 opacity-20" />
                     <p className="text-sm">Gere conteúdo para começar</p>
                   </div>
@@ -617,6 +683,7 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
       <ImageLibraryPicker 
         open={libraryOpen} 
         onOpenChange={setLibraryOpen} 
+        defaultTab={libraryDefaultTab}
         onSelect={(url) => {
           updateSlide(currentSlide, libraryTarget === "bg" ? { bgImageUrl: url } : { imageUrl: url });
           setLibraryOpen(false);

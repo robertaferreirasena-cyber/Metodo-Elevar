@@ -16,7 +16,7 @@ export type CarouselLayout =
   | "journal-torn-paper"  // papel rasgado sobre foto
   | "journal-envelope";   // envelope aberto + selo de cera
 
-export type AspectRatio = "1:1" | "16:9" | "9:16";
+export type AspectRatio = "1:1" | "4:5" | "16:9" | "9:16";
 
 export interface FormatSpec {
   width: number;
@@ -28,6 +28,7 @@ export interface FormatSpec {
 
 export const FORMAT_SPECS: Record<AspectRatio, FormatSpec> = {
   "1:1":  { width: 1080, height: 1080, label: "Feed 1:1",    titleSize: 42, bodySize: 26 },
+  "4:5":  { width: 1080, height: 1350, label: "Portrait 4:5", titleSize: 42, bodySize: 26 },
   "9:16": { width: 1080, height: 1920, label: "Stories 9:16", titleSize: 48, bodySize: 28 },
   "16:9": { width: 1920, height: 1080, label: "Wide 16:9",    titleSize: 48, bodySize: 28 },
 };
@@ -83,7 +84,7 @@ export interface CarouselTemplate {
   id: string;
   name: string;
   description: string;
-  aspectRatio: "1:1" | "16:9" | "9:16";
+  aspectRatio: "1:1" | "4:5" | "16:9" | "9:16";
   bgColor: string;
   textColor: string;
   accentColor: string;
@@ -601,6 +602,36 @@ export interface CarouselTemplate {
     bgGradient: "linear-gradient(180deg, #3d1f0a 0%, #0e0905 100%)",
     layout: "text-only",
   },
+
+  // ========== TEMPLATES PORTRAIT (4:5) ==========
+  {
+    id: "portrait-premium",
+    name: "Portrait Premium",
+    description: "Formato ideal Instagram (1080x1350)",
+    aspectRatio: "4:5",
+    bgColor: "#0A0A0A",
+    textColor: "#FFFFFF",
+    accentColor: "#D4AF37",
+    fontFamily: "'Playfair Display', serif",
+    titleSize: 42,
+    bodySize: 24,
+    align: "center",
+    layout: "text-only",
+  },
+  {
+    id: "portrait-minimal",
+    name: "Portrait Minimal",
+    description: "Clean e focado em leitura",
+    aspectRatio: "4:5",
+    bgColor: "#FAFAFA",
+    textColor: "#1A1A1A",
+    accentColor: "#3B82F6",
+    fontFamily: "'DM Sans', sans-serif",
+    titleSize: 38,
+    bodySize: 22,
+    align: "left",
+    layout: "text-only",
+  },
   {
     id: "stories-cta",
     name: "Stories CTA",
@@ -951,6 +982,7 @@ export function buildJournalSampleSlides(
 export interface SlideData {
   title: string;
   body: string;
+  caption?: string; // Legenda sugerida para o post
   bgColor: string;
   textColor: string;
   accentColor: string;
@@ -1020,12 +1052,13 @@ export interface SlideData {
 
 export function createSlidesFromTemplate(
   template: CarouselTemplate,
-  content: { title: string; body: string }[]
+  content: { title: string; body: string; caption?: string }[]
 ): SlideData[] {
   const isJournal = isJournalTemplate(template.id);
   return content.map((c, i) => ({
     title: c.title,
     body: c.body,
+    caption: c.caption,
     bgColor: template.bgColor,
     textColor: template.textColor,
     accentColor: template.accentColor,

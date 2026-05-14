@@ -25,6 +25,7 @@ interface Props {
   orientation?: "1:1" | "9:16" | "16:9";
   suggestedQuery?: string;
   onSelect: (dataUrl: string, attribution: string) => void;
+  defaultTab?: "search" | "uploads";
 }
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-library-search`;
@@ -130,7 +131,7 @@ function pruneCache() {
 }
 
 export default function ImageLibraryPicker({
-  open, onOpenChange, orientation = "1:1", suggestedQuery = "", onSelect,
+  open, onOpenChange, orientation = "1:1", suggestedQuery = "", onSelect, defaultTab = "search",
 }: Props) {
   const [query, setQuery] = useState(suggestedQuery);
   const [results, setResults] = useState<ImageItem[]>([]);
@@ -216,55 +217,73 @@ export default function ImageLibraryPicker({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ImagePlus className="h-5 w-5" /> Banco de imagens grátis
+            <ImagePlus className="h-5 w-5" /> Biblioteca de Imagens
           </DialogTitle>
         </DialogHeader>
-        <div className="flex gap-2">
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") search(); }}
-            placeholder="Buscar (ex: café, yoga, produto, natureza)"
-          />
-          <Button onClick={() => search()} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            Buscar
-          </Button>
-        </div>
-        <p className="text-[11px] text-muted-foreground">
-          Resultados de Unsplash + Pexels. Buscas recentes ficam em cache por 10 min para troca rápida entre layouts.
-        </p>
-        <ScrollArea className="h-[480px]">
-          {results.length === 0 ? (
-            <div className="text-center text-sm text-muted-foreground py-12">
-              {loading ? "Buscando..." : "Digite uma palavra-chave e pressione Buscar."}
+        
+        <Tabs defaultValue={defaultTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="search" className="gap-2"><Search className="h-4 w-4" /> Banco de Imagens</TabsTrigger>
+            <TabsTrigger value="uploads" className="gap-2"><Upload className="h-4 w-4" /> Meus Uploads</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="search" className="space-y-4 pt-4">
+            <div className="flex gap-2">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") search(); }}
+                placeholder="Buscar (ex: café, yoga, produto, natureza)"
+              />
+              <Button onClick={() => search()} disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                Buscar
+              </Button>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-1">
-              {results.map((img) => (
-                <button
-                  key={img.id}
-                  onClick={() => pick(img)}
-                  disabled={!!downloadingId}
-                  className="relative group rounded-lg overflow-hidden border border-border hover:border-primary/60 transition-colors disabled:opacity-40"
-                  style={{ aspectRatio: orientation === "9:16" ? "9/16" : orientation === "16:9" ? "16/9" : "1/1" }}
-                >
-                  <img src={img.thumbUrl} alt={img.alt || ""} loading="lazy" className="w-full h-full object-cover" />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 text-[10px] text-white flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="truncate">{img.author}</span>
-                    <span className="uppercase">{img.source}</span>
-                  </div>
-                  {downloadingId === img.id && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                      <Loader2 className="h-6 w-6 text-white animate-spin" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
+            <p className="text-[11px] text-muted-foreground">
+              Resultados de Unsplash + Pexels. Buscas recentes ficam em cache por 10 min.
+            </p>
+            <ScrollArea className="h-[400px]">
+              {results.length === 0 ? (
+                <div className="text-center text-sm text-muted-foreground py-12">
+                  {loading ? "Buscando..." : "Digite uma palavra-chave e pressione Buscar."}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-1">
+                  {results.map((img) => (
+                    <button
+                      key={img.id}
+                      onClick={() => pick(img)}
+                      disabled={!!downloadingId}
+                      className="relative group rounded-lg overflow-hidden border border-border hover:border-primary/60 transition-colors disabled:opacity-40"
+                      style={{ aspectRatio: orientation === "9:16" ? "9/16" : orientation === "16:9" ? "16/9" : "1/1" }}
+                    >
+                      <img src={img.thumbUrl} alt={img.alt || ""} loading="lazy" className="w-full h-full object-cover" />
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 text-[10px] text-white flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="truncate">{img.author}</span>
+                        <span className="uppercase">{img.source}</span>
+                      </div>
+                      {downloadingId === img.id && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Loader2 className="h-6 w-6 text-white animate-spin" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="uploads" className="pt-4">
+            <UserUploads onSelect={(url) => { onSelect(url, ""); onOpenChange(false); }} />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
 }
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Upload } from "lucide-react";
+import UserUploads from "./UserUploads";
