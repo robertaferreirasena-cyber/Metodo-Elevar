@@ -269,7 +269,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     toast.success(`Template "${template.name}" aplicado`);
   }, [templateApplyMode, currentSlide]);
 
-  // "Create from scratch" detection
+  // "Create from scratch" detection - Disabled as per user request to simplify workflow
+  /*
   useEffect(() => {
     if (searchParams.get("mode") === "blank") {
       const blankTemplate = CAROUSEL_TEMPLATES.find(t => t.id === "blank-canvas") || CAROUSEL_TEMPLATES[0];
@@ -280,6 +281,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       setActiveEditorTab("layers");
     }
   }, [searchParams]);
+  */
 
   const applyBrandKit = useCallback((kit: BrandKit) => {
     updateSlidesWithHistory(prev => prev.map(s => ({
