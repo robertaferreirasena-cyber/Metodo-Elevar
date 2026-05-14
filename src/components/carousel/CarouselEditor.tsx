@@ -151,6 +151,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryTarget, setLibraryTarget] = useState<"image" | "bg">("bg");
+  const [libraryDefaultTab, setLibraryDefaultTab] = useState<"search" | "uploads">("search");
 
   const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(() => {
     const candidate = sessionState.currentJournalPaletteId || "terracota";
