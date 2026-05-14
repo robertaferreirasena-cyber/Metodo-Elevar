@@ -210,7 +210,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 Tom de voz: ${tone}
 ${isStatic ? "O post deve ter uma headline forte e um texto de apoio convincente." : "Distribua o conteúdo de forma lógica entre os slides."}
 ${personaCtx}
-Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
+Retorne APENAS um JSON: {"slides":[{"title":"...","body":"...","caption":"..."}]}`;
 
       const resp = await fetch(CHAT_URL, {
         method: "POST",
