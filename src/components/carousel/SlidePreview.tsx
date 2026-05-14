@@ -233,7 +233,7 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
     // The inner slide at native resolution
     const slideContent = (
       <div
-        ref={ref}
+        ref={innerRef}
         style={{
           width: spec.width,
           height: spec.height,
