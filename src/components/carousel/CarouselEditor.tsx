@@ -156,6 +156,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const { hasProfile, formData, raioX } = usePersonaContext();
   const { user } = useAuth();
   const [projectId, setProjectId] = useState<string | null>(null);
+  const transformRef = useRef<ReactZoomPanPinchRef>(null);
+  const [zoomScale, setZoomScale] = useState(1);
 
   // Supabase Sync logic
   useEffect(() => {
