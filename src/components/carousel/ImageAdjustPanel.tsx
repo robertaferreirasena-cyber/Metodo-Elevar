@@ -25,6 +25,14 @@ const DEFAULTS: Required<ImageAdjustValues> = {
   positionX: 50, positionY: 50, scale: 1, blur: 0, brightness: 100, contrast: 100,
 };
 
+const PRESETS: { label: string; values: Partial<ImageAdjustValues> }[] = [
+  { label: "Nitidez", values: { contrast: 125, brightness: 105 } },
+  { label: "Brilho +", values: { brightness: 130 } },
+  { label: "Forte", values: { contrast: 140, brightness: 90 } },
+  { label: "Fundo", values: { blur: 8, brightness: 80 } },
+  { label: "PB", values: { contrast: 120, brightness: 110, blur: 0 } }, // Desaturate would need grayscale filter, but staying within defined props
+];
+
 export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRatio = 1 }: Props) {
   const previewRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
