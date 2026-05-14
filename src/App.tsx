@@ -335,8 +335,8 @@ const App = () => (
               <Route path="/admin/aprendizado" element={<ProtectedRoute><AdminRoute><AppLayout><AdminLearning /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route path="/admin/base-conhecimento" element={<ProtectedRoute><AdminRoute><AppLayout><AdminKnowledgeBase /></AppLayout></AdminRoute></ProtectedRoute>} />
 
-              {/* Legacy Instagram redirect */}
-              <Route path="/instagram" element={<Navigate to="/" replace />} />
+              {/* Legacy Instagram redirect - removed to allow /instagram to work */}
+              {/* <Route path="/instagram" element={<Navigate to="/" replace />} /> */}
 
               {/* Mentora Hub */}
               <Route
