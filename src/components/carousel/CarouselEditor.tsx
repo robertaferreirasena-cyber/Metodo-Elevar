@@ -736,7 +736,21 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
 
         {/* Main Workspace (Simplified) */}
         <div className="flex-1 bg-muted/40 relative flex flex-col overflow-hidden">
-          {/* Workspace Header */}
+          {exporting && (
+            <div className="absolute top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md p-4 border-b shadow-lg animate-in slide-in-from-top duration-300">
+              <div className="max-w-md mx-auto space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Processando Slides ({Math.round(exportProgress)}%)
+                  </span>
+                  <span className="text-[10px] font-mono text-muted-foreground">Não feche esta aba</span>
+                </div>
+                <Progress value={exportProgress} className="h-1.5" />
+              </div>
+            </div>
+          )}
+
           <div className="h-12 border-b bg-card flex items-center justify-between px-4 z-10 shrink-0">
              <div className="flex items-center gap-4">
                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
