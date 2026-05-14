@@ -255,7 +255,7 @@ export const SlideRenderer = React.memo(({
                 src={slide.imageUrl} 
                 className="w-full h-full object-cover" 
                 crossOrigin="anonymous"
-                style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })}
+                style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast, opacity: slide.imageOpacity })}
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
