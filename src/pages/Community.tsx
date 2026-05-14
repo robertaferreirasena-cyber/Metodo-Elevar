@@ -776,15 +776,13 @@ export default function Community() {
                               asChild
                               className="gap-2"
                             >
-                              <a 
-                                href={normalizeUrl(material.file_url)} 
-                                download={material.title}
-                                target="_blank" 
-                                rel="noopener noreferrer"
+                              <button 
+                                onClick={() => handleOpenUrl(material.file_url)}
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
                               >
                                 <Download className="h-4 w-4" />
                                 <span className="hidden sm:inline">Baixar</span>
-                              </a>
+                              </button>
                             </Button>
                             {isAdmin && (
                               <Button
