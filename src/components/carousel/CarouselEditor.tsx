@@ -269,7 +269,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     toast.success(`Template "${template.name}" aplicado`);
   }, [templateApplyMode, currentSlide]);
 
-  // "Create from scratch" detection
+  // "Create from scratch" detection - Disabled as per user request to simplify workflow
+  /*
   useEffect(() => {
     if (searchParams.get("mode") === "blank") {
       const blankTemplate = CAROUSEL_TEMPLATES.find(t => t.id === "blank-canvas") || CAROUSEL_TEMPLATES[0];
@@ -280,6 +281,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       setActiveEditorTab("layers");
     }
   }, [searchParams]);
+  */
 
   const applyBrandKit = useCallback((kit: BrandKit) => {
     updateSlidesWithHistory(prev => prev.map(s => ({
@@ -1171,7 +1173,7 @@ REGRAS OBRIGATÓRIAS:
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  {CAROUSEL_TEMPLATES.filter(t => formatFilter === "all" || t.aspectRatio === formatFilter).map((t) => (
+                  {CAROUSEL_TEMPLATES.filter(t => t.id !== 'blank-canvas' && (formatFilter === "all" || t.aspectRatio === formatFilter)).map((t) => (
                     <button
                       key={t.id}
                       onClick={() => applyTemplate(t)}
@@ -1521,23 +1523,6 @@ REGRAS OBRIGATÓRIAS:
             )}
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                <Card 
-                  className="cursor-pointer hover:border-primary transition-all overflow-hidden bg-primary/5 border-primary/20"
-                  onClick={() => {
-                    const blankTemplate = CAROUSEL_TEMPLATES.find(t => t.id === "blank-canvas") || CAROUSEL_TEMPLATES[0];
-                    setSelectedTemplate(blankTemplate);
-                    const initialSlides = createSlidesFromTemplate(blankTemplate, [{ title: "Seu Título", body: "Adicione seu conteúdo" }]);
-                    updateSlidesWithHistory(initialSlides);
-                    setIsFreeEditMode(true);
-                    setActiveTab("layers");
-                    toast.success("Começando do zero!");
-                  }}
-                >
-                  <CardContent className="p-2 flex flex-col items-center justify-center h-full min-h-[80px] text-center gap-1">
-                    <PlusCircle className="h-6 w-6 text-primary" />
-                    <span className="text-[10px] font-bold">Criar do Zero</span>
-                  </CardContent>
-                </Card>
               {filteredTemplates.map((t) => (
                 <TemplatePreviewTooltip key={t.id} template={t}>
                   <button
@@ -1867,8 +1852,9 @@ REGRAS OBRIGATÓRIAS:
                 limitToBounds={false}
                 onTransform={(ref) => setZoomScale(ref.state.scale)}
                 doubleClick={{ disabled: true }}
-                panning={{ activationKeys: [" "], disabled: false }}
-                wheel={{ disabled: false }}
+                panning={{ disabled: false }} // Allow panning without spacebar for easier navigation
+                wheel={{ disabled: true }} // Disable wheel zoom to avoid accidental zoom as requested
+
               >
                 {({ zoomIn, zoomOut, resetTransform }) => (
                   <>

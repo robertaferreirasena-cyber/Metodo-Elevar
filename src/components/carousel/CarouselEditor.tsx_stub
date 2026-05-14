@@ -1,0 +1,829 @@
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { toPng } from "html-to-image";
+import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
+import {
+  ChevronLeft, ChevronRight, Download, Wand2, Loader2, Paintbrush, Type,
+  AlignLeft, AlignCenter, DownloadCloud, ImagePlus, User, X, Smartphone,
+  Square, Monitor, Sparkles, Send, ChevronDown, ChevronUp,
+  Bold, Italic, Underline, ArrowUpFromLine, AlignVerticalSpaceAround, ArrowDownFromLine, Palette, Copy,
+  CopyPlus, Trash2, Maximize, Minimize, Undo2, CheckCircle2, LayoutGrid, Layers, MousePointer2, PlusCircle,
+  Search, ZoomIn, ZoomOut, Maximize2, Move
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { usePersonaContext } from "@/contexts/PersonaContext";
+import { useSessionPersistence } from "@/hooks/useSessionPersistence";
+import { SessionIndicator } from "@/components/SessionIndicator";
+import { useAuth } from "@/hooks/useAuth";
+import SlidePreview from "./SlidePreview";
+import CanvasElementsLibrary from "./CanvasElementsLibrary";
+import { scopedLocal } from "@/lib/userScopedKey";
+import TemplatePreviewTooltip from "./TemplatePreviewTooltip";
+import ImageAdjustPanel, { type ImageAdjustValues } from "./ImageAdjustPanel";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS, GRADIENT_PRESETS,
+  JOURNAL_TEMPLATE_IDS, JOURNAL_LAYOUT_SEQUENCE, isJournalTemplate,
+  JOURNAL_PALETTES, applyPaletteToSlide, buildJournalSampleSlides,
+  JOURNAL_SAMPLE_THEMES, type JournalPalette,
+  type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio, type LayerData,
+} from "./CarouselTemplates";
+import ImageLibraryPicker from "./ImageLibraryPicker";
+import JournalCollectionExporter, { type JournalExporterHandle } from "./JournalCollectionExporter";
+import JSZip from "jszip";
+import LayerList from "./LayerList";
+import UserUploads from "./UserUploads";
+import BrandKitManager, { type BrandKit } from "./BrandKitManager";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSearchParams } from "react-router-dom";
+
+const IMAGE_LAYOUTS: CarouselLayout[] = ["image-bg", "editorial", "journal-photo-card", "journal-torn-paper"];
+const MULTI_IMAGE_LAYOUTS: CarouselLayout[] = ["photo-grid", "tweet-post"];
+const PROFILE_LAYOUTS: CarouselLayout[] = ["profile-post", "photo-grid", "tweet-post", "prompt-card", "sticker-card"];
+const HIGHLIGHT_LAYOUTS: CarouselLayout[] = ["sales-highlight"];
+const BG_IMAGE_LAYOUTS: CarouselLayout[] = ["journal-photo-card", "journal-torn-paper", "image-bg"];
+
+type FormatFilter = "all" | "1:1" | "16:9" | "9:16";
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+interface CarouselEditorProps {
+  initialTopic?: string;
+}
+
+interface CarouselSessionState {
+  topic: string;
+  slideCount: number;
+  tone: string;
+  formatFilter: FormatFilter;
+  selectedTemplateId: string;
+  slides: SlideData[];
+  currentSlide: number;
+  giMessages: { role: "user" | "assistant"; content: string }[];
+  giOpen: boolean;
+  templateApplyMode: "all" | "current" | "preserve";
+  currentJournalPaletteId: string;
+}
+
+const EMPTY_CAROUSEL_STATE: CarouselSessionState = {
+  topic: "", slideCount: 5, tone: "profissional", formatFilter: "all",
+  selectedTemplateId: CAROUSEL_TEMPLATES[0].id, slides: [], currentSlide: 0,
+  giMessages: [], giOpen: false, templateApplyMode: "all",
+  currentJournalPaletteId: "terracota",
+};
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-mentor-chat`;
+
+async function readStream(
+  resp: Response,
+  onContent: (full: string) => void,
+): Promise<string> {
+  if (!resp.body) throw new Error("Stream não disponível");
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let full = "";
+  let buf = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let idx: number;
+    while ((idx = buf.indexOf("\n")) !== -1) {
+      let line = buf.slice(0, idx);
+      buf = buf.slice(idx + 1);
+      if (line.endsWith("\r")) line = line.slice(0, -1);
+      if (line.startsWith(":") || line.trim() === "") continue;
+      if (!line.startsWith("data: ")) continue;
+      const json = line.slice(6).trim();
+      if (json === "[DONE]") break;
+      try {
+        const c = JSON.parse(json).choices?.[0]?.delta?.content;
+        if (c) { full += c; onContent(full); }
+      } catch {
+        buf = line + "\n" + buf;
+        break;
+      }
+    }
+  }
+  return full;
+}
+
+const FILTERED_TEMPLATES = CAROUSEL_TEMPLATES.filter(t => t.id !== 'blank-canvas');
+
+export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {}) {
+  const [sessionState, setSessionState, clearSession, hasRestoredSession] = useSessionPersistence<CarouselSessionState>(
+    "session_carousel_editor", EMPTY_CAROUSEL_STATE, 1000, "local"
+  );
+
+  const [topic, setTopic] = useState(sessionState.topic || initialTopic || "");
+  const [slideCount, setSlideCount] = useState(sessionState.slideCount);
+  const [tone, setTone] = useState(sessionState.tone);
+  const [formatFilter, setFormatFilter] = useState<FormatFilter>(sessionState.formatFilter);
+  const [selectedTemplate, setSelectedTemplate] = useState<CarouselTemplate>(
+    CAROUSEL_TEMPLATES.find(t => t.id === sessionState.selectedTemplateId) || CAROUSEL_TEMPLATES[0]
+  );
+  const [slides, setSlides] = useState<SlideData[]>(sessionState.slides);
+  const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
+  const [generating, setGenerating] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const isMobile = useIsMobile();
+  const { hasProfile, formData, raioX } = usePersonaContext();
+  const { user } = useAuth();
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const transformRef = useRef<ReactZoomPanPinchRef>(null);
+  const [zoomScale, setZoomScale] = useState(1);
+
+  useEffect(() => {
+    if (!user || slides.length === 0) return;
+    const timer = setTimeout(async () => {
+      const designData: any = {
+        slides,
+        topic,
+        slideCount,
+        tone,
+        selectedTemplateId: selectedTemplate.id,
+      };
+      try {
+        if (projectId) {
+          await supabase
+            .from("carousel_designs")
+            .update({ data: designData, updated_at: new Date().toISOString() })
+            .eq("id", projectId);
+        } else {
+          const { data, error } = await supabase
+            .from("carousel_designs")
+            .insert({
+              user_id: user.id,
+              name: topic || "Projeto de Carrossel",
+              data: designData,
+            } as any)
+            .select("id")
+            .single();
+          if (data) setProjectId((data as any).id);
+        }
+      } catch (err) {
+        console.error("Failed to sync carousel to Supabase:", err);
+      }
+    }, 5000); 
+    return () => clearTimeout(timer);
+  }, [slides, topic, slideCount, tone, selectedTemplate.id, user, projectId]);
+
+  const [giOpen, setGiOpen] = useState(sessionState.giOpen);
+  const [giInput, setGiInput] = useState("");
+  const [giMessages, setGiMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(sessionState.giMessages);
+  const [giLoading, setGiLoading] = useState(false);
+  const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useState("templates");
+  const [searchParams] = useSearchParams();
+  
+  const [history, setHistory] = useState<SlideData[][]>([]);
+  const [redoStack, setRedoStack] = useState<SlideData[][]>([]);
+
+  const pushToHistory = useCallback((currentSlides: SlideData[]) => {
+    setHistory(prev => [...prev.slice(-19), JSON.parse(JSON.stringify(currentSlides))]);
+    setRedoStack([]);
+  }, []);
+
+  const updateSlidesWithHistory = useCallback((newSlides: SlideData[] | ((prev: SlideData[]) => SlideData[])) => {
+    setSlides(prev => {
+      const next = typeof newSlides === "function" ? newSlides(prev) : newSlides;
+      if (JSON.stringify(prev) !== JSON.stringify(next)) {
+        pushToHistory(prev);
+      }
+      return next;
+    });
+  }, [pushToHistory]);
+
+  const undo = useCallback(() => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setRedoStack(prevStack => [...prevStack, JSON.parse(JSON.stringify(slides))]);
+    setSlides(prev);
+    setHistory(prevHistory => prevHistory.slice(0, -1));
+    toast.success("Desfeito");
+  }, [history, slides]);
+
+  const redo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setHistory(prevHistory => [...prevHistory, JSON.parse(JSON.stringify(slides))]);
+    setSlides(next);
+    setRedoStack(prevStack => prevStack.slice(0, -1));
+    toast.success("Refeito");
+  }, [redoStack, slides]);
+
+  const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
+
+  const sidebarTabs = [
+    { id: "templates", label: "Design", icon: LayoutGrid },
+    { id: "text", label: "Texto", icon: Type },
+    { id: "brand", label: "Marca", icon: Palette },
+    { id: "uploads", label: "Mídia", icon: ImagePlus },
+  ];
+
+  const applyTemplate = useCallback((template: CarouselTemplate) => {
+    if (templateApplyMode === "all") {
+      applyTemplateToAll(template);
+    } else if (templateApplyMode === "current") {
+      applyTemplateToSlide(template, currentSlide);
+    } else {
+      applyTemplatePreservingFormatting(template, currentSlide);
+    }
+    toast.success(`Template "${template.name}" aplicado`);
+  }, [templateApplyMode, currentSlide]);
+
+  const applyBrandKit = useCallback((kit: BrandKit) => {
+    updateSlidesWithHistory(prev => prev.map(s => ({
+      ...s,
+      bgColor: kit.primary_color,
+      textColor: kit.secondary_color,
+      accentColor: kit.accent_color,
+      fontFamily: kit.font_family_title,
+    })));
+    toast.success("Identidade Visual aplicada ao carrossel");
+  }, []);
+
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryTarget, setLibraryTarget] = useState<"image" | "bg">("bg");
+  const [exportingCollection, setExportingCollection] = useState(false);
+  const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(() => {
+    const candidate = sessionState.currentJournalPaletteId || "terracota";
+    return JOURNAL_PALETTES.some(p => p.id === candidate) ? candidate : JOURNAL_PALETTES[0].id;
+  });
+  const currentJournalPalette = useMemo(
+    () => JOURNAL_PALETTES.find(p => p.id === currentJournalPaletteId) || JOURNAL_PALETTES[0],
+    [currentJournalPaletteId]
+  );
+
+  const [sampleThemeId, setSampleThemeId] = useState<string>("generico");
+  const journalThumbSlides = useMemo(
+    () => buildJournalSampleSlides(currentJournalPalette).map(s => ({
+      ...s,
+      title: s.title.length > 40 ? s.title.slice(0, 38) + "…" : s.title,
+      body: s.body.length > 60 ? s.body.slice(0, 58) + "…" : s.body,
+    })),
+    [currentJournalPalette]
+  );
+
+  const [exporterMounted, setExporterMounted] = useState(false);
+  const exporterRef = useRef<JournalExporterHandle>(null);
+
+  const applyJournalPalette = useCallback((palette: JournalPalette) => {
+    setCurrentJournalPaletteId(palette.id);
+    updateSlidesWithHistory(prev => prev.map(s => {
+      const isJournalSlide = isJournalTemplate(selectedTemplate.id) || (s.layout || "").startsWith("journal-");
+      if (!isJournalSlide) return s;
+      return {
+        ...s,
+        bgColor: palette.bgColor,
+        textColor: palette.textColor,
+        accentColor: palette.accentColor,
+      };
+    }));
+    toast.success(`Paleta "${palette.name}" aplicada`);
+  }, [selectedTemplate.id]);
+
+  const exportJournalCollection = useCallback(async () => {
+    setExportingCollection(true);
+    setExporterMounted(true);
+    try {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+      try {
+        await Promise.all([
+          (document as any).fonts?.load?.('700 64px "Playfair Display"'),
+          (document as any).fonts?.load?.('600 48px "Cormorant Garamond"'),
+          (document as any).fonts?.load?.('400 48px "Caveat"'),
+          (document as any).fonts?.load?.('700 32px "Inter"'),
+          (document as any).fonts?.load?.('400 36px "Bebas Neue"'),
+        ]);
+      } catch { }
+      await document.fonts.ready;
+      await new Promise((r) => setTimeout(r, 500));
+
+      const nodes = exporterRef.current?.getNodes() || [];
+      if (!nodes.length || nodes.some((n) => !n)) {
+        throw new Error("Falha ao montar prévia da coleção");
+      }
+
+      const { toPng } = await import("html-to-image");
+      const zip = new JSZip();
+
+      const waitForImages = async (root: HTMLElement) => {
+        const imgs = Array.from(root.querySelectorAll("img"));
+        await Promise.all(imgs.map(img =>
+          (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0
+            ? Promise.resolve()
+            : new Promise<void>((r) => {
+                const done = () => r();
+                img.addEventListener("load", done, { once: true });
+                img.addEventListener("error", done, { once: true });
+              })
+        ));
+      };
+
+      const captureOnce = (node: HTMLDivElement) => toPng(node, {
+        width: 1080,
+        height: 1080,
+        canvasWidth: 1080,
+        canvasHeight: 1080,
+        pixelRatio: 1,
+        cacheBust: true,
+        style: {
+          transform: "none",
+          position: "static",
+          margin: "0",
+          padding: "0",
+          width: "1080px",
+          height: "1080px",
+        },
+      });
+
+      try { await captureOnce(nodes[0] as HTMLDivElement); } catch { }
+
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i] as HTMLDivElement;
+        const layoutName = JOURNAL_LAYOUT_SEQUENCE[i];
+        await waitForImages(node);
+        let dataUrl = await captureOnce(node);
+        const ok = await new Promise<boolean>((r) => {
+          const im = new Image();
+          im.onload = () => r(im.naturalWidth === 1080 && im.naturalHeight === 1080);
+          im.onerror = () => r(false);
+          im.src = dataUrl;
+        });
+        if (!ok) {
+          await new Promise((r) => setTimeout(r, 200));
+          dataUrl = await captureOnce(node);
+        }
+        const blob = await (await fetch(dataUrl)).blob();
+        const fileName = `${String(i + 1).padStart(2, "0")}-${layoutName}.png`;
+        zip.file(fileName, blob);
+      }
+
+      const palette = currentJournalPalette;
+      const readme = [
+        "Coleção Journaling — Mentora Gi",
+        "",
+        `Paleta: ${palette.emoji} ${palette.name}`,
+        `  - Fundo:    ${palette.bgColor}`,
+        `  - Texto:    ${palette.textColor}`,
+        `  - Destaque: ${palette.accentColor}`,
+        "",
+        "Layouts (na ordem narrativa):",
+        ...JOURNAL_LAYOUT_SEQUENCE.map((l, i) => `  ${i + 1}. ${l}`),
+        "",
+        "Conteúdo de exemplo gerado automaticamente.",
+      ].join("\n");
+      zip.file("README.txt", readme);
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `colecao-journaling-${palette.id}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Prévia da Coleção Journaling exportada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao exportar coleção");
+    } finally {
+      setExporterMounted(false);
+      setExportingCollection(false);
+    }
+  }, [currentJournalPalette]);
+
+  const snapshotSlideForUndo = useCallback((index: number, label: string) => {
+    const before = slides[index];
+    if (!before) return;
+    const snap = { ...before };
+    toast.success(label, {
+      duration: 6000,
+      action: {
+        label: "Desfazer",
+        onClick: () => {
+          setSlides(prev => prev.map((s, i) => (i === index ? snap : s)));
+        },
+      },
+    });
+  }, [slides]);
+
+  const lastAppliedInitialTopic = useRef<string>(sessionState.topic || initialTopic || "");
+  const [pendingTopic, setPendingTopic] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!initialTopic) return;
+    if (initialTopic === lastAppliedInitialTopic.current) return;
+    if (slides.length > 0 && topic && initialTopic !== topic) {
+      setPendingTopic(initialTopic);
+    } else {
+      setTopic(initialTopic);
+      lastAppliedInitialTopic.current = initialTopic;
+    }
+  }, [initialTopic]);
+
+  useEffect(() => {
+    setSessionState({
+      topic, slideCount, tone, formatFilter,
+      selectedTemplateId: selectedTemplate.id, slides, currentSlide,
+      giMessages, giOpen, templateApplyMode,
+      currentJournalPaletteId,
+    });
+  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, giMessages, giOpen, templateApplyMode, currentJournalPaletteId, setSessionState]);
+
+  const applyJournalCollection = useCallback((
+    template: CarouselTemplate,
+    opts: { keepContent: boolean; themeId?: string; forceSampleText?: boolean } = { keepContent: true },
+  ) => {
+    const palette = currentJournalPalette;
+    const sample = buildJournalSampleSlides(palette, slides[0]?.profileHandle, opts.themeId);
+    const newSlides: SlideData[] = sample.map((s, i) => {
+      const existing = slides[i];
+      if (opts.keepContent && existing) {
+        return {
+          ...existing,
+          layout: s.layout,
+          bgColor: palette.bgColor,
+          textColor: palette.textColor,
+          accentColor: palette.accentColor,
+          fontFamily: template.fontFamily,
+          body: existing.body || s.body,
+          title: existing.title || s.title,
+        };
+      }
+      return {
+        ...s,
+        title: opts.forceSampleText ? s.title : (existing?.title || s.title),
+        body: opts.forceSampleText ? s.body : (existing?.body || s.body),
+        fontFamily: template.fontFamily,
+        titleSize: template.titleSize,
+        bodySize: template.bodySize,
+        align: template.align,
+        imageUrl: existing?.imageUrl,
+        bgImageUrl: existing?.bgImageUrl,
+        profileHandle: existing?.profileHandle || s.profileHandle,
+        profileName: existing?.profileName,
+        profileImageUrl: existing?.profileImageUrl,
+      };
+    });
+    setSelectedTemplate(template);
+    setSlides(newSlides);
+    setCurrentSlide(0);
+    slideRefs.current = new Array(newSlides.length).fill(null);
+    toast.success(
+      opts.keepContent
+        ? "Coleção aplicada — seu conteúdo foi preservado"
+        : "Coleção aplicada com texto modelo (6 slides)"
+    );
+  }, [currentJournalPalette, slides]);
+
+  const [generatingJournalColl, setGeneratingJournalColl] = useState(false);
+  const generateJournalCollection = useCallback(async () => {
+    if (!topic.trim()) {
+      toast.error("Informe o tema do carrossel acima primeiro");
+      return;
+    }
+    const journalTemplate =
+      CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id) && t.id === selectedTemplate.id)
+      || CAROUSEL_TEMPLATES.find(t => isJournalTemplate(t.id));
+    if (!journalTemplate) {
+      toast.error("Template Journaling não encontrado");
+      return;
+    }
+    setGeneratingJournalColl(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      let personaCtx = "";
+      if (hasProfile) {
+        const parts: string[] = [];
+        if (formData.niche) parts.push(`Nicho: ${formData.niche}`);
+        if (formData.product_description) parts.push(`Produto: ${formData.product_description}`);
+        if (formData.main_pain) parts.push(`Dor principal: ${formData.main_pain}`);
+        if (formData.main_differentiator) parts.push(`Diferencial: ${formData.main_differentiator}`);
+        if (raioX?.estrategia_recomendada?.tom_comunicacao) parts.push(`Tom: ${raioX.estrategia_recomendada.tom_comunicacao}`);
+        if (parts.length) personaCtx = `\n\nDADOS DA PERSONA DO USUÁRIO:\n${parts.join("\n")}`;
+      }
+      const prompt = `Crie um carrossel de EXATAMENTE 6 slides sobre: "${topic}"\nTom: ${tone}${personaCtx}\n\nCONTEXTO VISUAL: Os 6 slides serão renderizados em layouts visuais distintos de uma coleção "Journaling" estilo caderno artesanal.\n\nREGRAS OBRIGATÓRIAS:\n1. ARCO NARRATIVO consistente entre os 6 slides\n2. Títulos curtos e impactantes (6-12 palavras)\n3. Corpo enxuto (3-5 linhas), íntimo e conversacional\n4. Slide 6 com CTA irresistível\n\nRetorne APENAS um JSON válido sem markdown: {"slides":[{"title":"...","body":"..."}]}`;
+
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: prompt }],
+          persona: "copywriter",
+        }),
+      });
+      if (!resp.ok) throw new Error(`Erro ${resp.status}`);
+      const fullText = await readStream(resp, () => {});
+      const jsonMatch = fullText.match(/\{[\s\S]*"slides"[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("IA não retornou JSON válido");
+      const data = JSON.parse(jsonMatch[0]) as { slides: { title: string; body: string }[] };
+      if (!data.slides?.length) throw new Error("Resposta sem slides");
+
+      const six = data.slides.slice(0, 6);
+      while (six.length < 6) six.push({ title: "", body: "" });
+
+      const palette = currentJournalPalette;
+      const built = createSlidesFromTemplate(journalTemplate, six).map(s => ({
+        ...s,
+        bgColor: palette.bgColor,
+        textColor: palette.textColor,
+        accentColor: palette.accentColor,
+      }));
+      setSelectedTemplate(journalTemplate);
+      setSlides(built);
+      setCurrentSlide(0);
+      slideRefs.current = new Array(built.length).fill(null);
+      toast.success("Coleção Journaling gerada com Mentora Gi");
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar coleção");
+    } finally {
+      setGeneratingJournalColl(false);
+    }
+  }, [topic, tone, selectedTemplate, currentJournalPalette, hasProfile, formData, raioX]);
+
+  const applyJournalLayoutToCurrent = useCallback((layout: CarouselLayout) => {
+    const palette = currentJournalPalette;
+    setSlides(prev => prev.map((s, i) => i === currentSlide ? {
+      ...s,
+      layout,
+      bgColor: palette.bgColor,
+      textColor: palette.textColor,
+      accentColor: palette.accentColor,
+    } : s));
+    toast.success(`Layout aplicado ao slide ${currentSlide + 1}`);
+  }, [currentJournalPalette, currentSlide]);
+
+  const handleLibrarySelect = useCallback((dataUrl: string, attribution: string) => {
+    if (libraryTarget === "bg") {
+      snapshotSlideForUndo(currentSlide, "Imagem de fundo aplicada do banco");
+      updateSlide(currentSlide, { bgImageUrl: dataUrl });
+    } else {
+      snapshotSlideForUndo(currentSlide, "Imagem aplicada do banco");
+      updateSlide(currentSlide, { imageUrl: dataUrl });
+    }
+    toast.message(attribution, { duration: 5000 });
+  }, [libraryTarget, currentSlide]);
+
+  const showJournalSection = formatFilter === "all" || formatFilter === "1:1";
+  const journalTemplates = JOURNAL_TEMPLATE_IDS
+    .map(id => CAROUSEL_TEMPLATES.find(t => t.id === id))
+    .filter((t): t is CarouselTemplate => !!t);
+  const filteredTemplates = FILTERED_TEMPLATES.filter((t) => {
+    if (formatFilter !== "all" && t.aspectRatio !== formatFilter) return false;
+    if (showJournalSection && isJournalTemplate(t.id)) return false;
+    return true;
+  });
+
+  const generateContent = async () => {
+    if (!topic.trim()) { toast.error("Informe o tema do carrossel"); return; }
+    setGenerating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      let personaCtx = "";
+      if (hasProfile) {
+        const parts: string[] = [];
+        if (formData.niche) parts.push(`Nicho: ${formData.niche}`);
+        if (formData.product_description) parts.push(`Produto: ${formData.product_description}`);
+        if (formData.main_pain) parts.push(`Dor principal: ${formData.main_pain}`);
+        if (formData.main_differentiator) parts.push(`Diferencial: ${formData.main_differentiator}`);
+        if (raioX?.estrategia_recomendada?.tom_comunicacao) parts.push(`Tom: ${raioX.estrategia_recomendada.tom_comunicacao}`);
+        if (parts.length) personaCtx = `\n\nDADOS DA PERSONA DO USUÁRIO:\n${parts.join("\n")}`;
+      }
+      const prompt = `Crie um carrossel de ${slideCount} slides sobre: "${topic}"\nTom: ${tone}${personaCtx}\n\nREGRAS OBRIGATÓRIAS:\n1. ARCO NARRATIVO: Gancho + Dor, Desenvolvimento, Resolução + CTA\n2. Títulos: 8-15 palavras, impactantes.\n3. Subtítulos: 4-6 linhas, conversacional.\n4. Retorne APENAS um JSON válido sem markdown: {"slides":[{"title":"...","body":"..."}]}`;
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ messages: [{ role: "user", content: prompt }], persona: "copywriter" }),
+      });
+      if (!resp.ok) throw new Error(`Erro ${resp.status}`);
+      const fullText = await readStream(resp, () => {});
+      const jsonMatch = fullText.match(/\{[\s\S]*"slides"[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("IA não retornou JSON válido");
+      const data = JSON.parse(jsonMatch[0]) as { slides: { title: string; body: string }[] };
+      if (!data.slides?.length) throw new Error("Resposta sem slides");
+      const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
+      setSlides(newSlides);
+      setCurrentSlide(0);
+      slideRefs.current = new Array(newSlides.length).fill(null);
+      toast.success("Carrossel gerado com sucesso!");
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar carrossel");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const updateSlide = (index: number, updates: Partial<SlideData>) => {
+    updateSlidesWithHistory((prev) => prev.map((s, i) => (i === index ? { ...s, ...updates } : s)));
+  };
+
+  const snapshotBeforeTemplate = (template: CarouselTemplate) => {
+    toast.success(`Template "${template.name}" aplicado`);
+  };
+
+  const applyTemplateToAll = (template: CarouselTemplate) => {
+    setSelectedTemplate(template);
+    const isJournal = isJournalTemplate(template.id);
+    updateSlidesWithHistory((prev) =>
+      prev.map((s, i) => ({
+        ...s,
+        bgColor: template.bgColor, textColor: template.textColor, accentColor: template.accentColor,
+        titleSize: template.titleSize, bodySize: template.bodySize, fontFamily: template.fontFamily,
+        align: template.align, bgGradient: template.bgGradient,
+        layout: isJournal ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length] : template.layout,
+        highlightBgColor: template.highlightBgColor,
+      }))
+    );
+  };
+
+  const applyTemplateToSlide = (template: CarouselTemplate, index: number) => {
+    setSelectedTemplate(template);
+    updateSlide(index, {
+      bgColor: template.bgColor, textColor: template.textColor, accentColor: template.accentColor,
+      titleSize: template.titleSize, bodySize: template.bodySize, fontFamily: template.fontFamily,
+      align: template.align, bgGradient: template.bgGradient, layout: template.layout,
+      highlightBgColor: template.highlightBgColor,
+    });
+  };
+
+  const applyTemplatePreservingFormatting = (template: CarouselTemplate, index?: number) => {
+    setSelectedTemplate(template);
+    const applyToSlide = (s: SlideData): SlideData => ({
+      ...s,
+      bgColor: template.bgColor,
+      bgGradient: template.bgGradient,
+      layout: template.layout,
+      fontFamily: template.fontFamily,
+      align: s.align,
+      titleSize: s.titleSize,
+      bodySize: s.bodySize,
+      textColor: s.titleColor ? s.textColor : template.textColor,
+      accentColor: template.accentColor,
+      highlightBgColor: template.highlightBgColor,
+    });
+    if (index !== undefined) {
+      setSlides(prev => prev.map((s, i) => i === index ? applyToSlide(s) : s));
+    } else {
+      setSlides(prev => prev.map(applyToSlide));
+    }
+  };
+
+  const exportSlide = async (index: number) => {
+    const el = slideRefs.current[index];
+    if (!el) return;
+    const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
+    try {
+      await document.fonts.ready;
+      await new Promise((r) => setTimeout(r, 300));
+      const dataUrl = await toPng(el, {
+        cacheBust: true,
+        pixelRatio: 2,
+        width: spec.width,
+        height: spec.height,
+        style: { transform: 'none', position: 'static' },
+      });
+      const link = document.createElement("a");
+      link.download = `slide-${index + 1}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      toast.error("Erro ao exportar slide");
+    }
+  };
+
+  const exportAll = async () => {
+    setExporting(true);
+    try {
+      await document.fonts.ready;
+      await new Promise((r) => setTimeout(r, 500));
+      const zip = new JSZip();
+      for (let i = 0; i < slides.length; i++) {
+        const el = slideRefs.current[i];
+        if (!el) continue;
+        const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
+        const dataUrl = await toPng(el, {
+          cacheBust: true,
+          pixelRatio: 2,
+          width: spec.width,
+          height: spec.height,
+          style: { transform: 'none', position: 'static' },
+        });
+        zip.file(`slide-${i + 1}.png`, dataUrl.split(',')[1], { base64: true });
+      }
+      const content = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(content);
+      link.download = `carrossel-${topic.slice(0, 20).replace(/\s+/g, '-') || 'projeto'}.zip`;
+      link.click();
+      toast.success("Arquivo .zip gerado!");
+    } catch (err) {
+      toast.error("Erro ao gerar ZIP");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const renderActiveTabContent = () => {
+    if (!slides[currentSlide]) return null;
+    switch (activeTab) {
+      case "templates":
+        return (
+          <ScrollArea className="h-[600px]">
+            <div className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                {filteredTemplates.map((t) => (
+                  <button key={t.id} onClick={() => applyTemplate(t)} className={`p-2 rounded border ${selectedTemplate.id === t.id ? "border-primary bg-primary/5" : "border-border"}`}>
+                    <div className="text-xs font-bold truncate">{t.name}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </ScrollArea>
+        );
+      case "text":
+        return (
+          <div className="p-4 space-y-4">
+            <Label>Título</Label>
+            <Textarea value={slides[currentSlide].title} onChange={(e) => updateSlide(currentSlide, { title: e.target.value })} />
+            <Label>Corpo</Label>
+            <Textarea value={slides[currentSlide].body} onChange={(e) => updateSlide(currentSlide, { body: e.target.value })} />
+          </div>
+        );
+      case "brand":
+        return <div className="p-4"><BrandKitManager onApply={applyBrandKit} /></div>;
+      case "uploads":
+        return <div className="p-4"><UserUploads onSelect={(url) => updateSlide(currentSlide, { imageUrl: url })} /></div>;
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader><CardTitle>Gerador de Carrossel</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <Textarea placeholder="Tema do carrossel..." value={topic} onChange={(e) => setTopic(e.target.value)} />
+          <Button onClick={generateContent} disabled={generating} className="w-full">
+            {generating ? "Gerando..." : "Gerar com Mentora Gi"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {slides.length > 0 && (
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="w-full lg:w-80 bg-card border rounded-xl p-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="w-full"><TabsTrigger value="templates">Design</TabsTrigger><TabsTrigger value="text">Texto</TabsTrigger><TabsTrigger value="brand">Marca</TabsTrigger></TabsList>
+              {renderActiveTabContent()}
+            </Tabs>
+          </div>
+          <div className="flex-1 flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <Button onClick={exportAll} disabled={exporting}>Baixar Todos (PNG)</Button>
+            </div>
+            <div className="bg-muted/20 p-8 rounded-xl flex items-center justify-center">
+              <SlidePreview 
+                ref={(ref) => { if (ref) slideRefs.current[currentSlide] = ref.container as any; }}
+                slide={slides[currentSlide]} 
+                slideIndex={currentSlide} 
+                totalSlides={slides.length} 
+                aspectRatio={selectedTemplate.aspectRatio} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

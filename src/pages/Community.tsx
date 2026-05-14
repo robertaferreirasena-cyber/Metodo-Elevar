@@ -119,20 +119,24 @@ export default function Community() {
   const handleOpenUrl = (url: string) => {
     const finalUrl = normalizeUrl(url);
     if (!finalUrl) {
-      console.error("URL Inválida bloqueada:", url);
-      toast.error("URL inválida ou malformada");
+      console.error("[Community] URL Inválida bloqueada:", url);
+      toast.error("A URL fornecida é inválida ou está malformada.");
       return;
     }
+    
+    console.log("[Community] Tentando abrir URL:", finalUrl);
     
     try {
       const newWindow = window.open(finalUrl, '_blank', 'noopener,noreferrer');
       if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        console.warn("Pop-up bloqueado pelo navegador:", finalUrl);
-        toast.warning("Pop-up bloqueado. Por favor, permita pop-ups para visualizar o conteúdo.");
+        console.warn("[Community] Pop-up bloqueado pelo navegador:", finalUrl);
+        toast.warning("O seu navegador bloqueou a abertura do conteúdo. Por favor, autorize pop-ups para este site.");
+      } else {
+        console.log("[Community] Janela aberta com sucesso");
       }
     } catch (err) {
-      console.error("Erro ao tentar abrir URL:", err);
-      toast.error("Não foi possível abrir o link");
+      console.error("[Community] Erro fatal ao abrir URL:", err);
+      toast.error("Não foi possível abrir o link devido a uma restrição do navegador.");
     }
   };
 
@@ -883,6 +887,10 @@ export default function Community() {
                           frameBorder={0}
                           allow="autoplay; fullscreen; picture-in-picture; clipboard-write"
                           allowFullScreen
+                          onError={() => {
+                            console.error("[Community] Erro ao carregar player Vini:", normalizedUrl);
+                            toast.error("Ocorreu um erro ao carregar o vídeo do Vini.");
+                          }}
                         />
                       </div>
                     </div>
