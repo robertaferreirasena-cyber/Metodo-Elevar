@@ -23,7 +23,7 @@ interface Props {
 }
 
 const DEFAULTS: Required<ImageAdjustValues> = {
-  positionX: 50, positionY: 50, scale: 1, blur: 0, brightness: 100, contrast: 100,
+  positionX: 50, positionY: 50, scale: 1, blur: 0, brightness: 100, contrast: 100, opacity: 100,
 };
 
 const PRESETS: { label: string; values: Partial<ImageAdjustValues> }[] = [
