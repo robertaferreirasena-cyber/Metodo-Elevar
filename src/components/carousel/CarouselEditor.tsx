@@ -1867,8 +1867,9 @@ REGRAS OBRIGATÓRIAS:
                 limitToBounds={false}
                 onTransform={(ref) => setZoomScale(ref.state.scale)}
                 doubleClick={{ disabled: true }}
-                panning={{ activationKeys: [" "], disabled: false }}
-                wheel={{ disabled: false }}
+                panning={{ disabled: false }} // Allow panning without spacebar for easier navigation
+                wheel={{ disabled: true }} // Disable wheel zoom to avoid accidental zoom as requested
+
               >
                 {({ zoomIn, zoomOut, resetTransform }) => (
                   <>
