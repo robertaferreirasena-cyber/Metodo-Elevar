@@ -197,8 +197,11 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       layout: isJournal ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length] : template.layout,
       highlightBgColor: template.highlightBgColor,
       gap: template.gap || 20,
-      titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.1 },
-      bodyPos: { x: 0.1, y: 0.25, width: 0.8, height: 0.3 },
+      profileName: profileInfo.name,
+      profileHandle: profileInfo.handle,
+      profileImageUrl: profileInfo.image,
+      titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.15 },
+      bodyPos: { x: 0.1, y: 0.3, width: 0.8, height: 0.4 },
     });
 
     if (templateApplyMode === "all") {
