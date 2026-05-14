@@ -745,6 +745,16 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
           </div>
 
           {/* Bottom Navigator */}
+          <div className="h-10 border-t bg-card/50 flex items-center justify-between px-4 shrink-0">
+             <div className="flex items-center gap-2">
+               <span className="text-[10px] font-bold uppercase text-muted-foreground">Slides</span>
+               <Badge variant="secondary" className="text-[10px]">{slides.length}</Badge>
+             </div>
+             <div className="flex items-center gap-2">
+               <Button variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => setSelectedSlides(slides.map((_, i) => i))}>Selecionar Todos</Button>
+               <Button variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => setSelectedSlides([])}>Limpar Seleção</Button>
+             </div>
+          </div>
           <div className="h-[140px] border-t bg-card flex items-center px-4 overflow-x-auto gap-4 shrink-0 pb-2 custom-scrollbar">
              {slides.map((s, i) => {
                const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
