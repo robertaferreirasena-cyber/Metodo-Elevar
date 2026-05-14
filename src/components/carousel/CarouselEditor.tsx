@@ -743,11 +743,11 @@ Tom: ${tone}${personaCtx}
 
 REGRAS OBRIGATÓRIAS:
 1. ARCO NARRATIVO: Slide 1-2 = Gancho + Dor, Slides do meio = Desenvolvimento com valor, Slides finais = Resolução + CTA
-2. Títulos: 8-15 palavras, impactantes e emocionais
-3. Corpo: 4-6 linhas com conteúdo denso, exemplos e linguagem conversacional
-4. Cada slide deve ter conexão narrativa com o anterior
-5. O último slide DEVE ter um CTA irresistível
-
+2. Títulos: 8-15 palavras, impactantes e emocionais. Substitua o título original do template por este conteúdo.
+3. Subtítulos/Corpo: 4-6 linhas com conteúdo denso, exemplos e linguagem conversacional. Substitua o subtítulo do template.
+4. Cada slide deve ter conexão narrativa com o anterior.
+5. O último slide DEVE ter um CTA irresistível.
+6. Retorne APENAS um JSON válido: {"slides":[{"title":"...","body":"..."}]}`;
 Retorne APENAS um JSON válido sem markdown, neste formato exato:
 {"slides":[{"title":"...","body":"..."}]}`;
 
