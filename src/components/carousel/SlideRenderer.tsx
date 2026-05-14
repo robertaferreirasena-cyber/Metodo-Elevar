@@ -335,7 +335,7 @@ export const SlideRenderer = React.memo(({
       {layout === "journal-binder" && (
         <div className="absolute inset-0 flex flex-col p-16 pt-24" style={{ backgroundColor: slide.bgColor }}>
            <div className="absolute top-0 left-0 right-0 h-16 flex justify-around px-12">
-              <SpiralBinder color="#94a3b8" count={8} />
+              <SpiralBinder width={spec.width - 100} rings={8} />
            </div>
            <div className="h-full border-t border-muted pt-8">
               {renderText(slide.title, titleStyle, slide.titlePos, "mb-6")}
