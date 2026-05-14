@@ -983,7 +983,7 @@ export function buildJournalSampleSlides(
 export interface SlideData {
   title: string;
   body: string;
-  caption?: string; // Legenda sugerida para o post
+  caption?: string;
   bgColor: string;
   textColor: string;
   accentColor: string;
@@ -998,6 +998,49 @@ export interface SlideData {
   profileName?: string;
   profileHandle?: string;
   profileImageUrl?: string;
+  titleColor?: string;
+  bodyColor?: string;
+  titleBold?: boolean;
+  titleItalic?: boolean;
+  titleUnderline?: boolean;
+  bodyBold?: boolean;
+  bodyItalic?: boolean;
+  bodyUnderline?: boolean;
+  textShadow?: string;
+  gap?: number;
+  overlayOpacity?: number;
+  titlePos?: { x: number; y: number; width?: number; height?: number };
+  bodyPos?: { x: number; y: number; width?: number; height?: number };
+  verticalAlign?: "top" | "center" | "bottom";
+  titleVerticalAlign?: "top" | "center" | "bottom";
+  bodyVerticalAlign?: "top" | "center" | "bottom";
+  titleAlign?: "left" | "center" | "right";
+  bodyAlign?: "left" | "center" | "right";
+  highlightBgColor?: string;
+  bgImageUrl?: string;
+  bgImagePositionX?: number;
+  bgImagePositionY?: number;
+  bgImageScale?: number;
+  bgImageBlur?: number;
+  bgImageBrightness?: number;
+  bgImageContrast?: number;
+  imagePositionX?: number;
+  imagePositionY?: number;
+  imageScale?: number;
+  imageBlur?: number;
+  imageBrightness?: number;
+  imageContrast?: number;
+  layers?: Array<{
+    id: string;
+    type: 'text' | 'image' | 'shape';
+    content?: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    style?: React.CSSProperties;
+  }>;
+}
   highlightBgColor?: string;
   // Advanced formatting
   titleBold?: boolean;
