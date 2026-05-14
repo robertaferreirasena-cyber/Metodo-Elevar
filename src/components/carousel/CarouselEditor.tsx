@@ -228,6 +228,7 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       const data = JSON.parse(jsonMatch[0]);
       const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
       setSlides(newSlides);
+      setSelectedSlides([]); // Clear selection when generating new content
       setCurrentSlide(0);
       toast.success(isStatic ? "Post estático gerado!" : "Carrossel gerado!");
     } catch (err) {
