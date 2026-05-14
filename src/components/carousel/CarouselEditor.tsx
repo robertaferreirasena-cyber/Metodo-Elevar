@@ -1108,7 +1108,8 @@ REGRAS OBRIGATÓRIAS:
         });
       });
     } catch (err: any) {
-      toast.error(err.message || "Erro ao consultar Mentora Gi");
+      console.error("Erro na Mentora Gi:", err);
+      toast.error(err.message || "Erro ao consultar Mentora Gi. Tente novamente em instantes.");
     } finally { setGiLoading(false); }
   };
 
@@ -1741,7 +1742,7 @@ REGRAS OBRIGATÓRIAS:
 
       {/* ========== EDITOR + PREVIEW ========== */}
       {slides.length > 0 && cur && (
-        <div className="flex flex-col lg:flex-row h-[700px] lg:h-[850px] border border-border/50 rounded-2xl overflow-hidden bg-card shadow-2xl relative">
+        <div className={`flex flex-col lg:flex-row h-[700px] lg:h-[850px] border border-border/50 rounded-2xl overflow-hidden bg-card shadow-2xl relative ${fullscreen ? 'fixed inset-0 z-50 h-screen w-screen rounded-none' : ''}`}>
           {/* Canva-style Side Sidebar (Icon Bar) */}
           <div className="w-[70px] bg-muted/30 border-r border-border/50 flex flex-col py-4 gap-2 items-center shrink-0 z-20">
             {sidebarTabs.map(tab => (
@@ -1759,8 +1760,8 @@ REGRAS OBRIGATÓRIAS:
             ))}
             
             <div className="mt-auto flex flex-col gap-2 items-center w-full px-2">
-               <Button size="icon" variant="ghost" onClick={toggleFullscreen} title="Tela Cheia" className="h-10 w-10">
-                 <Maximize className="h-5 w-5" />
+               <Button size="icon" variant="ghost" onClick={() => setFullscreen(!fullscreen)} title={fullscreen ? "Sair da Tela Cheia" : "Tela Cheia"} className="h-10 w-10">
+                 {fullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
                </Button>
             </div>
           </div>
@@ -1805,10 +1806,23 @@ REGRAS OBRIGATÓRIAS:
                        <Undo2 className="h-4 w-4" style={{ transform: "scaleX(-1)" }} />
                     </Button>
                     <div className="h-4 w-[1px] bg-border mx-1 self-center" />
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicateSlide(currentSlide)} title="Duplicar">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => {
+                        const newSlide = JSON.parse(JSON.stringify(slides[currentSlide]));
+                        updateSlidesWithHistory(prev => [...prev, newSlide]);
+                        setCurrentSlide(slides.length);
+                        toast.success("Slide duplicado");
+                    }} title="Duplicar">
                        <CopyPlus className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteSlide(currentSlide)} disabled={slides.length <= 1} title="Excluir">
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => {
+                        if (slides.length <= 1) return;
+                        updateSlidesWithHistory(prev => {
+                          const next = prev.filter((_, i) => i !== currentSlide);
+                          setCurrentSlide(Math.max(0, currentSlide - 1));
+                          return next;
+                        });
+                        toast.success("Slide removido");
+                    }} disabled={slides.length <= 1} title="Excluir">
                        <Trash2 className="h-4 w-4" />
                     </Button>
                     <Button size="icon" variant="ghost" className={`h-8 w-8 ${isFreeEditMode ? 'text-primary bg-primary/10' : ''}`} onClick={() => setIsFreeEditMode(!isFreeEditMode)} title={isFreeEditMode ? 'Sair do Modo Edição Livre' : 'Modo Edição Livre'}>
@@ -1818,7 +1832,14 @@ REGRAS OBRIGATÓRIAS:
                </div>
 
                <div className="flex items-center gap-3">
-                  <Button size="sm" variant="outline" onClick={() => setSlides(prev => [...prev, { ...cur, id: Math.random().toString(36).substr(2, 9), title: "Nova Página", body: "Adicione seu texto aqui." }])} className="gap-2 hidden sm:flex">
+                  <Button size="sm" variant="outline" onClick={() => {
+                      const blankSlide = JSON.parse(JSON.stringify(slides[0]));
+                      blankSlide.title = "Nova Página";
+                      blankSlide.body = "Adicione seu texto aqui.";
+                      blankSlide.id = Math.random().toString(36).substr(2, 9);
+                      updateSlidesWithHistory(prev => [...prev, blankSlide]);
+                      setCurrentSlide(slides.length);
+                  }} className="gap-2 hidden sm:flex">
                     <PlusCircle className="h-4 w-4" /> Adicionar Página
                   </Button>
                   <Button size="sm" onClick={() => exportSlide(currentSlide)} disabled={exporting} className="gap-2 bg-primary hover:bg-primary/90 shadow-md">
@@ -1829,9 +1850,9 @@ REGRAS OBRIGATÓRIAS:
 
             {/* Canvas Area */}
             <div className="flex-1 p-4 lg:p-12 overflow-auto flex items-center justify-center bg-[#f0f2f5] dark:bg-[#111111]">
-               <div className="relative shadow-[0_20px_50px_rgba(0,0,0,0.2)] transition-all duration-500">
+               <div className={`relative shadow-[0_20px_50px_rgba(0,0,0,0.2)] transition-all duration-500 ${fullscreen ? 'max-h-full' : ''}`}>
                  <SlidePreview 
-                    ref={setSlideRef(currentSlide)} 
+                    ref={(el) => { slideRefs.current[currentSlide] = el; }}
                     slide={cur} 
                     slideIndex={currentSlide} 
                     totalSlides={slides.length} 
@@ -1839,7 +1860,11 @@ REGRAS OBRIGATÓRIAS:
                     isFreeEditMode={isFreeEditMode}
                     selectedLayerId={selectedLayerId}
                     onSelectLayer={setSelectedLayerId}
-                    onUpdate={(updates) => updateSlide(currentSlide, updates)}
+                    onUpdate={(updates) => {
+                      updateSlidesWithHistory(prev => prev.map((s, i) => 
+                        i === currentSlide ? { ...s, ...updates } : s
+                      ));
+                    }}
                  />
                </div>
             </div>
