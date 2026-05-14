@@ -29,7 +29,7 @@ import {
   isJournalTemplate, JOURNAL_LAYOUT_SEQUENCE, JOURNAL_PALETTES,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio
 } from "./CarouselTemplates";
-import { ImageLibraryPicker } from "./ImageLibraryPicker";
+import ImageLibraryPicker from "./ImageLibraryPicker";
 import JSZip from "jszip";
 import { toPng } from "html-to-image";
 import UserUploads from "./UserUploads";
