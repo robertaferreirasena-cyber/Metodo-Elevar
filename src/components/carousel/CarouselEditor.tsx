@@ -167,6 +167,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   };
 
   const applyTemplate = useCallback((template: CarouselTemplate) => {
+    // Preserve current selection when changing template
+    const currentSelectedIndices = [...selectedSlides];
+    
     setSelectedTemplate(template);
     const isJournal = isJournalTemplate(template.id);
     const applyToSlide = (s: SlideData, i: number): SlideData => ({
@@ -190,8 +193,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     } else {
       updateSlide(currentSlide, applyToSlide(cur, currentSlide));
     }
+    setSelectedSlides(currentSelectedIndices);
     toast.success(`Template "${template.name}" aplicado`);
-  }, [templateApplyMode, currentSlide, cur, updateSlidesWithHistory]);
+  }, [templateApplyMode, currentSlide, cur, updateSlidesWithHistory, selectedSlides]);
 
   const generateContent = async () => {
     if (!topic.trim()) { toast.error("Informe o tema do conteúdo"); return; }
@@ -228,6 +232,7 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       const data = JSON.parse(jsonMatch[0]);
       const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
       setSlides(newSlides);
+      setSelectedSlides([]); // Clear selection when generating new content
       setCurrentSlide(0);
       toast.success(isStatic ? "Post estático gerado!" : "Carrossel gerado!");
     } catch (err) {
@@ -244,11 +249,11 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       const zip = new JSZip();
       toast.info(`Iniciando exportação de ${indices.length} slides...`);
       
-      // We'll create a temporary div to render each slide
+      // Hidden container to render slides for export
       const exportContainer = document.createElement("div");
-      exportContainer.style.position = "absolute";
-      exportContainer.style.left = "-9999px";
-      exportContainer.style.top = "-9999px";
+      exportContainer.style.position = "fixed";
+      exportContainer.style.left = "-10000px";
+      exportContainer.style.top = "0";
       document.body.appendChild(exportContainer);
 
       for (let i = 0; i < indices.length; i++) {
@@ -256,43 +261,78 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
         const slide = slides[idx];
         const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
         
-        // Render slide
+        // Create a wrapper div for html-to-image
         const slideDiv = document.createElement("div");
         slideDiv.style.width = `${spec.width}px`;
         slideDiv.style.height = `${spec.height}px`;
+        slideDiv.style.position = "relative";
+        slideDiv.style.overflow = "hidden";
         exportContainer.appendChild(slideDiv);
+
+        // We'll use a hidden root for SlideRenderer
+        // But html-to-image needs real DOM elements.
+        // For a true multi-export, we'd ideally have a way to render a React component to a DOM node.
+        // For now, let's at least implement the logic for the current slide or sequentially if visible.
         
-        // We use the same SlidePreview logic but nativeSize=true and no scale
-        // For simplicity, we'll use a specialized component or just the renderer
-        // Since we can't easily use React components outside the tree, 
-        // we'll rely on the existing SlidePreview if it's mounted, 
-        // but for bulk export we need a better way.
-        // For now, let's try to find the element in the DOM if it's visible, 
-        // OR better: use a hidden "ExportRenderer"
+        // Fallback for single or sequential export using the visible preview
+        if (indices.length === 1 || idx === currentSlide) {
+          const el = document.querySelector(".slide-content-root");
+          if (el) {
+            const dataUrl = await toPng(el as HTMLElement, { 
+              width: spec.width, 
+              height: spec.height,
+              pixelRatio: 1
+            });
+            const base64Data = dataUrl.split(',')[1];
+            zip.file(`slide-${idx + 1}.png`, base64Data, { base64: true });
+          }
+        } else {
+          // If not the current slide, we'd need to switch currentSlide and wait, or use a separate renderer.
+          // Since switching slides triggers state updates, sequential export is safer.
+          setCurrentSlide(idx);
+          await new Promise(r => setTimeout(r, 500)); // Wait for render
+          const el = document.querySelector(".slide-content-root");
+          if (el) {
+            const dataUrl = await toPng(el as HTMLElement, { 
+              width: spec.width, 
+              height: spec.height,
+              pixelRatio: 1
+            });
+            const base64Data = dataUrl.split(',')[1];
+            zip.file(`slide-${idx + 1}.png`, base64Data, { base64: true });
+          }
+        }
       }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(content);
+      link.download = indices.length === 1 ? `slide-${indices[0] + 1}.png` : "carrossel.zip";
       
-      // Placeholder for actual PNG generation because it's complex to do without a dedicated React tree
-      // But we can trigger it for the current slide easily
-      if (indices.length === 1 && indices[0] === currentSlide) {
+      // If single file and zipped, we might want just the PNG, but ZIP is safer for multiple.
+      if (indices.length === 1) {
+        // Special case for single PNG
         const el = document.querySelector(".slide-content-root");
         if (el) {
-          const dataUrl = await toPng(el as HTMLElement, { width: FORMAT_SPECS[selectedTemplate.aspectRatio].width, height: FORMAT_SPECS[selectedTemplate.aspectRatio].height });
-          const link = document.createElement('a');
-          link.download = `slide-${indices[0] + 1}.png`;
-          link.href = dataUrl;
-          link.click();
+          const dataUrl = await toPng(el as HTMLElement, { 
+            width: FORMAT_SPECS[selectedTemplate.aspectRatio].width, 
+            height: FORMAT_SPECS[selectedTemplate.aspectRatio].height,
+            pixelRatio: 1
+          });
+          const singleLink = document.createElement('a');
+          singleLink.href = dataUrl;
+          singleLink.download = `slide-${indices[0] + 1}.png`;
+          singleLink.click();
         }
       } else {
-        toast.info("A exportação múltipla está sendo processada...");
-        // Real multi-export requires rendering all slides. 
-        // For now let's at least fix the single export and the UI.
+        link.click();
       }
       
       document.body.removeChild(exportContainer);
       toast.success("Exportação concluída!");
     } catch (err) {
-      console.error(err);
-      toast.error("Erro ao exportar");
+      console.error("Export error:", err);
+      toast.error("Erro ao exportar slides");
     } finally {
       setExporting(false);
     }
@@ -574,29 +614,59 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                   {/* Vertical Alignment and Spacing */}
                   <div className="space-y-4 p-3 rounded-lg border bg-muted/30">
                     <div className="space-y-2">
-                      <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Alinhamento Vertical</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Alinhamento do Título</Label>
                       <div className="flex bg-muted p-1 rounded-md gap-1">
                         <Button 
-                          variant={cur.verticalAlign === 'top' ? 'secondary' : 'ghost'} 
+                          variant={cur.titleVerticalAlign === 'top' ? 'secondary' : 'ghost'} 
                           size="sm" 
                           className="flex-1 h-7 text-[10px]"
-                          onClick={() => updateSlide(currentSlide, { verticalAlign: 'top', titlePos: undefined, bodyPos: undefined })}
+                          onClick={() => updateSlide(currentSlide, { titleVerticalAlign: 'top', titlePos: undefined })}
                         >
                           Topo
                         </Button>
                         <Button 
-                          variant={cur.verticalAlign === 'center' || !cur.verticalAlign ? 'secondary' : 'ghost'} 
+                          variant={cur.titleVerticalAlign === 'center' || !cur.titleVerticalAlign ? 'secondary' : 'ghost'} 
                           size="sm" 
                           className="flex-1 h-7 text-[10px]"
-                          onClick={() => updateSlide(currentSlide, { verticalAlign: 'center', titlePos: undefined, bodyPos: undefined })}
+                          onClick={() => updateSlide(currentSlide, { titleVerticalAlign: 'center', titlePos: undefined })}
                         >
                           Meio
                         </Button>
                         <Button 
-                          variant={cur.verticalAlign === 'bottom' ? 'secondary' : 'ghost'} 
+                          variant={cur.titleVerticalAlign === 'bottom' ? 'secondary' : 'ghost'} 
                           size="sm" 
                           className="flex-1 h-7 text-[10px]"
-                          onClick={() => updateSlide(currentSlide, { verticalAlign: 'bottom', titlePos: undefined, bodyPos: undefined })}
+                          onClick={() => updateSlide(currentSlide, { titleVerticalAlign: 'bottom', titlePos: undefined })}
+                        >
+                          Baixo
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Alinhamento do Corpo</Label>
+                      <div className="flex bg-muted p-1 rounded-md gap-1">
+                        <Button 
+                          variant={cur.bodyVerticalAlign === 'top' ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'top', bodyPos: undefined })}
+                        >
+                          Topo
+                        </Button>
+                        <Button 
+                          variant={cur.bodyVerticalAlign === 'center' || !cur.bodyVerticalAlign ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'center', bodyPos: undefined })}
+                        >
+                          Meio
+                        </Button>
+                        <Button 
+                          variant={cur.bodyVerticalAlign === 'bottom' ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'bottom', bodyPos: undefined })}
                         >
                           Baixo
                         </Button>
@@ -689,15 +759,16 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                     variant={selectedTemplate.aspectRatio === ratio ? 'secondary' : 'ghost'}
                     size="sm"
                     className="h-7 text-[10px] px-2"
-                    onClick={() => {
-                      const newT = { ...selectedTemplate, aspectRatio: ratio };
-                      setSelectedTemplate(newT);
-                      // Update all slides aspect ratio if needed, or just let the preview handle it
-                      toast.success(`Formato ${ratio} selecionado`);
-                    }}
-                   >
-                    {ratio}
-                   </Button>
+                     onClick={() => {
+                       const currentSelectedIndices = [...selectedSlides];
+                       const newT = { ...selectedTemplate, aspectRatio: ratio };
+                       setSelectedTemplate(newT);
+                       setSelectedSlides(currentSelectedIndices);
+                       toast.success(`Formato ${ratio} selecionado`);
+                     }}
+                    >
+                     {ratio}
+                    </Button>
                  ))}
                </div>
              </div>

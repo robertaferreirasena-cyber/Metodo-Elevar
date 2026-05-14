@@ -44,12 +44,10 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
       if (!el) return;
       
       const updateScale = () => {
-        const cw = el.offsetWidth;
-        const ch = el.offsetHeight;
+        const cw = el.clientWidth - 32; // Standard padding
+        const ch = el.clientHeight - 32;
         if (cw > 0 && ch > 0) {
-          // Leave some padding
-          const padding = 40;
-          const s = Math.min((cw - padding) / spec.width, (ch - padding) / spec.height);
+          const s = Math.min(cw / spec.width, ch / spec.height);
           setScale(s);
         }
       };
@@ -132,7 +130,7 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
     };
 
     return (
-      <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden relative bg-[#f0f2f5] dark:bg-black p-4">
+      <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden relative bg-[#f0f2f5] dark:bg-black p-0">
         <div 
           ref={innerRef}
           style={{ 
@@ -140,7 +138,7 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
             height: spec.height, 
             transform: `scale(${scale})`, 
             transformOrigin: "center center", 
-            boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
+            boxShadow: "0 15px 40px rgba(0,0,0,0.2)",
             position: 'absolute',
             flexShrink: 0
           }}
