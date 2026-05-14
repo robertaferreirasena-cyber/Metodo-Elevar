@@ -574,29 +574,59 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                   {/* Vertical Alignment and Spacing */}
                   <div className="space-y-4 p-3 rounded-lg border bg-muted/30">
                     <div className="space-y-2">
-                      <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Alinhamento Vertical</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Alinhamento do Título</Label>
                       <div className="flex bg-muted p-1 rounded-md gap-1">
                         <Button 
-                          variant={cur.verticalAlign === 'top' ? 'secondary' : 'ghost'} 
+                          variant={cur.titleVerticalAlign === 'top' ? 'secondary' : 'ghost'} 
                           size="sm" 
                           className="flex-1 h-7 text-[10px]"
-                          onClick={() => updateSlide(currentSlide, { verticalAlign: 'top', titlePos: undefined, bodyPos: undefined })}
+                          onClick={() => updateSlide(currentSlide, { titleVerticalAlign: 'top', titlePos: undefined })}
                         >
                           Topo
                         </Button>
                         <Button 
-                          variant={cur.verticalAlign === 'center' || !cur.verticalAlign ? 'secondary' : 'ghost'} 
+                          variant={cur.titleVerticalAlign === 'center' || !cur.titleVerticalAlign ? 'secondary' : 'ghost'} 
                           size="sm" 
                           className="flex-1 h-7 text-[10px]"
-                          onClick={() => updateSlide(currentSlide, { verticalAlign: 'center', titlePos: undefined, bodyPos: undefined })}
+                          onClick={() => updateSlide(currentSlide, { titleVerticalAlign: 'center', titlePos: undefined })}
                         >
                           Meio
                         </Button>
                         <Button 
-                          variant={cur.verticalAlign === 'bottom' ? 'secondary' : 'ghost'} 
+                          variant={cur.titleVerticalAlign === 'bottom' ? 'secondary' : 'ghost'} 
                           size="sm" 
                           className="flex-1 h-7 text-[10px]"
-                          onClick={() => updateSlide(currentSlide, { verticalAlign: 'bottom', titlePos: undefined, bodyPos: undefined })}
+                          onClick={() => updateSlide(currentSlide, { titleVerticalAlign: 'bottom', titlePos: undefined })}
+                        >
+                          Baixo
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Alinhamento do Corpo</Label>
+                      <div className="flex bg-muted p-1 rounded-md gap-1">
+                        <Button 
+                          variant={cur.bodyVerticalAlign === 'top' ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'top', bodyPos: undefined })}
+                        >
+                          Topo
+                        </Button>
+                        <Button 
+                          variant={cur.bodyVerticalAlign === 'center' || !cur.bodyVerticalAlign ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'center', bodyPos: undefined })}
+                        >
+                          Meio
+                        </Button>
+                        <Button 
+                          variant={cur.bodyVerticalAlign === 'bottom' ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'bottom', bodyPos: undefined })}
                         >
                           Baixo
                         </Button>
