@@ -131,6 +131,7 @@ export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRat
             backgroundPosition: `${v.positionX}% ${v.positionY}%`,
             backgroundRepeat: "no-repeat",
             filter: `blur(${v.blur}px) brightness(${v.brightness}%) contrast(${v.contrast}%)`,
+            opacity: v.opacity / 100,
           }}
         />
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
