@@ -267,6 +267,38 @@ export const SlideRenderer = React.memo(({
         </div>
       )}
 
+      {layout === "photo-grid" && (
+        <div className="absolute inset-0 flex flex-col p-8 gap-4">
+          <div className="flex-1 grid grid-cols-2 gap-2">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="bg-muted rounded-md overflow-hidden relative">
+                {slide.imageUrls?.[i] ? (
+                  <img src={slide.imageUrls[i]} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-10"><ImagePlus className="w-6 h-6" /></div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="h-1/3">
+            {renderText(slide.title, titleStyle, slide.titlePos, "mb-2")}
+            {renderText(slide.body, bodyStyle, slide.bodyPos)}
+          </div>
+        </div>
+      )}
+
+      {layout === "sales-highlight" && (
+        <div className="absolute inset-0 flex flex-col p-12">
+           <div className="flex-1 flex flex-col justify-center items-center text-center">
+              <div className="px-6 py-2 rounded-full mb-6 font-bold" style={{ backgroundColor: slide.highlightBgColor || slide.accentColor, color: slide.bgColor }}>
+                 OFERTA ESPECIAL
+              </div>
+              {renderText(slide.title, titleStyle, slide.titlePos, "mb-6")}
+              {renderText(slide.body, bodyStyle, slide.bodyPos)}
+           </div>
+        </div>
+      )}
+
       {layout === "journal-photo-card" && (
         <div className="absolute inset-0 flex items-center justify-center p-12">
            {renderBgImage()}
@@ -275,6 +307,64 @@ export const SlideRenderer = React.memo(({
               {renderText(slide.body, bodyStyle, slide.bodyPos)}
               <div className="absolute top-4 right-4"><WashiTape width={120 * fontScale} color={slide.accentColor} rotate={-15} /></div>
            </div>
+        </div>
+      )}
+
+      {layout === "journal-note" && (
+        <div className="absolute inset-0 flex flex-col p-16" style={{ backgroundImage: `url(${PAPER_TEXTURES.white})`, backgroundSize: 'cover' }}>
+           <div className="border-l-4 border-primary/20 pl-8 h-full flex flex-col justify-center">
+              {renderText(slide.title, { ...titleStyle, fontFamily: "'Playfair Display', serif" }, slide.titlePos, "mb-6")}
+              {renderText(slide.body, { ...bodyStyle, fontFamily: "'DM Sans', sans-serif" }, slide.bodyPos)}
+           </div>
+           <div className="absolute top-8 right-8"><GoldStamp size={80 * fontScale} /></div>
+        </div>
+      )}
+
+      {layout === "journal-tape" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center" style={{ backgroundColor: slide.bgColor }}>
+           <div className="absolute top-10"><WashiTape width={200 * fontScale} color={slide.accentColor} /></div>
+           <div className="bg-white p-12 shadow-xl rotate-1 max-w-[90%]">
+              {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+              {renderText(slide.body, bodyStyle, slide.bodyPos)}
+           </div>
+           <div className="absolute bottom-10 right-10 rotate-12"><WaxSeal color={slide.accentColor} size={60 * fontScale} /></div>
+        </div>
+      )}
+
+      {layout === "journal-binder" && (
+        <div className="absolute inset-0 flex flex-col p-16 pt-24" style={{ backgroundColor: slide.bgColor }}>
+           <div className="absolute top-0 left-0 right-0 h-16 flex justify-around px-12">
+              <SpiralBinder color="#94a3b8" count={8} />
+           </div>
+           <div className="h-full border-t border-muted pt-8">
+              {renderText(slide.title, titleStyle, slide.titlePos, "mb-6")}
+              {renderText(slide.body, bodyStyle, slide.bodyPos)}
+           </div>
+        </div>
+      )}
+
+      {layout === "journal-torn-paper" && (
+        <div className="absolute inset-0">
+           {renderBgImage()}
+           <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative w-[85%] h-[75%] bg-white p-12 shadow-2xl overflow-hidden" style={{ clipPath: TornPaperPath }}>
+                 <div className="absolute top-0 left-0 w-full h-4 bg-muted/20" />
+                 {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+                 {renderText(slide.body, bodyStyle, slide.bodyPos)}
+              </div>
+           </div>
+        </div>
+      )}
+
+      {layout === "journal-envelope" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-12" style={{ backgroundColor: slide.bgColor }}>
+           <div className="relative w-full aspect-video bg-[#fdfaf6] shadow-inner p-8 flex flex-col items-center justify-center text-center">
+              <div className="absolute inset-0 border-[20px] border-white/40 pointer-events-none" />
+              {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+              {renderText(slide.body, bodyStyle, slide.bodyPos)}
+              <div className="absolute -bottom-8"><WaxSeal color={slide.accentColor} size={70 * fontScale} /></div>
+           </div>
+           <div className="mt-16"><HandDrawnArrow color={slide.accentColor} width={60 * fontScale} rotate={180} /></div>
         </div>
       )}
 
