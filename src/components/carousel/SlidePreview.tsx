@@ -127,7 +127,7 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
             className="pointer-events-auto z-20 group"
             position={{ x: pos.x * spec.width, y: pos.y * spec.height }}
             size={pos.width ? { width: pos.width * spec.width, height: pos.height * spec.height } : undefined}
-            onDrag={(e, d) => updateGuides(d.x, d.y, (pos.width || 0.8) * spec.width, (pos.height || 0.1) * spec.height)}
+            onDrag={(e, d) => { updateGuides(d.x, d.y, (pos.width || 0.8) * spec.width, (pos.height || 0.1) * spec.height); }}
             onDragStop={(e, d) => { setShowGuides({}); onUpdate?.({ [posKey]: { ...pos, x: d.x / spec.width, y: d.y / spec.height } }); }}
             onResizeStop={(e, dir, ref, delta, pos) => { onUpdate?.({ [posKey]: { ...pos, x: pos.x / spec.width, y: pos.y / spec.height, width: ref.offsetWidth / spec.width, height: ref.offsetHeight / spec.height } }); }}
             bounds="parent"
