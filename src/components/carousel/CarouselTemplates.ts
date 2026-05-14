@@ -16,7 +16,7 @@ export type CarouselLayout =
   | "journal-torn-paper"  // papel rasgado sobre foto
   | "journal-envelope";   // envelope aberto + selo de cera
 
-export type AspectRatio = "1:1" | "16:9" | "9:16";
+export type AspectRatio = "1:1" | "4:5" | "16:9" | "9:16";
 
 export interface FormatSpec {
   width: number;
@@ -28,6 +28,7 @@ export interface FormatSpec {
 
 export const FORMAT_SPECS: Record<AspectRatio, FormatSpec> = {
   "1:1":  { width: 1080, height: 1080, label: "Feed 1:1",    titleSize: 42, bodySize: 26 },
+  "4:5":  { width: 1080, height: 1350, label: "Portrait 4:5", titleSize: 42, bodySize: 26 },
   "9:16": { width: 1080, height: 1920, label: "Stories 9:16", titleSize: 48, bodySize: 28 },
   "16:9": { width: 1920, height: 1080, label: "Wide 16:9",    titleSize: 48, bodySize: 28 },
 };
