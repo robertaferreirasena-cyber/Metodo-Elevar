@@ -119,13 +119,20 @@ export default function Community() {
   const handleOpenUrl = (url: string) => {
     const finalUrl = normalizeUrl(url);
     if (!finalUrl) {
-      toast.error("URL inválida");
+      console.error("URL Inválida bloqueada:", url);
+      toast.error("URL inválida ou malformada");
       return;
     }
     
-    const newWindow = window.open(finalUrl, '_blank', 'noopener,noreferrer');
-    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-      toast.warning("Pop-up bloqueado. Por favor, permita pop-ups para este site.");
+    try {
+      const newWindow = window.open(finalUrl, '_blank', 'noopener,noreferrer');
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        console.warn("Pop-up bloqueado pelo navegador:", finalUrl);
+        toast.warning("Pop-up bloqueado. Por favor, permita pop-ups para visualizar o conteúdo.");
+      }
+    } catch (err) {
+      console.error("Erro ao tentar abrir URL:", err);
+      toast.error("Não foi possível abrir o link");
     }
   };
 
