@@ -582,7 +582,8 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                             scale: cur.bgImageScale,
                             blur: cur.bgImageBlur,
                             brightness: cur.bgImageBrightness,
-                            contrast: cur.bgImageContrast
+                            contrast: cur.bgImageContrast,
+                            opacity: cur.bgImageOpacity
                           }}
                           onChange={(vals) => updateSlide(currentSlide, {
                             bgImagePositionX: vals.positionX,
@@ -590,7 +591,8 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                             bgImageScale: vals.scale,
                             bgImageBlur: vals.blur,
                             bgImageBrightness: vals.brightness,
-                            bgImageContrast: vals.contrast
+                            bgImageContrast: vals.contrast,
+                            bgImageOpacity: vals.opacity
                           })}
                         />
                         <div className="space-y-2">
