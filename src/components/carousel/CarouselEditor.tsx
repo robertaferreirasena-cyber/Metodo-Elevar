@@ -397,7 +397,7 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"...","caption":"..."}]
                   <div className="space-y-1">
                     <Label className="text-[10px] uppercase">Imagem de Fundo</Label>
                     <div className="flex gap-1">
-                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}>
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
                         <Search className="h-3 w-3 mr-1" /> Banco
                       </Button>
                       {cur?.bgImageUrl && (
@@ -410,7 +410,7 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"...","caption":"..."}]
                   <div className="space-y-1">
                     <Label className="text-[10px] uppercase">Imagem Template</Label>
                     <div className="flex gap-1">
-                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryOpen(true); }}>
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
                         <Search className="h-3 w-3 mr-1" /> Banco
                       </Button>
                       {cur?.imageUrl && (
@@ -421,7 +421,7 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"...","caption":"..."}]
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full gap-2 text-xs h-8 border-dashed" onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}>
+                <Button variant="outline" className="w-full gap-2 text-xs h-8 border-dashed" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
                    <Upload className="h-3 w-3" /> Meus Uploads
                 </Button>
               </section>
