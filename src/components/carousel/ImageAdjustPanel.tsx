@@ -10,7 +10,8 @@ export interface ImageAdjustValues {
   scale?: number;
   blur?: number;
   brightness?: number;
-  contrast?: number;
+   contrast?: number;
+   opacity?: number;
 }
 
 interface Props {
@@ -22,7 +23,7 @@ interface Props {
 }
 
 const DEFAULTS: Required<ImageAdjustValues> = {
-  positionX: 50, positionY: 50, scale: 1, blur: 0, brightness: 100, contrast: 100,
+  positionX: 50, positionY: 50, scale: 1, blur: 0, brightness: 100, contrast: 100, opacity: 100,
 };
 
 const PRESETS: { label: string; values: Partial<ImageAdjustValues> }[] = [
@@ -46,6 +47,7 @@ export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRat
     blur: values.blur ?? DEFAULTS.blur,
     brightness: values.brightness ?? DEFAULTS.brightness,
     contrast: values.contrast ?? DEFAULTS.contrast,
+    opacity: values.opacity ?? DEFAULTS.opacity,
   };
 
   const update = (patch: Partial<ImageAdjustValues>) => onChange({ ...values, ...patch });
@@ -129,6 +131,7 @@ export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRat
             backgroundPosition: `${v.positionX}% ${v.positionY}%`,
             backgroundRepeat: "no-repeat",
             filter: `blur(${v.blur}px) brightness(${v.brightness}%) contrast(${v.contrast}%)`,
+            opacity: v.opacity / 100,
           }}
         />
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -151,6 +154,10 @@ export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRat
       <div>
         <Label className="text-xs">Desfoque: {v.blur}px</Label>
         <Slider value={[v.blur]} onValueChange={([n]) => update({ blur: n })} min={0} max={20} step={0.5} className="mt-1" />
+      </div>
+      <div>
+        <Label className="text-xs">Opacidade: {v.opacity}%</Label>
+        <Slider value={[v.opacity]} onValueChange={([n]) => update({ opacity: n })} min={0} max={100} step={1} className="mt-1" />
       </div>
     </div>
   );

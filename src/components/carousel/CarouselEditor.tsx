@@ -34,6 +34,8 @@ import ImageLibraryPicker from "./ImageLibraryPicker";
 import JSZip from "jszip";
 import { toPng } from "html-to-image";
 import UserUploads from "./UserUploads";
+import ImageAdjustPanel from "./ImageAdjustPanel";
+import { User } from "lucide-react";
 
 type FormatFilter = "all" | "1:1" | "4:5" | "16:9" | "9:16";
 
@@ -110,12 +112,19 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [slides, setSlides] = useState<SlideData[]>(sessionState.slides);
   const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
   const [selectedSlides, setSelectedSlides] = useState<number[]>([]);
+  const { user } = useAuth();
+  const { hasProfile, formData } = usePersonaContext();
+
+  const [profileInfo, setProfileInfo] = useState({
+    name: user?.user_metadata?.full_name || formData?.business_name || "Seu Nome",
+    handle: formData?.niche ? `@${formData.niche.toLowerCase().replace(/\s+/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, "")}` : "@usuario",
+    image: user?.user_metadata?.avatar_url || ""
+  });
+
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [exportSlideIndex, setExportSlideIndex] = useState<number | null>(null);
-  const { user } = useAuth();
-  const { hasProfile, formData } = usePersonaContext();
 
   const [history, setHistory] = useState<SlideData[][]>([]);
   const [redoStack, setRedoStack] = useState<SlideData[][]>([]);
@@ -155,7 +164,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   const [templateApplyMode, setTemplateApplyMode] = useState<"all" | "current" | "preserve">(sessionState.templateApplyMode);
   const [libraryOpen, setLibraryOpen] = useState(false);
-  const [libraryTarget, setLibraryTarget] = useState<"image" | "bg">("bg");
+  const [libraryTarget, setLibraryTarget] = useState<"image" | "bg" | "profile">("bg");
   const [libraryDefaultTab, setLibraryDefaultTab] = useState<"search" | "uploads">("search");
 
   const [currentJournalPaletteId, setCurrentJournalPaletteId] = useState<string>(() => {
@@ -188,8 +197,11 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       layout: isJournal ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length] : template.layout,
       highlightBgColor: template.highlightBgColor,
       gap: template.gap || 20,
-      titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.1 },
-      bodyPos: { x: 0.1, y: 0.25, width: 0.8, height: 0.3 },
+      profileName: profileInfo.name,
+      profileHandle: profileInfo.handle,
+      profileImageUrl: profileInfo.image,
+      titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.15 },
+      bodyPos: { x: 0.1, y: 0.3, width: 0.8, height: 0.4 },
     });
 
     if (templateApplyMode === "all") {
@@ -234,7 +246,12 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       const jsonMatch = fullText.match(/\{[\s\S]*"slides"[\s\S]*\}/);
       if (!jsonMatch) throw new Error("Resposta inválida");
       const data = JSON.parse(jsonMatch[0]);
-      const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
+      const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides).map(s => ({
+        ...s,
+        profileName: profileInfo.name,
+        profileHandle: profileInfo.handle,
+        profileImageUrl: profileInfo.image
+      }));
       const oldSelectedIndices = [...selectedSlides];
       setSlides(newSlides);
       // Mantemos a seleção atual se os índices ainda existirem
@@ -478,54 +495,182 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
 
               <hr />
 
-              {/* Media Section */}
-              <section className="space-y-4">
-                <Label className="text-sm font-bold flex items-center gap-2 text-primary"><ImageIcon className="h-4 w-4" /> Imagens e Fundo</Label>
-                <div className="grid grid-cols-2 gap-4">
+              {/* Profile Section (Conditional) */}
+              {(selectedTemplate.layout === "profile-post" || selectedTemplate.layout === "tweet-post") && (
+                <section className="space-y-4 p-3 rounded-lg border bg-blue-50/30 border-blue-100">
+                  <Label className="text-sm font-bold flex items-center gap-2 text-blue-700">
+                    <User className="h-4 w-4" /> Personalizar Perfil
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-[10px] uppercase">Nome</Label>
+                      <Input 
+                        value={profileInfo.name} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setProfileInfo(p => ({ ...p, name: val }));
+                          updateSlidesWithHistory(prev => prev.map(s => ({ ...s, profileName: val })));
+                        }} 
+                        className="h-8 text-xs" 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] uppercase">@Handle</Label>
+                      <Input 
+                        value={profileInfo.handle} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setProfileInfo(p => ({ ...p, handle: val }));
+                          updateSlidesWithHistory(prev => prev.map(s => ({ ...s, profileHandle: val })));
+                        }} 
+                        className="h-8 text-xs" 
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Fundo (Background)</Label>
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex gap-1.5">
-                        <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
-                          <Search className="h-3 w-3 mr-1" /> Banco
+                    <Label className="text-[10px] uppercase">Foto de Perfil</Label>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("profile"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
+                        <Upload className="h-3 w-3 mr-1" /> Alterar Foto
+                      </Button>
+                      {profileInfo.image && (
+                        <Button variant="outline" size="sm" className="h-8 text-[10px] text-destructive" onClick={() => {
+                          setProfileInfo(p => ({ ...p, image: "" }));
+                          updateSlidesWithHistory(prev => prev.map(s => ({ ...s, profileImageUrl: "" })));
+                        }}>
+                          Remover
                         </Button>
-                        <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
-                          <Upload className="h-3 w-3 mr-1" /> Subir
-                        </Button>
-                      </div>
-                      {cur?.bgImageUrl && (
-                        <div className="flex items-center gap-2 p-1 bg-muted rounded border group">
-                          <img src={cur.bgImageUrl} className="h-6 w-6 object-cover rounded" />
-                          <span className="text-[8px] flex-1 truncate opacity-60">Fundo ativo</span>
-                          <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:bg-destructive/10" onClick={() => updateSlide(currentSlide, { bgImageUrl: undefined })}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
                       )}
                     </div>
                   </div>
+                </section>
+              )}
 
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Elemento (Template)</Label>
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex gap-1.5">
-                        <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
-                          <Search className="h-3 w-3 mr-1" /> Banco
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
-                          <Upload className="h-3 w-3 mr-1" /> Subir
-                        </Button>
-                      </div>
-                      {cur?.imageUrl && (
-                        <div className="flex items-center gap-2 p-1 bg-muted rounded border group">
-                          <img src={cur.imageUrl} className="h-6 w-6 object-cover rounded" />
-                          <span className="text-[8px] flex-1 truncate opacity-60">Imagem ativa</span>
-                          <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:bg-destructive/10" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
+              <hr />
+
+              {/* Media Section */}
+              <section className="space-y-4">
+                <Label className="text-sm font-bold flex items-center gap-2 text-primary"><ImageIcon className="h-4 w-4" /> Imagens e Fundo</Label>
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Fundo (Background)</Label>
+                      {cur?.bgImageUrl && (
+                         <Button variant="ghost" size="sm" className="h-6 text-[10px] text-destructive" onClick={() => updateSlide(currentSlide, { bgImageUrl: undefined })}>
+                            <Trash2 className="h-3 w-3 mr-1" /> Remover
+                         </Button>
                       )}
                     </div>
+                    
+                    {!cur?.bgImageUrl ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" size="sm" className="h-10 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
+                          <Search className="h-4 w-4 mr-2" /> Banco de Imagens
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-10 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
+                          <Upload className="h-4 w-4 mr-2" /> Subir Arquivo
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
+                            Trocar
+                          </Button>
+                          <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
+                            Subir Nova
+                          </Button>
+                        </div>
+                        <ImageAdjustPanel 
+                          imageUrl={cur.bgImageUrl}
+                          aspectRatio={FORMAT_SPECS[selectedTemplate.aspectRatio].width / FORMAT_SPECS[selectedTemplate.aspectRatio].height}
+                          values={{
+                            positionX: cur.bgImagePositionX,
+                            positionY: cur.bgImagePositionY,
+                            scale: cur.bgImageScale,
+                            blur: cur.bgImageBlur,
+                            brightness: cur.bgImageBrightness,
+                            contrast: cur.bgImageContrast,
+                            opacity: cur.bgImageOpacity
+                          }}
+                          onChange={(vals) => updateSlide(currentSlide, {
+                            bgImagePositionX: vals.positionX,
+                            bgImagePositionY: vals.positionY,
+                            bgImageScale: vals.scale,
+                            bgImageBlur: vals.blur,
+                            bgImageBrightness: vals.brightness,
+                            bgImageContrast: vals.contrast,
+                            bgImageOpacity: vals.opacity
+                          })}
+                        />
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <Label className="text-[10px] uppercase">Opacidade do Overlay</Label>
+                            <span className="text-[10px] font-mono">{Math.round((cur.overlayOpacity ?? 0.55) * 100)}%</span>
+                          </div>
+                          <Slider 
+                            value={[(cur.overlayOpacity ?? 0.55) * 100]} 
+                            min={0} max={100} 
+                            onValueChange={([v]) => updateSlide(currentSlide, { overlayOpacity: v / 100 })} 
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Elemento (Template)</Label>
+                      {cur?.imageUrl && (
+                         <Button variant="ghost" size="sm" className="h-6 text-[10px] text-destructive" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })}>
+                            <Trash2 className="h-3 w-3 mr-1" /> Remover
+                         </Button>
+                      )}
+                    </div>
+
+                    {!cur?.imageUrl ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" size="sm" className="h-10 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
+                          <Search className="h-4 w-4 mr-2" /> Banco de Imagens
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-10 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
+                          <Upload className="h-4 w-4 mr-2" /> Subir Arquivo
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("search"); setLibraryOpen(true); }}>
+                            Trocar
+                          </Button>
+                          <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryDefaultTab("uploads"); setLibraryOpen(true); }}>
+                            Subir Nova
+                          </Button>
+                        </div>
+                        <ImageAdjustPanel 
+                          imageUrl={cur.imageUrl}
+                          aspectRatio={1} // Elements are usually square or standard
+                          values={{
+                            positionX: cur.imagePositionX,
+                            positionY: cur.imagePositionY,
+                            scale: cur.imageScale,
+                            blur: cur.imageBlur,
+                            brightness: cur.imageBrightness,
+                            contrast: cur.imageContrast,
+                            opacity: cur.imageOpacity
+                          }}
+                          onChange={(vals) => updateSlide(currentSlide, {
+                            imagePositionX: vals.positionX,
+                            imagePositionY: vals.positionY,
+                            imageScale: vals.scale,
+                            imageBlur: vals.blur,
+                            imageBrightness: vals.brightness,
+                            imageContrast: vals.contrast,
+                            imageOpacity: vals.opacity
+                          })}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
@@ -913,8 +1058,16 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
         open={libraryOpen} 
         onOpenChange={setLibraryOpen} 
         defaultTab={libraryDefaultTab}
+        orientation={libraryTarget === "bg" && selectedTemplate.aspectRatio !== "4:5" ? selectedTemplate.aspectRatio : "1:1"}
         onSelect={(url) => {
-          updateSlide(currentSlide, libraryTarget === "bg" ? { bgImageUrl: url } : { imageUrl: url });
+          if (libraryTarget === "bg") {
+            updateSlide(currentSlide, { bgImageUrl: url });
+          } else if (libraryTarget === "profile") {
+            setProfileInfo(p => ({ ...p, image: url }));
+            updateSlidesWithHistory(prev => prev.map(s => ({ ...s, profileImageUrl: url })));
+          } else {
+            updateSlide(currentSlide, { imageUrl: url });
+          }
           setLibraryOpen(false);
         }} 
       />

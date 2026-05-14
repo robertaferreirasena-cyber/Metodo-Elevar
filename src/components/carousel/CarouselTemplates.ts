@@ -183,7 +183,7 @@ export interface CarouselTemplate {
     titleSize: 28,
     bodySize: 18,
     align: "left",
-    layout: "text-only",
+    layout: "tweet-post",
   },
   {
     id: "instagram-educativo",
@@ -494,7 +494,7 @@ export interface CarouselTemplate {
     titleSize: 28,
     bodySize: 18,
     align: "left",
-    layout: "text-only",
+    layout: "tweet-post",
   },
   {
     id: "destaque-dourado",
@@ -1034,12 +1034,14 @@ export interface SlideData {
   bgImageBlur?: number;
   bgImageBrightness?: number;
   bgImageContrast?: number;
+  bgImageOpacity?: number;
   imagePositionX?: number;
   imagePositionY?: number;
   imageScale?: number;
   imageBlur?: number;
   imageBrightness?: number;
   imageContrast?: number;
+  imageOpacity?: number;
   highlightScale?: number;
   highlightOffsetY?: number;
   titlePos?: { x: number; y: number; width?: number; height?: number; rotation?: number };

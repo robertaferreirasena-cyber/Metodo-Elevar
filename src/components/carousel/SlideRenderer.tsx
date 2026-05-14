@@ -68,10 +68,12 @@ export const SlideRenderer = React.memo(({
     const blur = opts.blur ?? 0;
     const bright = opts.brightness ?? 100;
     const contrast = opts.contrast ?? 100;
+    const opacity = (opts.opacity ?? 100) / 100;
     return {
       objectPosition: `${posX}% ${posY}%`,
       transform: `scale(${scl})`,
       filter: `blur(${blur}px) brightness(${bright}%) contrast(${contrast}%)`,
+      opacity,
     };
   };
 
@@ -81,8 +83,8 @@ export const SlideRenderer = React.memo(({
     const opacity = slide.overlayOpacity ?? 0.55;
     const useBg = !!slide.bgImageUrl;
     const adj = useBg
-      ? { positionX: slide.bgImagePositionX, positionY: slide.bgImagePositionY, scale: slide.bgImageScale, blur: slide.bgImageBlur, brightness: slide.bgImageBrightness, contrast: slide.bgImageContrast }
-      : { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast };
+      ? { positionX: slide.bgImagePositionX, positionY: slide.bgImagePositionY, scale: slide.bgImageScale, blur: slide.bgImageBlur, brightness: slide.bgImageBrightness, contrast: slide.bgImageContrast, opacity: slide.bgImageOpacity }
+      : { positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast, opacity: slide.imageOpacity };
     
     return (
       <>
@@ -203,19 +205,41 @@ export const SlideRenderer = React.memo(({
         </>
       )}
 
-      {layout === "profile-post" && (
-        <div className="absolute inset-0 flex flex-col p-8" style={{ textAlign: slide.align }}>
-          <div className="flex items-center gap-3 mb-6" style={{ justifyContent: slide.align === 'center' ? 'center' : 'flex-start' }}>
-            <div className="w-12 h-12 rounded-full bg-muted overflow-hidden">
-              {slide.profileImageUrl && <img src={slide.profileImageUrl} className="w-full h-full object-cover" crossOrigin="anonymous" />}
+      {(layout === "profile-post" || layout === "tweet-post") && (
+        <div className="absolute inset-0 flex flex-col p-8" style={{ textAlign: slide.align, justifyContent: slide.verticalAlign === "top" ? "flex-start" : slide.verticalAlign === "bottom" ? "flex-end" : "center" }}>
+          <div className={`flex items-center gap-3 mb-6 ${layout === "tweet-post" ? "border-b border-muted pb-4" : ""}`} style={{ justifyContent: slide.align === 'center' ? 'center' : 'flex-start' }}>
+            <div className="w-12 h-12 rounded-full bg-muted overflow-hidden shrink-0 border border-white/10">
+              {slide.profileImageUrl ? (
+                <img src={slide.profileImageUrl} className="w-full h-full object-cover" crossOrigin="anonymous" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-primary/20 text-primary font-bold">
+                  {slide.profileName?.[0] || "U"}
+                </div>
+              )}
             </div>
             <div style={{ textAlign: 'left' }}>
-              <div className="font-bold" style={{ color: slide.textColor }}>{slide.profileName || "Seu Nome"}</div>
-              <div className="text-xs opacity-60" style={{ color: slide.textColor }}>{slide.profileHandle || "@seuusuario"}</div>
+              <div className="font-bold leading-tight" style={{ color: slide.textColor }}>{slide.profileName || "Seu Nome"}</div>
+              <div className="text-sm opacity-60" style={{ color: slide.textColor }}>{slide.profileHandle || "@seuusuario"}</div>
             </div>
+            {layout === "tweet-post" && (
+              <div className="ml-auto opacity-40">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+              </div>
+            )}
           </div>
-          {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-          {renderText(slide.body, bodyStyle, slide.bodyPos)}
+          <div className="flex-1 flex flex-col" style={{ justifyContent: slide.verticalAlign === "top" ? "flex-start" : slide.verticalAlign === "bottom" ? "flex-end" : "center" }}>
+            <div style={{ marginBottom: `${(slide.gap || 20) * fontScale}px` }}>
+              {renderText(slide.title, titleStyle, slide.titlePos)}
+            </div>
+            {renderText(slide.body, bodyStyle, slide.bodyPos)}
+          </div>
+          
+          {layout === "tweet-post" && (
+            <div className="mt-8 pt-4 border-t border-muted flex gap-6 opacity-60 text-sm" style={{ color: slide.textColor }}>
+              <span><b>12.4K</b> Retweets</span>
+              <span><b>45.2K</b> Curtidas</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -231,7 +255,7 @@ export const SlideRenderer = React.memo(({
                 src={slide.imageUrl} 
                 className="w-full h-full object-cover" 
                 crossOrigin="anonymous"
-                style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })}
+                style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast, opacity: slide.imageOpacity })}
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
@@ -245,6 +269,38 @@ export const SlideRenderer = React.memo(({
         </div>
       )}
 
+      {layout === "photo-grid" && (
+        <div className="absolute inset-0 flex flex-col p-8 gap-4">
+          <div className="flex-1 grid grid-cols-2 gap-2">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="bg-muted rounded-md overflow-hidden relative">
+                {slide.imageUrls?.[i] ? (
+                  <img src={slide.imageUrls[i]} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-10"><ImagePlus className="w-6 h-6" /></div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="h-1/3">
+            {renderText(slide.title, titleStyle, slide.titlePos, "mb-2")}
+            {renderText(slide.body, bodyStyle, slide.bodyPos)}
+          </div>
+        </div>
+      )}
+
+      {layout === "sales-highlight" && (
+        <div className="absolute inset-0 flex flex-col p-12">
+           <div className="flex-1 flex flex-col justify-center items-center text-center">
+              <div className="px-6 py-2 rounded-full mb-6 font-bold" style={{ backgroundColor: slide.highlightBgColor || slide.accentColor, color: slide.bgColor }}>
+                 OFERTA ESPECIAL
+              </div>
+              {renderText(slide.title, titleStyle, slide.titlePos, "mb-6")}
+              {renderText(slide.body, bodyStyle, slide.bodyPos)}
+           </div>
+        </div>
+      )}
+
       {layout === "journal-photo-card" && (
         <div className="absolute inset-0 flex items-center justify-center p-12">
            {renderBgImage()}
@@ -253,6 +309,68 @@ export const SlideRenderer = React.memo(({
               {renderText(slide.body, bodyStyle, slide.bodyPos)}
               <div className="absolute top-4 right-4"><WashiTape width={120 * fontScale} color={slide.accentColor} rotate={-15} /></div>
            </div>
+        </div>
+      )}
+
+      {layout === "journal-note" && (
+        <div className="absolute inset-0 flex flex-col p-16" style={{ background: slide.bgColor }}>
+           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: PAPER_TEXTURES.notebook }} />
+           <div className="border-l-4 border-primary/20 pl-8 h-full flex flex-col justify-center relative z-10">
+              {renderText(slide.title, { ...titleStyle, fontFamily: "'Playfair Display', serif" }, slide.titlePos, "mb-6")}
+              {renderText(slide.body, { ...bodyStyle, fontFamily: "'DM Sans', sans-serif" }, slide.bodyPos)}
+           </div>
+           <div className="absolute top-8 right-8"><GoldStamp size={80 * fontScale} /></div>
+        </div>
+      )}
+
+      {layout === "journal-tape" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center" style={{ backgroundColor: slide.bgColor }}>
+           <div className="absolute top-10"><WashiTape width={200 * fontScale} color={slide.accentColor} /></div>
+           <div className="bg-white p-12 shadow-xl rotate-1 max-w-[90%]">
+              {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+              {renderText(slide.body, bodyStyle, slide.bodyPos)}
+           </div>
+           <div className="absolute bottom-10 right-10 rotate-12"><WaxSeal color={slide.accentColor} size={60 * fontScale} /></div>
+        </div>
+      )}
+
+      {layout === "journal-binder" && (
+        <div className="absolute inset-0 flex flex-col p-16 pt-24" style={{ backgroundColor: slide.bgColor }}>
+           <div className="absolute top-0 left-0 right-0 h-16 flex justify-around px-12">
+              <SpiralBinder width={spec.width - 100} rings={8} />
+           </div>
+           <div className="h-full border-t border-muted pt-8">
+              {renderText(slide.title, titleStyle, slide.titlePos, "mb-6")}
+              {renderText(slide.body, bodyStyle, slide.bodyPos)}
+           </div>
+        </div>
+      )}
+
+      {layout === "journal-torn-paper" && (
+        <div className="absolute inset-0">
+           {renderBgImage()}
+           <div className="absolute inset-0 flex items-center justify-center">
+              <TornPaperPath width={spec.width * 0.85} height={spec.height * 0.75} fill={slide.bgColor}>
+                 {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+                 {renderText(slide.body, bodyStyle, slide.bodyPos)}
+              </TornPaperPath>
+           </div>
+        </div>
+      )}
+
+      {layout === "journal-envelope" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-12" style={{ backgroundColor: slide.bgColor }}>
+           <div className="relative w-full aspect-video flex flex-col items-center justify-center text-center">
+              <div className="absolute inset-0">
+                 <EnvelopeShape width={spec.width * 0.7} height={spec.width * 0.5} color={slide.bgColor} flapColor={slide.accentColor} />
+              </div>
+              <div className="relative z-10 px-12">
+                {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+                {renderText(slide.body, bodyStyle, slide.bodyPos)}
+              </div>
+              <div className="absolute -bottom-8"><WaxSeal color={slide.accentColor} size={70 * fontScale} /></div>
+           </div>
+           <div className="mt-16"><HandDrawnArrow color={slide.accentColor} width={60 * fontScale} rotate={180} /></div>
         </div>
       )}
 
