@@ -112,6 +112,12 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [slides, setSlides] = useState<SlideData[]>(sessionState.slides);
   const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
   const [selectedSlides, setSelectedSlides] = useState<number[]>([]);
+  const [profileInfo, setProfileInfo] = useState({
+    name: formData?.name || "",
+    handle: formData?.niche ? `@${formData.niche.toLowerCase().replace(/\s+/g, '')}` : "",
+    image: formData?.profile_image_url || ""
+  });
+
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
