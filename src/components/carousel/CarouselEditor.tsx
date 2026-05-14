@@ -31,7 +31,7 @@ import ImageLibraryPicker from "./ImageLibraryPicker";
 import JSZip from "jszip";
 import UserUploads from "./UserUploads";
 
-type FormatFilter = "all" | "1:1" | "16:9" | "9:16";
+type FormatFilter = "all" | "1:1" | "4:5" | "16:9" | "9:16";
 
 interface CarouselSessionState {
   topic: string;
