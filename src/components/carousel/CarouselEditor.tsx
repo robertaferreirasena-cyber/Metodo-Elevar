@@ -252,11 +252,11 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
 
   useEffect(() => {
     setSessionState({
-      topic, slideCount, tone, formatFilter,
+      topic, slideCount, tone, postType, formatFilter,
       selectedTemplateId: selectedTemplate.id, slides, currentSlide,
       templateApplyMode, currentJournalPaletteId,
     });
-  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, templateApplyMode, currentJournalPaletteId, setSessionState]);
+  }, [topic, slideCount, tone, postType, formatFilter, selectedTemplate, slides, currentSlide, templateApplyMode, currentJournalPaletteId, setSessionState]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
