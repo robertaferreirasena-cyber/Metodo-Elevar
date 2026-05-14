@@ -112,18 +112,19 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [slides, setSlides] = useState<SlideData[]>(sessionState.slides);
   const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
   const [selectedSlides, setSelectedSlides] = useState<number[]>([]);
+  const { user } = useAuth();
+  const { hasProfile, formData } = usePersonaContext();
+
   const [profileInfo, setProfileInfo] = useState({
-    name: formData?.name || "",
-    handle: formData?.niche ? `@${formData.niche.toLowerCase().replace(/\s+/g, '')}` : "",
-    image: formData?.profile_image_url || ""
+    name: user?.user_metadata?.full_name || formData?.business_name || "Seu Nome",
+    handle: formData?.niche ? `@${formData.niche.toLowerCase().replace(/\s+/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, "")}` : "@usuario",
+    image: user?.user_metadata?.avatar_url || ""
   });
 
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [exportSlideIndex, setExportSlideIndex] = useState<number | null>(null);
-  const { user } = useAuth();
-  const { hasProfile, formData } = usePersonaContext();
 
   const [history, setHistory] = useState<SlideData[][]>([]);
   const [redoStack, setRedoStack] = useState<SlideData[][]>([]);
