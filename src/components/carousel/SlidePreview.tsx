@@ -967,28 +967,33 @@ const SlidePreview = forwardRef<HTMLDivElement, SlidePreviewProps>(
     // For export: render at native resolution
     if (nativeSize) return slideContent;
 
-    // For preview: scale down to fit container
+    // Final container styling to ensure the slide is centered and fits
+    const outerStyle: React.CSSProperties = {
+      maxWidth: aspectRatio === "9:16" ? 360 : aspectRatio === "16:9" ? 640 : 480,
+      aspectRatio: `${spec.width} / ${spec.height}`,
+      overflow: "hidden",
+      position: "relative",
+      width: "100%",
+      margin: "0 auto",
+      transition: "transform 0.15s ease-out"
+    };
+
+    const scaledInnerStyle: React.CSSProperties = {
+      width: spec.width,
+      height: spec.height,
+      transform: `scale(${scale})`,
+      transformOrigin: "top left",
+      position: "absolute",
+      top: 0,
+      left: 0,
+    };
+
     return (
-      <div
-        ref={containerRef}
-        className="w-full relative"
-        style={{
-          maxWidth: aspectRatio === "9:16" ? 360 : aspectRatio === "16:9" ? 640 : 480,
-          aspectRatio: `${spec.width} / ${spec.height}`,
-          overflow: "hidden",
-        }}
+      <div 
+        ref={containerRef} 
+        style={outerStyle}
       >
-        <div
-          style={{
-            width: spec.width,
-            height: spec.height,
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-            position: "absolute",
-            top: 0,
-            left: 0,
-          }}
-        >
+        <div style={scaledInnerStyle}>
           {slideContent}
         </div>
       </div>
