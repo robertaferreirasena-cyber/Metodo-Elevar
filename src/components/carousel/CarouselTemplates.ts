@@ -1019,6 +1019,8 @@ export interface SlideData {
   bodyUnderline?: boolean;
   titleColor?: string;
   bodyColor?: string;
+  titleFontFamily?: string;
+  bodyFontFamily?: string;
   titleAlign?: "left" | "center" | "right";
   bodyAlign?: "left" | "center" | "right";
   gap?: number;
