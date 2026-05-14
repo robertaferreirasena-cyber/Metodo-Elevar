@@ -182,7 +182,9 @@ export const SlideRenderer = React.memo(({
                 flexDirection: "column",
                 justifyContent: slide.titleVerticalAlign === "bottom" ? "flex-end" : "flex-start"
               }}>
-                {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+                <div style={{ marginBottom: `${(slide.gap || 20) * fontScale}px` }}>
+                  {renderText(slide.title, titleStyle, slide.titlePos)}
+                </div>
               </div>
               
               <div style={{ 
