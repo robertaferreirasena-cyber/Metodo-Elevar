@@ -501,6 +501,17 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"...","caption":"..."}]
                     </div>
                   </div>
 
+                  {/* Caption Controls (if static or specific slide) */}
+                  <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
+                    <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"><FileText className="h-3 w-3" /> Legenda Sugerida</Label>
+                    <Textarea 
+                      value={cur.caption || ""} 
+                      onChange={(e) => updateSlide(currentSlide, { caption: e.target.value })} 
+                      placeholder="Legenda para o post..."
+                      className="min-h-[100px] text-xs bg-background" 
+                    />
+                  </div>
+
                   {/* Spacing Control */}
                   <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
                     <div className="flex justify-between items-center">
