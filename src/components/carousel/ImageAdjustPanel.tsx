@@ -47,6 +47,7 @@ export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRat
     blur: values.blur ?? DEFAULTS.blur,
     brightness: values.brightness ?? DEFAULTS.brightness,
     contrast: values.contrast ?? DEFAULTS.contrast,
+    opacity: values.opacity ?? DEFAULTS.opacity,
   };
 
   const update = (patch: Partial<ImageAdjustValues>) => onChange({ ...values, ...patch });
