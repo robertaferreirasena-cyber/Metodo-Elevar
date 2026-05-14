@@ -722,17 +722,17 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
           </div>
 
           {/* Centered Preview */}
-          <div className="flex-1 overflow-hidden flex items-center justify-center p-4 md:p-8 bg-[#f5f7f9] dark:bg-zinc-950">
-             <div className="relative w-full h-full max-w-[800px] max-h-[800px] flex items-center justify-center">
+          <div className="flex-1 overflow-hidden flex items-center justify-center p-2 md:p-6 bg-[#f5f7f9] dark:bg-zinc-950">
+             <div className="relative w-full h-full flex items-center justify-center">
                 {cur ? (
-                  <div className="shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-zinc-900 border transition-all duration-300 w-full h-full flex items-center justify-center">
+                  <div className="shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-zinc-900 border transition-all duration-300 w-full h-full flex items-center justify-center relative">
                     <SlidePreview 
                       slide={cur} 
                       slideIndex={currentSlide} 
                       totalSlides={slides.length} 
                       aspectRatio={selectedTemplate.aspectRatio}
                       onUpdate={(upd) => updateSlide(currentSlide, upd)}
-                      isFreeEditMode={false} // Default to false for "normal" simplified view
+                      isFreeEditMode={false}
                     />
                   </div>
                 ) : (
