@@ -40,13 +40,8 @@ export default function UserUploads({ onSelect }: { onSelect: (url: string) => v
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Client-side limit removed as requested
-    /*
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Arquivo muito grande. Máximo 5MB.");
-      return;
-    }
-    */
+    // Limite removido a pedido do usuário
+
 
     setUploading(true);
     const fileName = `${Date.now()}-${file.name}`;
