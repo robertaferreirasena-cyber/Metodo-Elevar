@@ -120,10 +120,12 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
           enableResizing={isFreeEditMode}
           disableDragging={!isFreeEditMode}
         >
-          {isFreeEditMode && (
+          {isFreeEditMode ? (
             <div className="w-full h-full border-2 border-primary/50 group-hover:border-primary border-dashed rounded flex items-center justify-center bg-primary/5">
               <span className="text-[10px] font-bold text-primary opacity-50 uppercase tracking-widest">{label}</span>
             </div>
+          ) : (
+            <div className="w-full h-full" /> // Invisible layer for interaction if needed later
           )}
         </Rnd>
       );
