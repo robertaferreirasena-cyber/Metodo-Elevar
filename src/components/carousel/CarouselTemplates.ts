@@ -1014,6 +1014,8 @@ export interface SlideData {
   overlayOpacity?: number;
   bgImageUrl?: string;
   verticalAlign?: "top" | "center" | "bottom";
+  titleVerticalAlign?: "top" | "center" | "bottom";
+  bodyVerticalAlign?: "top" | "center" | "bottom";
   // Background image adjustments (per slide)
   bgImagePositionX?: number;  // 0–100 (%) – default 50
   bgImagePositionY?: number;  // 0–100 (%) – default 50
