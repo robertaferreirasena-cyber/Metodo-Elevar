@@ -5,7 +5,8 @@ import {
   Square, Monitor, Sparkles, Undo2, LayoutGrid, Layers, Trash2,
   CopyPlus, ZoomIn, ZoomOut, Maximize2, Move, AlignLeft, AlignRight,
   Bold, Italic, Underline, Palette, Search, Settings2, Image as ImageIcon,
-  MessageSquare, FileText, ChevronDown, Highlighter, ArrowUpDown
+  MessageSquare, FileText, ChevronDown, Highlighter, ArrowUpDown,
+  Upload, Cloud, RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePersonaContext } from "@/contexts/PersonaContext";
