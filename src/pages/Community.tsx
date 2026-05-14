@@ -800,15 +800,20 @@ export default function Community() {
           {(() => {
             if (!vimeoMaterial) return null;
             const rawUrl = vimeoMaterial.url;
-            let normalizedUrl = rawUrl;
+            let normalizedUrl = rawUrl.trim();
             
-            if (rawUrl.startsWith('http') || rawUrl.startsWith('blob:') || rawUrl.startsWith('data:')) {
-              normalizedUrl = rawUrl;
-            } else if (rawUrl.startsWith('/')) {
-              normalizedUrl = `${window.location.origin}${rawUrl}`;
-            } else if (rawUrl.includes('.') && !rawUrl.includes(' ')) {
-              // Looks like a domain without protocol
-              normalizedUrl = `https://${rawUrl}`;
+            if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://') || normalizedUrl.startsWith('blob:') || normalizedUrl.startsWith('data:')) {
+              // Already has protocol or is a special URL
+            } else if (normalizedUrl.startsWith('//')) {
+              normalizedUrl = `https:${normalizedUrl}`;
+            } else if (normalizedUrl.startsWith('/')) {
+              normalizedUrl = `${window.location.origin}${normalizedUrl}`;
+            } else {
+              // Check if it looks like a domain (has a dot, no spaces)
+              const domainMatch = normalizedUrl.match(/^[a-zA-Z0-0][a-zA-Z0-9-]{1,61}[a-zA-Z0-0]\.[a-zA-Z]{2,}/);
+              if (domainMatch || (normalizedUrl.includes('.') && !normalizedUrl.includes(' '))) {
+                normalizedUrl = `https://${normalizedUrl}`;
+              }
             }
 
             return (

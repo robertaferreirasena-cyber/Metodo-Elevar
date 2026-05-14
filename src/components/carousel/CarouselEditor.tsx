@@ -251,7 +251,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     { id: "elements", label: "Elementos", icon: Square },
     { id: "text", label: "Texto", icon: Type },
     { id: "brand", label: "Marca", icon: Palette },
-    { id: "uploads", label: "Uploads", icon: ArrowUpFromLine },
+    { id: "uploads", label: "Mídia", icon: ImagePlus },
     { id: "layers", label: "Camadas", icon: Layers },
   ];
   const applyTemplate = useCallback((template: CarouselTemplate) => {
@@ -743,13 +743,11 @@ Tom: ${tone}${personaCtx}
 
 REGRAS OBRIGATÓRIAS:
 1. ARCO NARRATIVO: Slide 1-2 = Gancho + Dor, Slides do meio = Desenvolvimento com valor, Slides finais = Resolução + CTA
-2. Títulos: 8-15 palavras, impactantes e emocionais
-3. Corpo: 4-6 linhas com conteúdo denso, exemplos e linguagem conversacional
-4. Cada slide deve ter conexão narrativa com o anterior
-5. O último slide DEVE ter um CTA irresistível
-
-Retorne APENAS um JSON válido sem markdown, neste formato exato:
-{"slides":[{"title":"...","body":"..."}]}`;
+2. Títulos: 8-15 palavras, impactantes e emocionais. Substitua o título original do template por este conteúdo.
+3. Subtítulos/Corpo: 4-6 linhas com conteúdo denso, exemplos e linguagem conversacional. Substitua o subtítulo do template.
+4. Cada slide deve ter conexão narrativa com o anterior.
+5. O último slide DEVE ter um CTA irresistível.
+6. Retorne APENAS um JSON válido sem markdown: {"slides":[{"title":"...","body":"..."}]}`;
 
       const resp = await fetch(CHAT_URL, {
         method: "POST",
@@ -1239,9 +1237,97 @@ Retorne APENAS um JSON válido sem markdown, neste formato exato:
         );
       case "uploads":
         return (
-          <ScrollArea className="h-[600px]">
-            <div className="p-4">
-              <UserUploads onSelect={(url) => addLayer("image", url)} />
+          <ScrollArea className="h-[calc(100vh-120px)]">
+            <div className="p-4 space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Banco de Imagens</h3>
+                <div className="flex gap-2">
+                  <Button 
+                    variant={libraryTarget === "image" ? "default" : "outline"} 
+                    className="flex-1 text-xs" 
+                    onClick={() => { setLibraryTarget("image"); setLibraryOpen(true); }}
+                  >
+                    Imagem Principal
+                  </Button>
+                  <Button 
+                    variant={libraryTarget === "bg" ? "default" : "outline"} 
+                    className="flex-1 text-xs" 
+                    onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}
+                  >
+                    Fundo
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h3 className="text-xs font-semibold mb-3 uppercase tracking-wider text-muted-foreground">Seus Uploads</h3>
+                <UserUploads onSelect={(url) => {
+                  if (libraryTarget === "bg") {
+                    snapshotSlideForUndo(currentSlide, "Upload aplicado ao fundo");
+                    updateSlide(currentSlide, { bgImageUrl: url });
+                  } else {
+                    addLayer("image", url);
+                  }
+                }} />
+              </div>
+
+              {(cur.imageUrl || cur.bgImageUrl) && (
+                <div className="pt-4 border-t space-y-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ajustes da Imagem</h3>
+                  
+                  {cur.imageUrl && (
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold">Ajustar Imagem Principal</Label>
+                      <ImageAdjustPanel 
+                        imageUrl={cur.imageUrl}
+                        aspectRatio={FORMAT_SPECS[selectedTemplate.aspectRatio].width / FORMAT_SPECS[selectedTemplate.aspectRatio].height}
+                        values={{
+                          positionX: cur.imagePositionX,
+                          positionY: cur.imagePositionY,
+                          scale: cur.imageScale,
+                          blur: cur.imageBlur,
+                          brightness: cur.imageBrightness,
+                          contrast: cur.imageContrast
+                        }}
+                        onChange={(vals) => updateSlide(currentSlide, {
+                          imagePositionX: vals.positionX,
+                          imagePositionY: vals.positionY,
+                          imageScale: vals.scale,
+                          imageBlur: vals.blur,
+                          imageBrightness: vals.brightness,
+                          imageContrast: vals.contrast
+                        })}
+                      />
+                    </div>
+                  )}
+
+                  {cur.bgImageUrl && (
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold">Ajustar Fundo</Label>
+                      <ImageAdjustPanel 
+                        imageUrl={cur.bgImageUrl}
+                        aspectRatio={FORMAT_SPECS[selectedTemplate.aspectRatio].width / FORMAT_SPECS[selectedTemplate.aspectRatio].height}
+                        values={{
+                          positionX: cur.bgImagePositionX,
+                          positionY: cur.bgImagePositionY,
+                          scale: cur.bgImageScale,
+                          blur: cur.bgImageBlur,
+                          brightness: cur.bgImageBrightness,
+                          contrast: cur.bgImageContrast
+                        }}
+                        onChange={(vals) => updateSlide(currentSlide, {
+                          bgImagePositionX: vals.positionX,
+                          bgImagePositionY: vals.positionY,
+                          bgImageScale: vals.scale,
+                          bgImageBlur: vals.blur,
+                          bgImageBrightness: vals.brightness,
+                          bgImageContrast: vals.contrast
+                        })}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </ScrollArea>
         );
