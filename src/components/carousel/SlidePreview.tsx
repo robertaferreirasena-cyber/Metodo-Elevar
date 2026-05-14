@@ -44,10 +44,9 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
       if (!el) return;
       
       const updateScale = () => {
-        const cw = el.clientWidth;
-        const ch = el.clientHeight;
+        const cw = el.clientWidth - 32; // Standard padding
+        const ch = el.clientHeight - 32;
         if (cw > 0 && ch > 0) {
-          // Calculate scale to fit while maintaining aspect ratio
           const s = Math.min(cw / spec.width, ch / spec.height);
           setScale(s);
         }
