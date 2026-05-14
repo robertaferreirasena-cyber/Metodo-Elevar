@@ -26,6 +26,7 @@ export default function Login() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
