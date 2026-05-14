@@ -251,7 +251,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     { id: "elements", label: "Elementos", icon: Square },
     { id: "text", label: "Texto", icon: Type },
     { id: "brand", label: "Marca", icon: Palette },
-    { id: "uploads", label: "Uploads", icon: ArrowUpFromLine },
+    { id: "uploads", label: "Mídia", icon: ImagePlus },
     { id: "layers", label: "Camadas", icon: Layers },
   ];
   const applyTemplate = useCallback((template: CarouselTemplate) => {
