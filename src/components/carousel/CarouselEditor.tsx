@@ -21,7 +21,9 @@ import { usePersonaContext } from "@/contexts/PersonaContext";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { useAuth } from "@/hooks/useAuth";
 import SlidePreview from "./SlidePreview";
+import BrandKitManager, { type BrandKit } from "./BrandKitManager";
 import {
+
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS,
   isJournalTemplate, JOURNAL_LAYOUT_SEQUENCE, JOURNAL_PALETTES, buildJournalSampleSlides,
   JOURNAL_SAMPLE_THEMES, type JournalPalette,
