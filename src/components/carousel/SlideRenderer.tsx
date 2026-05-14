@@ -93,6 +93,9 @@ export const SlideRenderer = React.memo(({
             crossOrigin="anonymous"
             className="absolute inset-0 w-full h-full object-cover" 
             style={buildImageStyle(adj)}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
           />
         </div>
         <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(0,0,0,${opacity})` }} />
@@ -158,7 +161,14 @@ export const SlideRenderer = React.memo(({
 
       {layout === "text-only" && (
         <>
-          <div className="absolute inset-0 flex flex-col" style={{ padding: padPx, textAlign: slide.align, justifyContent: slide.verticalAlign === "top" ? "flex-start" : "center" }}>
+          <div 
+            className="absolute inset-0 flex flex-col" 
+            style={{ 
+              padding: padPx, 
+              textAlign: slide.align, 
+              justifyContent: slide.verticalAlign === "top" ? "flex-start" : slide.verticalAlign === "bottom" ? "flex-end" : "center" 
+            }}
+          >
             <div className="mb-4 font-bold uppercase tracking-widest" style={counterStyle}>
               {slideIndex + 1} / {totalSlides}
             </div>
@@ -198,6 +208,9 @@ export const SlideRenderer = React.memo(({
                 className="w-full h-full object-cover" 
                 crossOrigin="anonymous"
                 style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center opacity-20">

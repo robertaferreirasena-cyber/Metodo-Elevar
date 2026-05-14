@@ -132,7 +132,7 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
     };
 
     return (
-      <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-visible relative bg-[#f0f2f5] dark:bg-black">
+      <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden relative bg-[#f0f2f5] dark:bg-black p-4">
         <div 
           ref={innerRef}
           style={{ 
@@ -141,8 +141,8 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
             transform: `scale(${scale})`, 
             transformOrigin: "center center", 
             boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
-            position: 'relative',
-            overflow: 'hidden'
+            position: 'absolute',
+            flexShrink: 0
           }}
         >
           {/* Static Renderer Background */}
