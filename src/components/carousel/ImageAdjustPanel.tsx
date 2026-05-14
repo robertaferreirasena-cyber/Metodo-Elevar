@@ -155,6 +155,10 @@ export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRat
         <Label className="text-xs">Desfoque: {v.blur}px</Label>
         <Slider value={[v.blur]} onValueChange={([n]) => update({ blur: n })} min={0} max={20} step={0.5} className="mt-1" />
       </div>
+      <div>
+        <Label className="text-xs">Opacidade: {v.opacity}%</Label>
+        <Slider value={[v.opacity]} onValueChange={([n]) => update({ opacity: n })} min={0} max={100} step={1} className="mt-1" />
+      </div>
     </div>
   );
 }
