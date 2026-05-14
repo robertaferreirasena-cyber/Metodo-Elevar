@@ -375,6 +375,25 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
     updateSlide(currentSlide, { [field]: newText });
   };
 
+  const insertColorTag = (field: 'title' | 'body', color: string) => {
+    const textarea = document.getElementById(`${field}-textarea`) as HTMLTextAreaElement;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const selected = text.substring(start, end);
+    const after = text.substring(end);
+    
+    if (start === end) {
+      toast.info("Selecione um texto para mudar a cor");
+      return;
+    }
+    
+    const newText = `${before}<span style="color: ${color}">${selected}</span>${after}`;
+    updateSlide(currentSlide, { [field]: newText });
+  };
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       {/* Header bar */}
