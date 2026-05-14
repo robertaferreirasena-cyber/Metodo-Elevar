@@ -193,7 +193,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   }, [templateApplyMode, currentSlide, cur]);
 
   const generateContent = async () => {
-    if (!topic.trim()) { toast.error("Informe o tema do carrossel"); return; }
+    if (!topic.trim()) { toast.error("Informe o tema do conteúdo"); return; }
     setGenerating(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -204,7 +204,16 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
         if (formData.product_description) parts.push(`Produto: ${formData.product_description}`);
         if (parts.length) personaCtx = `\n\nDADOS DA PERSONA:\n${parts.join("\n")}`;
       }
-      const prompt = `Crie um carrossel de ${slideCount} slides sobre: "${topic}"\nTom: ${tone}${personaCtx}\nRetorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
+
+      const isStatic = postType === "static";
+      const finalSlideCount = isStatic ? 1 : slideCount;
+
+      const prompt = `Crie um ${isStatic ? "post estático (1 slide)" : `carrossel de ${finalSlideCount} slides`} sobre: "${topic}"
+Tom de voz: ${tone}
+${isStatic ? "O post deve ter uma headline forte e um texto de apoio convincente." : "Distribua o conteúdo de forma lógica entre os slides."}
+${personaCtx}
+Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
@@ -218,9 +227,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
       setSlides(newSlides);
       setCurrentSlide(0);
-      toast.success("Carrossel gerado!");
+      toast.success(isStatic ? "Post estático gerado!" : "Carrossel gerado!");
     } catch (err) {
-      toast.error("Erro ao gerar carrossel");
+      toast.error("Erro ao gerar conteúdo");
     } finally {
       setGenerating(false);
     }
