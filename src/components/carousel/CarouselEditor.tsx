@@ -391,15 +391,38 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
 
               {/* Media Section */}
               <section className="space-y-3">
-                <Label className="text-sm font-bold flex items-center gap-2 text-primary"><ImageIcon className="h-4 w-4" /> Mídia</Label>
+                <Label className="text-sm font-bold flex items-center gap-2 text-primary"><ImageIcon className="h-4 w-4" /> Imagens e Fundo</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" className="gap-2 text-xs" onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}>
-                     <Search className="h-3 w-3" /> Buscar
-                  </Button>
-                  <Button variant="outline" className="gap-2 text-xs" onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}>
-                     <Upload className="h-3 w-3" /> Upload
-                  </Button>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Imagem de Fundo</Label>
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}>
+                        <Search className="h-3 w-3 mr-1" /> Banco
+                      </Button>
+                      {cur?.bgImageUrl && (
+                        <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => updateSlide(currentSlide, { bgImageUrl: undefined })}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Imagem Template</Label>
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]" onClick={() => { setLibraryTarget("image"); setLibraryOpen(true); }}>
+                        <Search className="h-3 w-3 mr-1" /> Banco
+                      </Button>
+                      {cur?.imageUrl && (
+                        <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
+                <Button variant="outline" className="w-full gap-2 text-xs h-8 border-dashed" onClick={() => { setLibraryTarget("bg"); setLibraryOpen(true); }}>
+                   <Upload className="h-3 w-3" /> Meus Uploads
+                </Button>
               </section>
 
               <hr />
