@@ -1066,6 +1066,8 @@ export function createSlidesFromTemplate(
     titleSize: template.titleSize,
     bodySize: template.bodySize,
     fontFamily: template.fontFamily,
+    titleFontFamily: template.fontFamily,
+    bodyFontFamily: template.fontFamily,
     align: template.align,
     bgGradient: template.bgGradient,
     layout: isJournal
