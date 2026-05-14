@@ -203,19 +203,41 @@ export const SlideRenderer = React.memo(({
         </>
       )}
 
-      {layout === "profile-post" && (
-        <div className="absolute inset-0 flex flex-col p-8" style={{ textAlign: slide.align }}>
-          <div className="flex items-center gap-3 mb-6" style={{ justifyContent: slide.align === 'center' ? 'center' : 'flex-start' }}>
-            <div className="w-12 h-12 rounded-full bg-muted overflow-hidden">
-              {slide.profileImageUrl && <img src={slide.profileImageUrl} className="w-full h-full object-cover" crossOrigin="anonymous" />}
+      {(layout === "profile-post" || layout === "tweet-post") && (
+        <div className="absolute inset-0 flex flex-col p-8" style={{ textAlign: slide.align, justifyContent: slide.verticalAlign === "top" ? "flex-start" : slide.verticalAlign === "bottom" ? "flex-end" : "center" }}>
+          <div className={`flex items-center gap-3 mb-6 ${layout === "tweet-post" ? "border-b border-muted pb-4" : ""}`} style={{ justifyContent: slide.align === 'center' ? 'center' : 'flex-start' }}>
+            <div className="w-12 h-12 rounded-full bg-muted overflow-hidden shrink-0 border border-white/10">
+              {slide.profileImageUrl ? (
+                <img src={slide.profileImageUrl} className="w-full h-full object-cover" crossOrigin="anonymous" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-primary/20 text-primary font-bold">
+                  {slide.profileName?.[0] || "U"}
+                </div>
+              )}
             </div>
             <div style={{ textAlign: 'left' }}>
-              <div className="font-bold" style={{ color: slide.textColor }}>{slide.profileName || "Seu Nome"}</div>
-              <div className="text-xs opacity-60" style={{ color: slide.textColor }}>{slide.profileHandle || "@seuusuario"}</div>
+              <div className="font-bold leading-tight" style={{ color: slide.textColor }}>{slide.profileName || "Seu Nome"}</div>
+              <div className="text-sm opacity-60" style={{ color: slide.textColor }}>{slide.profileHandle || "@seuusuario"}</div>
             </div>
+            {layout === "tweet-post" && (
+              <div className="ml-auto opacity-40">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+              </div>
+            )}
           </div>
-          {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-          {renderText(slide.body, bodyStyle, slide.bodyPos)}
+          <div className="flex-1 flex flex-col" style={{ justifyContent: slide.verticalAlign === "top" ? "flex-start" : slide.verticalAlign === "bottom" ? "flex-end" : "center" }}>
+            <div style={{ marginBottom: `${(slide.gap || 20) * fontScale}px` }}>
+              {renderText(slide.title, titleStyle, slide.titlePos)}
+            </div>
+            {renderText(slide.body, bodyStyle, slide.bodyPos)}
+          </div>
+          
+          {layout === "tweet-post" && (
+            <div className="mt-8 pt-4 border-t border-muted flex gap-6 opacity-60 text-sm" style={{ color: slide.textColor }}>
+              <span><b>12.4K</b> Retweets</span>
+              <span><b>45.2K</b> Curtidas</span>
+            </div>
+          )}
         </div>
       )}
 
