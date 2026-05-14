@@ -602,20 +602,21 @@ Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
           </div>
 
           {/* Centered Preview */}
-          <div className="flex-1 overflow-auto flex items-center justify-center p-8 bg-[#f5f7f9] dark:bg-zinc-950">
-             <div className="relative group">
+          <div className="flex-1 overflow-hidden flex items-center justify-center p-4 md:p-8 bg-[#f5f7f9] dark:bg-zinc-950">
+             <div className="relative w-full h-full max-w-[800px] max-h-[800px] flex items-center justify-center">
                 {cur ? (
-                  <div className="shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-zinc-900 border">
+                  <div className="shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-zinc-900 border transition-all duration-300 w-full h-full flex items-center justify-center">
                     <SlidePreview 
                       slide={cur} 
                       slideIndex={currentSlide} 
                       totalSlides={slides.length} 
                       aspectRatio={selectedTemplate.aspectRatio}
                       onUpdate={(upd) => updateSlide(currentSlide, upd)}
+                      isFreeEditMode={false} // Default to false for "normal" simplified view
                     />
                   </div>
                 ) : (
-                  <div className="w-[400px] h-[400px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
+                  <div className="w-full h-full max-w-[400px] max-h-[400px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg bg-card/50">
                     <Wand2 className="h-12 w-12 mb-4 opacity-20" />
                     <p className="text-sm">Gere conteúdo para começar</p>
                   </div>
