@@ -34,10 +34,11 @@ export const SlideRenderer = React.memo(({
     fontSize: `${slide.titleSize * fontScale}px`,
     fontWeight: slide.titleBold !== false ? "bold" : "normal",
     fontStyle: slide.titleItalic ? "italic" : "normal",
+    textDecoration: slide.titleUnderline ? "underline" : "none",
     textShadow: slide.textShadow || undefined,
     lineHeight: 1.15,
     fontFamily: slide.fontFamily,
-    textAlign: slide.align || "center",
+    textAlign: slide.titleAlign || slide.align || "center",
   };
 
   const bodyStyle: React.CSSProperties = {
@@ -50,7 +51,8 @@ export const SlideRenderer = React.memo(({
     textShadow: slide.textShadow || undefined,
     lineHeight: 1.5,
     fontFamily: slide.fontFamily,
-    textAlign: slide.align || "center",
+    textAlign: slide.bodyAlign || slide.align || "center",
+    marginTop: slide.gap ? `${slide.gap * fontScale}px` : undefined,
   };
 
   const counterStyle: React.CSSProperties = {
@@ -98,7 +100,7 @@ export const SlideRenderer = React.memo(({
     );
   };
 
-  const renderStaticText = (text: string, style: React.CSSProperties, pos?: any, className?: string) => {
+  const renderText = (text: string, style: React.CSSProperties, pos?: any, className?: string) => {
     if (!text) return null;
     const posStyle: React.CSSProperties = pos ? { 
       position: 'absolute', 
@@ -108,7 +110,13 @@ export const SlideRenderer = React.memo(({
       height: pos.height ? `${pos.height * 100}%` : undefined,
       margin: 0
     } : {};
-    return <div className={className} style={{ ...style, ...posStyle }}>{text}</div>;
+    return (
+      <div 
+        className={className} 
+        style={{ ...style, ...posStyle }}
+        dangerouslySetInnerHTML={{ __html: text.replace(/\n/g, '<br/>') }}
+      />
+    );
   };
 
   const journal = getJournalScale(aspectRatio, (slide.title || "").length, (slide.body || "").length);
@@ -139,8 +147,8 @@ export const SlideRenderer = React.memo(({
             <div className="mb-2 font-bold uppercase tracking-widest" style={counterStyle}>
               {slideIndex + 1} / {totalSlides}
             </div>
-            {renderStaticText(slide.title, titleStyle, slide.titlePos, "mb-2")}
-            {renderStaticText(slide.body, bodyStyle, slide.bodyPos)}
+            {renderText(slide.title, titleStyle, slide.titlePos, "mb-2")}
+            {renderText(slide.body, bodyStyle, slide.bodyPos)}
           </div>
           <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
         </>
@@ -154,8 +162,8 @@ export const SlideRenderer = React.memo(({
             <div className="mb-4 font-bold uppercase tracking-widest" style={counterStyle}>
               {slideIndex + 1} / {totalSlides}
             </div>
-            {renderStaticText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-            {renderStaticText(slide.body, bodyStyle, slide.bodyPos)}
+            {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+            {renderText(slide.body, bodyStyle, slide.bodyPos)}
           </div>
           <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
         </>
@@ -172,16 +180,16 @@ export const SlideRenderer = React.memo(({
               <div className="text-xs opacity-60" style={{ color: slide.textColor }}>{slide.profileHandle || "@seuusuario"}</div>
             </div>
           </div>
-          {renderStaticText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-          {renderStaticText(slide.body, bodyStyle, slide.bodyPos)}
+          {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+          {renderText(slide.body, bodyStyle, slide.bodyPos)}
         </div>
       )}
 
       {layout === "editorial" && (
         <div className="absolute inset-0 flex p-12 gap-8">
           <div className="flex-1 flex flex-col justify-center">
-            {renderStaticText(slide.title, titleStyle, slide.titlePos, "mb-6")}
-            {renderStaticText(slide.body, bodyStyle, slide.bodyPos)}
+            {renderText(slide.title, titleStyle, slide.titlePos, "mb-6")}
+            {renderText(slide.body, bodyStyle, slide.bodyPos)}
           </div>
           <div className="w-1/3 bg-muted rounded-lg overflow-hidden relative">
             {slide.imageUrl ? (
@@ -204,8 +212,8 @@ export const SlideRenderer = React.memo(({
         <div className="absolute inset-0 flex items-center justify-center p-12">
            {renderBgImage()}
            <div className="relative z-10 p-10 shadow-2xl rounded-sm" style={{ backgroundColor: slide.bgColor, width: '80%', height: '70%', textAlign: slide.align }}>
-              {renderStaticText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-              {renderStaticText(slide.body, bodyStyle, slide.bodyPos)}
+              {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
+              {renderText(slide.body, bodyStyle, slide.bodyPos)}
               <div className="absolute top-4 right-4"><WashiTape width={120 * fontScale} color={slide.accentColor} rotate={-15} /></div>
            </div>
         </div>

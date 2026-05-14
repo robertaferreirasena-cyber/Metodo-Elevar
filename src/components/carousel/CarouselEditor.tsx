@@ -1,11 +1,11 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import {
   ChevronLeft, ChevronRight, Download, Wand2, Loader2, Type,
   AlignCenter, DownloadCloud, ImagePlus, X,
   Square, Monitor, Sparkles, Undo2, LayoutGrid, Layers, Trash2,
-  CopyPlus, ZoomIn, ZoomOut, Maximize2, Move, AlignLeft,
-  Bold, Italic, Underline, Palette, Search
+  CopyPlus, ZoomIn, ZoomOut, Maximize2, Move, AlignLeft, AlignRight,
+  Bold, Italic, Underline, Palette, Search, Settings2, Image as ImageIcon,
+  MessageSquare, FileText, ChevronDown, Highlighter, ArrowUpDown
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,10 +23,8 @@ import { useAuth } from "@/hooks/useAuth";
 import SlidePreview from "./SlidePreview";
 import BrandKitManager, { type BrandKit } from "./BrandKitManager";
 import {
-
   CAROUSEL_TEMPLATES, createSlidesFromTemplate, FORMAT_SPECS, FONT_OPTIONS,
-  isJournalTemplate, JOURNAL_LAYOUT_SEQUENCE, JOURNAL_PALETTES, buildJournalSampleSlides,
-  JOURNAL_SAMPLE_THEMES, type JournalPalette,
+  isJournalTemplate, JOURNAL_LAYOUT_SEQUENCE, JOURNAL_PALETTES,
   type SlideData, type CarouselTemplate, type CarouselLayout, type AspectRatio
 } from "./CarouselTemplates";
 import ImageLibraryPicker from "./ImageLibraryPicker";
@@ -39,6 +37,7 @@ interface CarouselSessionState {
   topic: string;
   slideCount: number;
   tone: string;
+  postType: "static" | "carousel";
   formatFilter: FormatFilter;
   selectedTemplateId: string;
   slides: SlideData[];
@@ -48,7 +47,7 @@ interface CarouselSessionState {
 }
 
 const EMPTY_CAROUSEL_STATE: CarouselSessionState = {
-  topic: "", slideCount: 5, tone: "profissional", formatFilter: "all",
+  topic: "", slideCount: 5, tone: "profissional", postType: "carousel", formatFilter: "all",
   selectedTemplateId: CAROUSEL_TEMPLATES[0].id, slides: [], currentSlide: 0,
   templateApplyMode: "all",
   currentJournalPaletteId: "terracota",
@@ -92,14 +91,14 @@ interface CarouselEditorProps {
 }
 
 export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {}) {
-
   const [sessionState, setSessionState] = useSessionPersistence<CarouselSessionState>(
-    "session_carousel_editor", EMPTY_CAROUSEL_STATE, 1000, "local"
+    "session_carousel_editor_v2", EMPTY_CAROUSEL_STATE, 1000, "local"
   );
 
   const [topic, setTopic] = useState(sessionState.topic || "");
   const [slideCount, setSlideCount] = useState(sessionState.slideCount);
   const [tone, setTone] = useState(sessionState.tone);
+  const [postType, setPostType] = useState<"static" | "carousel">(sessionState.postType || "carousel");
   const [formatFilter, setFormatFilter] = useState<FormatFilter>(sessionState.formatFilter);
   const [selectedTemplate, setSelectedTemplate] = useState<CarouselTemplate>(
     CAROUSEL_TEMPLATES.find(t => t.id === sessionState.selectedTemplateId) || CAROUSEL_TEMPLATES[0]
@@ -108,10 +107,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [zoomScale, setZoomScale] = useState(1);
-  const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const { user } = useAuth();
-  const { hasProfile, formData, raioX } = usePersonaContext();
+  const { hasProfile, formData } = usePersonaContext();
 
   const [history, setHistory] = useState<SlideData[][]>([]);
   const [redoStack, setRedoStack] = useState<SlideData[][]>([]);
@@ -179,7 +176,6 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       bgGradient: template.bgGradient,
       layout: isJournal ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length] : template.layout,
       highlightBgColor: template.highlightBgColor,
-      // Reset positions to template defaults
       titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.1 },
       bodyPos: { x: 0.1, y: 0.25, width: 0.8, height: 0.3 },
     });
@@ -190,10 +186,10 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       updateSlide(currentSlide, applyToSlide(cur, currentSlide));
     }
     toast.success(`Template "${template.name}" aplicado`);
-  }, [templateApplyMode, currentSlide, cur]);
+  }, [templateApplyMode, currentSlide, cur, updateSlidesWithHistory]);
 
   const generateContent = async () => {
-    if (!topic.trim()) { toast.error("Informe o tema do carrossel"); return; }
+    if (!topic.trim()) { toast.error("Informe o tema do conteúdo"); return; }
     setGenerating(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -204,7 +200,16 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
         if (formData.product_description) parts.push(`Produto: ${formData.product_description}`);
         if (parts.length) personaCtx = `\n\nDADOS DA PERSONA:\n${parts.join("\n")}`;
       }
-      const prompt = `Crie um carrossel de ${slideCount} slides sobre: "${topic}"\nTom: ${tone}${personaCtx}\nRetorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
+
+      const isStatic = postType === "static";
+      const finalSlideCount = isStatic ? 1 : slideCount;
+
+      const prompt = `Crie um ${isStatic ? "post estático (1 slide)" : `carrossel de ${finalSlideCount} slides`} sobre: "${topic}"
+Tom de voz: ${tone}
+${isStatic ? "O post deve ter uma headline forte e um texto de apoio convincente." : "Distribua o conteúdo de forma lógica entre os slides."}
+${personaCtx}
+Retorne APENAS um JSON: {"slides":[{"title":"...","body":"..."}]}`;
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
@@ -218,9 +223,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides);
       setSlides(newSlides);
       setCurrentSlide(0);
-      toast.success("Carrossel gerado!");
+      toast.success(isStatic ? "Post estático gerado!" : "Carrossel gerado!");
     } catch (err) {
-      toast.error("Erro ao gerar carrossel");
+      toast.error("Erro ao gerar conteúdo");
     } finally {
       setGenerating(false);
     }
@@ -231,8 +236,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     try {
       const zip = new JSZip();
       toast.info("Iniciando exportação...");
-      // For simplicity, we'll just download as images if we were actually rendering them here.
-      // But we'll keep the logic placeholder.
+      // For now this is a placeholder
       toast.success("Exportação concluída!");
     } catch (err) {
       toast.error("Erro ao exportar");
@@ -243,18 +247,37 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
   useEffect(() => {
     setSessionState({
-      topic, slideCount, tone, formatFilter,
+      topic, slideCount, tone, postType, formatFilter,
       selectedTemplateId: selectedTemplate.id, slides, currentSlide,
       templateApplyMode, currentJournalPaletteId,
     });
-  }, [topic, slideCount, tone, formatFilter, selectedTemplate, slides, currentSlide, templateApplyMode, currentJournalPaletteId, setSessionState]);
+  }, [topic, slideCount, tone, postType, formatFilter, selectedTemplate, slides, currentSlide, templateApplyMode, currentJournalPaletteId, setSessionState]);
+
+  const insertTag = (field: 'title' | 'body', tag: string) => {
+    const textarea = document.getElementById(`${field}-textarea`) as HTMLTextAreaElement;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const selected = text.substring(start, end);
+    const after = text.substring(end);
+    
+    let newText = "";
+    if (tag === 'b') newText = `${before}<b>${selected}</b>${after}`;
+    else if (tag === 'i') newText = `${before}<i>${selected}</i>${after}`;
+    else if (tag === 'u') newText = `${before}<u>${selected}</u>${after}`;
+    else if (tag === 'mark') newText = `${before}<mark style="background-color: ${cur.accentColor}; color: white; padding: 0 4px; border-radius: 2px;">${selected}</mark>${after}`;
+
+    updateSlide(currentSlide, { [field]: newText });
+  };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       {/* Header bar */}
       <div className="h-14 border-b flex items-center justify-between px-6 bg-card shrink-0">
         <div className="flex items-center gap-4">
-          <h1 className="font-bold text-lg">Editor de Carrossel</h1>
+          <h1 className="font-bold text-lg">PostStudio Editor</h1>
           <div className="flex gap-1">
              <Button variant="ghost" size="icon" onClick={undo} disabled={history.length === 0}><Undo2 className="h-4 w-4" /></Button>
              <Button variant="ghost" size="icon" onClick={redo} disabled={redoStack.length === 0}><Undo2 className="h-4 w-4 scale-x-[-1]" /></Button>
@@ -268,16 +291,75 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Traditional Style */}
+        {/* Sidebar */}
         <div className="w-[380px] border-r bg-card flex flex-col shrink-0">
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-6">
-              {/* AI Section */}
-              <section className="space-y-3">
-                <Label className="text-sm font-bold flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Gerar Conteúdo</Label>
-                <Textarea placeholder="Sobre o que é o seu carrossel?" value={topic} onChange={(e) => setTopic(e.target.value)} className="min-h-[80px]" />
-                <Button onClick={generateContent} disabled={generating} className="w-full">
-                   {generating ? "Gerando..." : "Gerar com Mentora Gi"}
+              {/* Generation Section */}
+              <section className="space-y-4">
+                <Label className="text-sm font-bold flex items-center gap-2 text-primary"><Sparkles className="h-4 w-4" /> Criar Conteúdo com Mentora Gi</Label>
+                
+                <div className="space-y-2">
+                  <Label className="text-[11px] text-muted-foreground uppercase">O que vamos criar hoje?</Label>
+                  <Textarea 
+                    placeholder="Ex: 5 dicas para melhorar o engajamento no Instagram..." 
+                    value={topic} 
+                    onChange={(e) => setTopic(e.target.value)} 
+                    className="min-h-[80px]" 
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] text-muted-foreground uppercase">Tipo de Post</Label>
+                    <div className="flex bg-muted p-1 rounded-md gap-1">
+                      <Button 
+                        variant={postType === 'static' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        className="flex-1 text-[10px] h-7 px-1"
+                        onClick={() => setPostType('static')}
+                      >
+                        <Square className="h-3 w-3 mr-1" /> Estático
+                      </Button>
+                      <Button 
+                        variant={postType === 'carousel' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        className="flex-1 text-[10px] h-7 px-1"
+                        onClick={() => setPostType('carousel')}
+                      >
+                        <Layers className="h-3 w-3 mr-1" /> Carrossel
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] text-muted-foreground uppercase">Tom de Voz</Label>
+                    <select 
+                      value={tone} 
+                      onChange={(e) => setTone(e.target.value)}
+                      className="w-full h-9 bg-muted border-none rounded-md px-2 text-xs outline-none"
+                    >
+                      <option value="profissional">Profissional</option>
+                      <option value="amigavel">Amigável</option>
+                      <option value="autoridade">Autoridade</option>
+                      <option value="persuasivo">Persuasivo</option>
+                      <option value="humorado">Humorado</option>
+                    </select>
+                  </div>
+                </div>
+
+                {postType === 'carousel' && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-[11px] text-muted-foreground uppercase">Quantidade de Slides</Label>
+                      <span className="text-xs font-bold">{slideCount}</span>
+                    </div>
+                    <Slider value={[slideCount]} min={3} max={10} step={1} onValueChange={([val]) => setSlideCount(val)} />
+                  </div>
+                )}
+
+                <Button onClick={generateContent} disabled={generating} className="w-full gap-2 bg-primary hover:bg-primary/90">
+                   {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />} 
+                   {generating ? "Processando..." : "Gerar Conteúdo"}
                 </Button>
               </section>
 
@@ -286,15 +368,15 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
               {/* Templates Section */}
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-bold flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-primary" /> Templates</Label>
-                  <select value={templateApplyMode} onChange={(e) => setTemplateApplyMode(e.target.value as any)} className="text-[10px] bg-muted border-none rounded px-1 py-0.5 outline-none">
-                    <option value="all">Todos slides</option>
-                    <option value="current">Apenas atual</option>
-                  </select>
+                  <Label className="text-sm font-bold flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-primary" /> Estilos Disponíveis</Label>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {CAROUSEL_TEMPLATES.filter(t => t.id !== 'blank-canvas').map(t => (
-                    <button key={t.id} onClick={() => applyTemplate(t)} className={`group relative p-1 rounded-lg border-2 transition-all ${selectedTemplate.id === t.id ? 'border-primary bg-primary/5' : 'border-transparent hover:border-primary/30'}`}>
+                    <button 
+                      key={t.id} 
+                      onClick={() => applyTemplate(t)} 
+                      className={`group relative p-1 rounded-lg border-2 transition-all ${selectedTemplate.id === t.id ? 'border-primary bg-primary/5' : 'border-transparent hover:border-primary/30'}`}
+                    >
                        <div className="aspect-square bg-muted rounded overflow-hidden">
                          <div style={{ transform: "scale(0.15)", transformOrigin: "top left", width: 1080, height: 1080, pointerEvents: "none" }}>
                             <SlidePreview slide={{...t, title: "Título", body: "Texto"}} aspectRatio={t.aspectRatio} slideIndex={0} totalSlides={1} nativeSize />
@@ -306,84 +388,131 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
                     </button>
                   ))}
                 </div>
-
-                {/* Journaling Collection Sub-section */}
-                {(isJournalTemplate(selectedTemplate.id) || slides.some(s => (s.layout || "").startsWith("journal-"))) && (
-                  <div className="mt-3 p-3 rounded-lg border border-amber-200/60 bg-amber-50/30 dark:bg-amber-950/10 space-y-3">
-                    <Label className="text-[11px] font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1">📓 Coleção Journaling</Label>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {JOURNAL_PALETTES.map((p) => (
-                        <button
-                          key={p.id}
-                          title={p.name}
-                          onClick={() => {
-                            setCurrentJournalPaletteId(p.id);
-                            updateSlidesWithHistory(prev => prev.map(s => ({
-                              ...s,
-                              bgColor: p.bgColor,
-                              textColor: p.textColor,
-                              accentColor: p.accentColor,
-                            })));
-                          }}
-                          className={`w-6 h-6 rounded-full border ${currentJournalPaletteId === p.id ? "ring-2 ring-primary" : ""}`}
-                          style={{ background: p.swatch }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
               </section>
 
-
               <hr />
 
-              {/* Selected Slide Content */}
+              {/* Detailed Editor */}
               {cur && (
-                <section className="space-y-4">
-                  <Label className="text-sm font-bold flex items-center gap-2"><Type className="h-4 w-4 text-primary" /> Conteúdo do Slide {currentSlide + 1}</Label>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Título</Label>
-                    <Textarea value={cur.title} onChange={(e) => updateSlide(currentSlide, { title: e.target.value })} className="min-h-[60px] text-sm" />
-                    <div className="flex items-center gap-3">
-                       <Slider value={[cur.titleSize]} min={20} max={120} step={1} onValueChange={([val]) => updateSlide(currentSlide, { titleSize: val })} className="flex-1" />
-                       <span className="text-[10px] w-6 text-center">{cur.titleSize}</span>
+                <section className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-bold flex items-center gap-2"><Settings2 className="h-4 w-4 text-primary" /> Edição Detalhada</Label>
+                    <Badge variant="outline" className="text-[10px] uppercase">Slide {currentSlide + 1}</Badge>
+                  </div>
+
+                  {/* Title Controls */}
+                  <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[11px] font-bold uppercase tracking-wider">Título Principal</Label>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'b')}><Bold className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'i')}><Italic className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'u')}><Underline className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'mark')}><Highlighter className="h-3 w-3" /></Button>
+                      </div>
+                    </div>
+                    <Textarea 
+                      id="title-textarea"
+                      value={cur.title} 
+                      onChange={(e) => updateSlide(currentSlide, { title: e.target.value })} 
+                      className="min-h-[60px] text-sm bg-background" 
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Tamanho</Label>
+                        <Slider value={[cur.titleSize]} min={20} max={120} onValueChange={([v]) => updateSlide(currentSlide, { titleSize: v })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Alinhamento</Label>
+                        <div className="flex gap-1">
+                          <Button variant={cur.titleAlign === 'left' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateSlide(currentSlide, { titleAlign: 'left' })}><AlignLeft className="h-3.5 w-3.5" /></Button>
+                          <Button variant={cur.titleAlign === 'center' || !cur.titleAlign ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateSlide(currentSlide, { titleAlign: 'center' })}><AlignCenter className="h-3.5 w-3.5" /></Button>
+                          <Button variant={cur.titleAlign === 'right' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateSlide(currentSlide, { titleAlign: 'right' })}><AlignRight className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Texto de Apoio</Label>
-                    <Textarea value={cur.body} onChange={(e) => updateSlide(currentSlide, { body: e.target.value })} className="min-h-[80px] text-sm" />
-                    <div className="flex items-center gap-3">
-                       <Slider value={[cur.bodySize]} min={12} max={80} step={1} onValueChange={([val]) => updateSlide(currentSlide, { bodySize: val })} className="flex-1" />
-                       <span className="text-[10px] w-6 text-center">{cur.bodySize}</span>
+                  {/* Body Controls */}
+                  <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[11px] font-bold uppercase tracking-wider">Texto de Apoio</Label>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('body', 'b')}><Bold className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('body', 'i')}><Italic className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('body', 'u')}><Underline className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('body', 'mark')}><Highlighter className="h-3 w-3" /></Button>
+                      </div>
+                    </div>
+                    <Textarea 
+                      id="body-textarea"
+                      value={cur.body} 
+                      onChange={(e) => updateSlide(currentSlide, { body: e.target.value })} 
+                      className="min-h-[80px] text-sm bg-background" 
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Tamanho</Label>
+                        <Slider value={[cur.bodySize]} min={12} max={80} onValueChange={([v]) => updateSlide(currentSlide, { bodySize: v })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Alinhamento</Label>
+                        <div className="flex gap-1">
+                          <Button variant={cur.bodyAlign === 'left' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateSlide(currentSlide, { bodyAlign: 'left' })}><AlignLeft className="h-3.5 w-3.5" /></Button>
+                          <Button variant={cur.bodyAlign === 'center' || !cur.bodyAlign ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateSlide(currentSlide, { bodyAlign: 'center' })}><AlignCenter className="h-3.5 w-3.5" /></Button>
+                          <Button variant={cur.bodyAlign === 'right' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateSlide(currentSlide, { bodyAlign: 'right' })}><AlignRight className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="pt-2">
-                    <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Cores e Alinhamento</Label>
-                    <div className="flex gap-2 mt-2">
-                      <Button variant="outline" size="icon" onClick={() => updateSlide(currentSlide, { align: "left" })} className={cur.align === "left" ? "bg-primary/10 border-primary" : ""}><AlignLeft className="h-4 w-4" /></Button>
-                      <Button variant="outline" size="icon" onClick={() => updateSlide(currentSlide, { align: "center" })} className={cur.align === "center" ? "bg-primary/10 border-primary" : ""}><AlignCenter className="h-4 w-4" /></Button>
-                      <div className="flex-1" />
-                      <Input type="color" value={cur.textColor} onChange={(e) => updateSlide(currentSlide, { textColor: e.target.value })} className="w-10 h-10 p-0 border-none bg-transparent cursor-pointer" />
-                      <Input type="color" value={cur.accentColor} onChange={(e) => updateSlide(currentSlide, { accentColor: e.target.value })} className="w-10 h-10 p-0 border-none bg-transparent cursor-pointer" />
+                  {/* Spacing Control */}
+                  <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"><ArrowUpDown className="h-3 w-3" /> Espaçamento Vertical</Label>
+                      <span className="text-[10px] font-mono">{cur.gap || 0}px</span>
+                    </div>
+                    <Slider value={[cur.gap || 0]} min={-20} max={100} step={1} onValueChange={([v]) => updateSlide(currentSlide, { gap: v })} />
+                  </div>
+
+                  {/* Appearance Controls */}
+                  <div className="space-y-4 p-3 rounded-lg border bg-muted/30">
+                    <Label className="text-[11px] font-bold uppercase tracking-wider">Cores e Fundo</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                       <div className="space-y-1">
+                          <Label className="text-[9px] uppercase">Texto</Label>
+                          <div className="flex items-center gap-1.5 p-1 bg-background rounded border">
+                            <Input type="color" value={cur.textColor} onChange={(e) => updateSlide(currentSlide, { textColor: e.target.value })} className="w-6 h-6 p-0 border-none bg-transparent cursor-pointer" />
+                            <span className="text-[9px] truncate">{cur.textColor}</span>
+                          </div>
+                       </div>
+                       <div className="space-y-1">
+                          <Label className="text-[9px] uppercase">Destaque</Label>
+                          <div className="flex items-center gap-1.5 p-1 bg-background rounded border">
+                            <Input type="color" value={cur.accentColor} onChange={(e) => updateSlide(currentSlide, { accentColor: e.target.value })} className="w-6 h-6 p-0 border-none bg-transparent cursor-pointer" />
+                            <span className="text-[9px] truncate">{cur.accentColor}</span>
+                          </div>
+                       </div>
+                       <div className="space-y-1">
+                          <Label className="text-[9px] uppercase">Fundo</Label>
+                          <div className="flex items-center gap-1.5 p-1 bg-background rounded border">
+                            <Input type="color" value={cur.bgColor} onChange={(e) => updateSlide(currentSlide, { bgColor: e.target.value, bgGradient: undefined })} className="w-6 h-6 p-0 border-none bg-transparent cursor-pointer" />
+                            <span className="text-[9px] truncate">{cur.bgColor}</span>
+                          </div>
+                       </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                       <Label className="text-[10px] text-muted-foreground uppercase">Fonte do Template</Label>
+                       <select 
+                         value={cur.fontFamily} 
+                         onChange={(e) => updateSlide(currentSlide, { fontFamily: e.target.value })}
+                         className="w-full h-8 bg-background border rounded-md px-2 text-[11px] outline-none"
+                       >
+                         {FONT_OPTIONS.map(f => <option key={f.name} value={f.family}>{f.name}</option>)}
+                       </select>
                     </div>
                   </div>
-                </section>
-              )}
-
-              <hr />
-
-              {/* Images Section */}
-              {cur && (
-                <section className="space-y-3">
-                   <Label className="text-sm font-bold flex items-center gap-2"><ImagePlus className="h-4 w-4 text-primary" /> Imagens</Label>
-                   <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" size="sm" onClick={() => { setLibraryTarget("image"); setLibraryOpen(true); }} className="w-full text-[10px]">Biblioteca</Button>
-                      <Button variant="outline" size="sm" onClick={() => updateSlide(currentSlide, { imageUrl: undefined })} className="w-full text-[10px] text-destructive">Remover</Button>
-                   </div>
-                  <UserUploads onSelect={(url) => updateSlide(currentSlide, { imageUrl: url })} />
                 </section>
               )}
 
@@ -391,7 +520,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
 
               {/* Brand Kit Section */}
               <section className="space-y-3">
-                 <Label className="text-sm font-bold flex items-center gap-2"><Palette className="h-4 w-4 text-primary" /> Identidade Visual</Label>
+                 <Label className="text-sm font-bold flex items-center gap-2 text-primary"><Palette className="h-4 w-4" /> Identidade Visual</Label>
                  <BrandKitManager onApply={(kit) => {
                     updateSlidesWithHistory(prev => prev.map(s => ({
                       ...s,
@@ -400,7 +529,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
                       accentColor: kit.accent_color,
                       fontFamily: kit.font_family_title,
                     })));
-                    toast.success("Marca aplicada");
+                    toast.success("Marca aplicada a todos os slides");
                  }} />
               </section>
 
@@ -408,21 +537,21 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
           </ScrollArea>
         </div>
 
-        {/* Workspace */}
-        <div className="flex-1 bg-muted/20 relative flex flex-col">
-          {/* Top Bar for Workspace */}
-          <div className="h-12 border-b bg-card flex items-center justify-between px-4 z-10">
+        {/* Main Workspace (Simplified) */}
+        <div className="flex-1 bg-muted/40 relative flex flex-col overflow-hidden">
+          {/* Workspace Header */}
+          <div className="h-12 border-b bg-card flex items-center justify-between px-4 z-10 shrink-0">
              <div className="flex items-center gap-2">
-               <Button variant="ghost" size="icon" onClick={() => transformRef.current?.zoomOut()}><ZoomOut className="h-4 w-4" /></Button>
-               <span className="text-xs font-medium w-12 text-center">{Math.round(zoomScale * 100)}%</span>
-               <Button variant="ghost" size="icon" onClick={() => transformRef.current?.zoomIn()}><ZoomIn className="h-4 w-4" /></Button>
-               <Button variant="ghost" size="icon" onClick={() => transformRef.current?.resetTransform()}><Maximize2 className="h-4 w-4" /></Button>
+               <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                 {selectedTemplate.aspectRatio} • {slides.length} Slides
+               </Badge>
              </div>
-             <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" className="text-xs gap-2" onClick={() => {
                    const newSlide = JSON.parse(JSON.stringify(cur));
-                   updateSlidesWithHistory(prev => [...prev, newSlide]);
-                   setCurrentSlide(slides.length);
+                   updateSlidesWithHistory(prev => [...prev.slice(0, currentSlide + 1), newSlide, ...prev.slice(currentSlide + 1)]);
+                   setCurrentSlide(currentSlide + 1);
+                   toast.success("Slide duplicado");
                 }}>
                    <CopyPlus className="h-3.5 w-3.5" /> Duplicar
                 </Button>
@@ -430,56 +559,51 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
                    if (slides.length <= 1) return;
                    updateSlidesWithHistory(prev => prev.filter((_, i) => i !== currentSlide));
                    setCurrentSlide(Math.max(0, currentSlide - 1));
+                   toast.info("Slide removido");
                 }}>
                    <Trash2 className="h-3.5 w-3.5" /> Excluir
                 </Button>
              </div>
           </div>
 
-          <div className="flex-1 overflow-hidden">
-            <TransformWrapper
-              ref={transformRef}
-              initialScale={1}
-              minScale={0.1}
-              maxScale={4}
-              centerOnInit
-              onZoom={(ref) => setZoomScale(ref.state.scale)}
-              doubleClick={{ disabled: true }}
-              wheel={{ disabled: true }}
-            >
-              <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyItems: "center" }}>
-                <div className="w-full h-full flex items-center justify-center p-12">
-                   {cur && (
-                     <SlidePreview 
-                       slide={cur} 
-                       slideIndex={currentSlide} 
-                       totalSlides={slides.length} 
-                       aspectRatio={selectedTemplate.aspectRatio}
-                       isFreeEditMode={true}
-                       onUpdate={(upd) => updateSlide(currentSlide, upd)}
-                     />
-                   )}
-                </div>
-              </TransformComponent>
-            </TransformWrapper>
+          {/* Centered Preview */}
+          <div className="flex-1 overflow-auto flex items-center justify-center p-8 bg-[#f5f7f9] dark:bg-zinc-950">
+             <div className="relative group">
+                {cur ? (
+                  <div className="shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-zinc-900 border">
+                    <SlidePreview 
+                      slide={cur} 
+                      slideIndex={currentSlide} 
+                      totalSlides={slides.length} 
+                      aspectRatio={selectedTemplate.aspectRatio}
+                      onUpdate={(upd) => updateSlide(currentSlide, upd)}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-[400px] h-[400px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
+                    <Wand2 className="h-12 w-12 mb-4 opacity-20" />
+                    <p className="text-sm">Gere conteúdo para começar</p>
+                  </div>
+                )}
+             </div>
           </div>
 
           {/* Bottom Navigator */}
-          <div className="h-[120px] border-t bg-card flex items-center px-4 overflow-x-auto gap-4 shrink-0">
+          <div className="h-[140px] border-t bg-card flex items-center px-4 overflow-x-auto gap-4 shrink-0 pb-2">
              {slides.map((s, i) => (
                <button 
                  key={i} 
                  onClick={() => setCurrentSlide(i)}
-                 className={`relative h-[80px] aspect-square rounded border-2 transition-all shrink-0 ${currentSlide === i ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-primary/40'}`}
+                 className={`relative h-[90px] aspect-square rounded-md border-2 transition-all shrink-0 flex flex-col items-center justify-center bg-muted/20 ${currentSlide === i ? 'border-primary shadow-lg ring-2 ring-primary/20' : 'border-transparent hover:border-primary/40'}`}
                >
-                 <div style={{ transform: "scale(0.074)", transformOrigin: "top left", width: 1080, height: 1080, pointerEvents: "none" }}>
+                 <div style={{ transform: "scale(0.083)", transformOrigin: "top left", width: 1080, height: 1080, pointerEvents: "none" }}>
                     <SlidePreview slide={s} aspectRatio={selectedTemplate.aspectRatio} slideIndex={i} totalSlides={slides.length} nativeSize />
                  </div>
-                 <div className="absolute top-1 left-1 bg-black/60 text-white text-[8px] px-1 rounded-sm">{i + 1}</div>
+                 <div className="absolute -top-2 -left-2 bg-primary text-primary-foreground text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center shadow-md">{i + 1}</div>
                </button>
              ))}
-             <Button variant="outline" className="h-[80px] aspect-square flex flex-col gap-1 shrink-0" onClick={() => {
-                const newSlide = createSlidesFromTemplate(selectedTemplate, [{ title: "Novo Slide", body: "Edite este conteúdo." }])[0];
+             <Button variant="outline" className="h-[90px] aspect-square flex flex-col gap-1 shrink-0 rounded-md border-dashed" onClick={() => {
+                const newSlide = createSlidesFromTemplate(selectedTemplate, [{ title: "Novo Slide", body: "Edite este conteúdo clicando no texto." }])[0];
                 updateSlidesWithHistory(prev => [...prev, newSlide]);
                 setCurrentSlide(slides.length);
              }}>
@@ -493,9 +617,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       <ImageLibraryPicker 
         open={libraryOpen} 
         onOpenChange={setLibraryOpen} 
-        onSelect={(url, attr) => {
-          updateSlide(currentSlide, libraryTarget === 'bg' ? { bgImageUrl: url } : { imageUrl: url });
-          toast.message(attr);
+        onSelect={(url) => {
+          updateSlide(currentSlide, libraryTarget === "bg" ? { bgImageUrl: url } : { imageUrl: url });
           setLibraryOpen(false);
         }} 
       />
