@@ -147,6 +147,7 @@ export const SlideRenderer = React.memo(({
       )}
 
 
+
       {layout === "text-only" && (
         <>
           <div className="absolute inset-0 flex flex-col" style={{ padding: padPx, textAlign: slide.align, justifyContent: slide.verticalAlign === "top" ? "flex-start" : "center" }}>
