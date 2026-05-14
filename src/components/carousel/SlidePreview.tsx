@@ -131,7 +131,7 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
     };
 
     return (
-      <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden relative bg-[#f0f2f5] dark:bg-black p-2 md:p-6">
+      <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden relative bg-[#f0f2f5] dark:bg-black p-0">
         <div 
           ref={innerRef}
           style={{ 
