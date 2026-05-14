@@ -96,6 +96,21 @@ export default function ImageAdjustPanel({ imageUrl, values, onChange, aspectRat
         </Button>
       </div>
 
+      {/* Presets */}
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        {PRESETS.map((p) => (
+          <Button
+            key={p.label}
+            size="sm"
+            variant="outline"
+            className="h-7 text-[10px] px-2 py-0 bg-background/50"
+            onClick={() => onChange({ ...values, ...p.values })}
+          >
+            {p.label}
+          </Button>
+        ))}
+      </div>
+
       {/* Drag preview */}
       <div
         ref={previewRef}
