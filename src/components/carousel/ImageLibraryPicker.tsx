@@ -25,6 +25,7 @@ interface Props {
   orientation?: "1:1" | "9:16" | "16:9";
   suggestedQuery?: string;
   onSelect: (dataUrl: string, attribution: string) => void;
+  defaultTab?: "search" | "uploads";
 }
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-library-search`;
