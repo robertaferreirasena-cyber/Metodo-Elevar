@@ -1046,8 +1046,16 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
         open={libraryOpen} 
         onOpenChange={setLibraryOpen} 
         defaultTab={libraryDefaultTab}
+        orientation={libraryTarget === "bg" ? selectedTemplate.aspectRatio : "1:1"}
         onSelect={(url) => {
-          updateSlide(currentSlide, libraryTarget === "bg" ? { bgImageUrl: url } : { imageUrl: url });
+          if (libraryTarget === "bg") {
+            updateSlide(currentSlide, { bgImageUrl: url });
+          } else if (libraryTarget === "profile") {
+            setProfileInfo(p => ({ ...p, image: url }));
+            updateSlidesWithHistory(prev => prev.map(s => ({ ...s, profileImageUrl: url })));
+          } else {
+            updateSlide(currentSlide, { imageUrl: url });
+          }
           setLibraryOpen(false);
         }} 
       />
