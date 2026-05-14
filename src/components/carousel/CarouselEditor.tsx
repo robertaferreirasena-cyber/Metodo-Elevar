@@ -262,20 +262,24 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
         setExportProgress(Math.round((i / indices.length) * 100));
         setExportSlideIndex(idx);
         
-        // Espera o React renderizar o slide oculto e as imagens carregarem
-        // O SlideRenderer já tem lógica de esperar imagens se usarmos o onReady do SlidePreview
-        // Mas aqui vamos fazer um polling simples ou esperar um tempo seguro
-        await new Promise(r => setTimeout(r, 800)); 
+        // Espera o React renderizar o slide e as imagens carregarem
+        // Aumentamos o tempo para garantir que fontes e imagens complexas carreguem
+        await new Promise(r => setTimeout(r, 1500)); 
 
         const el = document.querySelector(".export-slide-root .slide-content-root");
         if (el) {
           try {
+            // Tentamos capturar com alta qualidade
             const dataUrl = await toPng(el as HTMLElement, { 
               width: spec.width, 
               height: spec.height,
-              pixelRatio: 2, // Melhor qualidade para exportação
+              pixelRatio: 2, 
               skipFonts: false,
               cacheBust: true,
+              style: {
+                transform: 'scale(1)',
+                transformOrigin: 'top left'
+              }
             });
             const base64Data = dataUrl.split(',')[1];
             zip.file(`slide-${idx + 1}.png`, base64Data, { base64: true });
@@ -289,24 +293,22 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       }
 
       setExportProgress(100);
-      const content = await zip.generateAsync({ type: "blob" });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(content);
-      link.download = indices.length === 1 ? `slide-${indices[0] + 1}.png` : `carrossel-${Date.now()}.zip`;
       
       if (indices.length === 1) {
-        // Se for só um, baixamos o PNG direto se possível
-        const el = document.querySelector(".export-slide-root .slide-content-root");
-        if (el) {
-           const dataUrl = await toPng(el as HTMLElement, { width: spec.width, height: spec.height, pixelRatio: 2 });
-           const singleLink = document.createElement('a');
-           singleLink.href = dataUrl;
-           singleLink.download = `slide-${indices[0] + 1}.png`;
-           singleLink.click();
-        } else {
+        // Para um único slide, baixamos o arquivo PNG diretamente
+        const content = await zip.generateAsync({ type: "blob" });
+        const zipFile = await zip.file(`slide-${indices[0] + 1}.png`)?.async("blob");
+        if (zipFile) {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(zipFile);
+          link.download = `slide-${indices[0] + 1}.png`;
           link.click();
         }
       } else {
+        const content = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = `carrossel-${Date.now()}.zip`;
         link.click();
       }
       
@@ -320,6 +322,7 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
       setExportProgress(0);
     }
   };
+
 
   const exportAll = () => exportSlides(slides.map((_, i) => i));
   const exportSelected = () => exportSlides(selectedSlides);
