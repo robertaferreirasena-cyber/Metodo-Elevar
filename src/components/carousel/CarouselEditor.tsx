@@ -60,6 +60,11 @@ const EMPTY_CAROUSEL_STATE: CarouselSessionState = {
   currentJournalPaletteId: "terracota",
 };
 
+const PRESET_COLORS = [
+  "#000000", "#FFFFFF", "#E11D48", "#3B82F6", "#F59E0B", "#10B981", "#6366F1", "#8B5CF6", "#EC4899", "#F43F5E",
+  "#c9965a", "#3d1f0a", "#1e2e1a", "#0a1628", "#15202B"
+];
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-mentor-chat`;
 
 async function readStream(resp: Response, onContent: (full: string) => void): Promise<string> {
