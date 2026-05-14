@@ -167,6 +167,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   };
 
   const applyTemplate = useCallback((template: CarouselTemplate) => {
+    // Preserve current selection when changing template
+    const currentSelectedIndices = [...selectedSlides];
+    
     setSelectedTemplate(template);
     const isJournal = isJournalTemplate(template.id);
     const applyToSlide = (s: SlideData, i: number): SlideData => ({
