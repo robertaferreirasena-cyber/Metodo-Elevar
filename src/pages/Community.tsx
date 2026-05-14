@@ -887,6 +887,10 @@ export default function Community() {
                           frameBorder={0}
                           allow="autoplay; fullscreen; picture-in-picture; clipboard-write"
                           allowFullScreen
+                          onError={() => {
+                            console.error("[Community] Erro ao carregar player Vini:", normalizedUrl);
+                            toast.error("Ocorreu um erro ao carregar o vídeo do Vini.");
+                          }}
                         />
                       </div>
                     </div>
