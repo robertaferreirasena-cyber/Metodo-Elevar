@@ -249,96 +249,74 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
   const exportSlides = async (indices: number[]) => {
     if (indices.length === 0) { toast.error("Selecione pelo menos um slide"); return; }
     setExporting(true);
+    setExportProgress(0);
     try {
       const zip = new JSZip();
       toast.info(`Iniciando exportação de ${indices.length} slides...`);
       
-      // Hidden container to render slides for export
-      const exportContainer = document.createElement("div");
-      exportContainer.style.position = "fixed";
-      exportContainer.style.left = "-10000px";
-      exportContainer.style.top = "0";
-      document.body.appendChild(exportContainer);
+      const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
 
       for (let i = 0; i < indices.length; i++) {
         const idx = indices[i];
-        const slide = slides[idx];
-        const spec = FORMAT_SPECS[selectedTemplate.aspectRatio];
+        setExportProgress(Math.round((i / indices.length) * 100));
+        setExportSlideIndex(idx);
         
-        // Create a wrapper div for html-to-image
-        const slideDiv = document.createElement("div");
-        slideDiv.style.width = `${spec.width}px`;
-        slideDiv.style.height = `${spec.height}px`;
-        slideDiv.style.position = "relative";
-        slideDiv.style.overflow = "hidden";
-        exportContainer.appendChild(slideDiv);
+        // Espera o React renderizar o slide oculto e as imagens carregarem
+        // O SlideRenderer já tem lógica de esperar imagens se usarmos o onReady do SlidePreview
+        // Mas aqui vamos fazer um polling simples ou esperar um tempo seguro
+        await new Promise(r => setTimeout(r, 800)); 
 
-        // We'll use a hidden root for SlideRenderer
-        // But html-to-image needs real DOM elements.
-        // For a true multi-export, we'd ideally have a way to render a React component to a DOM node.
-        // For now, let's at least implement the logic for the current slide or sequentially if visible.
-        
-        // Fallback for single or sequential export using the visible preview
-        if (indices.length === 1 || idx === currentSlide) {
-          const el = document.querySelector(".slide-content-root");
-          if (el) {
+        const el = document.querySelector(".export-slide-root .slide-content-root");
+        if (el) {
+          try {
             const dataUrl = await toPng(el as HTMLElement, { 
               width: spec.width, 
               height: spec.height,
-              pixelRatio: 1
+              pixelRatio: 2, // Melhor qualidade para exportação
+              skipFonts: false,
+              cacheBust: true,
             });
             const base64Data = dataUrl.split(',')[1];
             zip.file(`slide-${idx + 1}.png`, base64Data, { base64: true });
+          } catch (pngErr) {
+            console.error(`Erro ao capturar slide ${idx + 1}:`, pngErr);
+            toast.error(`Erro no slide ${idx + 1}`);
           }
         } else {
-          // If not the current slide, we'd need to switch currentSlide and wait, or use a separate renderer.
-          // Since switching slides triggers state updates, sequential export is safer.
-          setCurrentSlide(idx);
-          await new Promise(r => setTimeout(r, 500)); // Wait for render
-          const el = document.querySelector(".slide-content-root");
-          if (el) {
-            const dataUrl = await toPng(el as HTMLElement, { 
-              width: spec.width, 
-              height: spec.height,
-              pixelRatio: 1
-            });
-            const base64Data = dataUrl.split(',')[1];
-            zip.file(`slide-${idx + 1}.png`, base64Data, { base64: true });
-          }
+          console.error(`Elemento de exportação não encontrado para o slide ${idx + 1}`);
         }
       }
 
+      setExportProgress(100);
       const content = await zip.generateAsync({ type: "blob" });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(content);
-      link.download = indices.length === 1 ? `slide-${indices[0] + 1}.png` : "carrossel.zip";
+      link.download = indices.length === 1 ? `slide-${indices[0] + 1}.png` : `carrossel-${Date.now()}.zip`;
       
-      // If single file and zipped, we might want just the PNG, but ZIP is safer for multiple.
       if (indices.length === 1) {
-        // Special case for single PNG
-        const el = document.querySelector(".slide-content-root");
+        // Se for só um, baixamos o PNG direto se possível
+        const el = document.querySelector(".export-slide-root .slide-content-root");
         if (el) {
-          const dataUrl = await toPng(el as HTMLElement, { 
-            width: FORMAT_SPECS[selectedTemplate.aspectRatio].width, 
-            height: FORMAT_SPECS[selectedTemplate.aspectRatio].height,
-            pixelRatio: 1
-          });
-          const singleLink = document.createElement('a');
-          singleLink.href = dataUrl;
-          singleLink.download = `slide-${indices[0] + 1}.png`;
-          singleLink.click();
+           const dataUrl = await toPng(el as HTMLElement, { width: spec.width, height: spec.height, pixelRatio: 2 });
+           const singleLink = document.createElement('a');
+           singleLink.href = dataUrl;
+           singleLink.download = `slide-${indices[0] + 1}.png`;
+           singleLink.click();
+        } else {
+          link.click();
         }
       } else {
         link.click();
       }
       
-      document.body.removeChild(exportContainer);
       toast.success("Exportação concluída!");
     } catch (err) {
       console.error("Export error:", err);
       toast.error("Erro ao exportar slides");
     } finally {
       setExporting(false);
+      setExportSlideIndex(null);
+      setExportProgress(0);
     }
   };
 
