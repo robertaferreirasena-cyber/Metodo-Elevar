@@ -10,7 +10,8 @@ export interface ImageAdjustValues {
   scale?: number;
   blur?: number;
   brightness?: number;
-  contrast?: number;
+   contrast?: number;
+   opacity?: number;
 }
 
 interface Props {
