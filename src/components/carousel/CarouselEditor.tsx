@@ -1900,7 +1900,7 @@ REGRAS OBRIGATÓRIAS:
                         justifyContent: "center",
                       }}
                     >
-                      <div className={`relative shadow-[0_20px_50px_rgba(0,0,0,0.2)] transition-shadow duration-500 ${isFreeEditMode ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}>
+                      <div className={`relative transition-shadow duration-500 ${isFreeEditMode ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}>
                         <SlidePreview 
                             ref={(ref) => { 
                               if (ref && slideRefs.current) {
