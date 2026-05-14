@@ -566,13 +566,45 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                     />
                   </div>
 
-                  {/* Spacing Control */}
-                  <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
-                    <div className="flex justify-between items-center">
-                      <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"><ArrowUpDown className="h-3 w-3" /> Espaçamento Vertical</Label>
-                      <span className="text-[10px] font-mono">{cur.gap || 0}px</span>
+                  {/* Vertical Alignment and Spacing */}
+                  <div className="space-y-4 p-3 rounded-lg border bg-muted/30">
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Alinhamento Vertical</Label>
+                      <div className="flex bg-muted p-1 rounded-md gap-1">
+                        <Button 
+                          variant={cur.verticalAlign === 'top' ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { verticalAlign: 'top', titlePos: undefined, bodyPos: undefined })}
+                        >
+                          Topo
+                        </Button>
+                        <Button 
+                          variant={cur.verticalAlign === 'center' || !cur.verticalAlign ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { verticalAlign: 'center', titlePos: undefined, bodyPos: undefined })}
+                        >
+                          Meio
+                        </Button>
+                        <Button 
+                          variant={cur.verticalAlign === 'bottom' ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { verticalAlign: 'bottom', titlePos: undefined, bodyPos: undefined })}
+                        >
+                          Baixo
+                        </Button>
+                      </div>
                     </div>
-                    <Slider value={[cur.gap || 0]} min={-20} max={100} step={1} onValueChange={([v]) => updateSlide(currentSlide, { gap: v })} />
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"><ArrowUpDown className="h-3 w-3" /> Espaçamento Vertical</Label>
+                        <span className="text-[10px] font-mono">{cur.gap || 0}px</span>
+                      </div>
+                      <Slider value={[cur.gap || 0]} min={-20} max={100} step={1} onValueChange={([v]) => updateSlide(currentSlide, { gap: v })} />
+                    </div>
                   </div>
 
                   {/* Appearance Controls */}
