@@ -187,6 +187,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       bgGradient: template.bgGradient,
       layout: isJournal ? JOURNAL_LAYOUT_SEQUENCE[i % JOURNAL_LAYOUT_SEQUENCE.length] : template.layout,
       highlightBgColor: template.highlightBgColor,
+      gap: template.gap || 20,
       titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.1 },
       bodyPos: { x: 0.1, y: 0.25, width: 0.8, height: 0.3 },
     });
