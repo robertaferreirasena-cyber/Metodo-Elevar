@@ -51,7 +51,7 @@ const JournalCollectionExporter = forwardRef<JournalExporterHandle, Props>(
             }}
           >
             <SlidePreview
-              ref={(el) => { nodeRefs.current[i] = el; }}
+              ref={(ref) => { nodeRefs.current[i] = ref?.container || null; }}
               slide={s}
               slideIndex={i}
               totalSlides={slides.length}
