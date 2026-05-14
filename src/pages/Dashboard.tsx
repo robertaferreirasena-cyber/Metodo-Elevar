@@ -324,7 +324,13 @@ export default function Dashboard() {
       {/* Quick Access Hubs */}
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground mb-3">Acesso Rápido</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+          <QuickHub
+            icon={<Instagram className="h-5 w-5 text-pink-500" />}
+            label="Instagram"
+            href="/instagram"
+            color="bg-pink-500/10"
+          />
           <QuickHub
             icon={<BotMessageSquare className="h-5 w-5 text-primary" />}
             label="Mentora Gi"
