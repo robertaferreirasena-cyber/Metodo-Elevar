@@ -208,6 +208,9 @@ export const SlideRenderer = React.memo(({
                 className="w-full h-full object-cover" 
                 crossOrigin="anonymous"
                 style={buildImageStyle({ positionX: slide.imagePositionX, positionY: slide.imagePositionY, scale: slide.imageScale, blur: slide.imageBlur, brightness: slide.imageBrightness, contrast: slide.imageContrast })}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center opacity-20">
