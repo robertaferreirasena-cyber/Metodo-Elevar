@@ -818,22 +818,7 @@ export default function Community() {
         <DialogContent className="max-w-4xl w-[95vw] p-4 sm:p-6 overflow-hidden flex flex-col max-h-[90vh]">
           {(() => {
             if (!vimeoMaterial) return null;
-            const rawUrl = vimeoMaterial.url;
-            let normalizedUrl = rawUrl.trim();
-            
-            if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://') || normalizedUrl.startsWith('blob:') || normalizedUrl.startsWith('data:')) {
-              // Already has protocol or is a special URL
-            } else if (normalizedUrl.startsWith('//')) {
-              normalizedUrl = `https:${normalizedUrl}`;
-            } else if (normalizedUrl.startsWith('/')) {
-              normalizedUrl = `${window.location.origin}${normalizedUrl}`;
-            } else {
-              // Check if it looks like a domain (has a dot, no spaces)
-              const domainMatch = normalizedUrl.match(/^[a-zA-Z0-0][a-zA-Z0-9-]{1,61}[a-zA-Z0-0]\.[a-zA-Z]{2,}/);
-              if (domainMatch || (normalizedUrl.includes('.') && !normalizedUrl.includes(' '))) {
-                normalizedUrl = `https://${normalizedUrl}`;
-              }
-            }
+            const normalizedUrl = normalizeUrl(vimeoMaterial.url);
 
             return (
               <>
