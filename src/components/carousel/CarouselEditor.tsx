@@ -774,10 +774,23 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
              </div>
           </div>
 
-          {/* Centered Preview */}
-          <div className="flex-1 overflow-hidden flex items-center justify-center p-2 md:p-6 bg-[#f5f7f9] dark:bg-zinc-950">
-             <div className="relative w-full h-full flex items-center justify-center">
-                {cur ? (
+           {/* Centered Preview */}
+           <div className="flex-1 overflow-hidden flex items-center justify-center p-2 md:p-6 bg-[#f5f7f9] dark:bg-zinc-950">
+              {/* Progress Bar for Export */}
+              {exporting && (
+                <div className="absolute top-0 left-0 right-0 z-50 p-3 bg-background/95 backdrop-blur-sm border-b shadow-sm animate-in fade-in slide-in-from-top-2">
+                  <div className="max-w-md mx-auto space-y-2">
+                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-primary">
+                      <span className="flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> Gerando imagens...</span>
+                      <span>{exportProgress}%</span>
+                    </div>
+                    <Progress value={exportProgress} className="h-1.5" />
+                  </div>
+                </div>
+              )}
+
+              <div className="relative w-full h-full flex items-center justify-center">
+                 {cur ? (
                   <div className="shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-zinc-900 border transition-all duration-300 w-full h-full flex items-center justify-center relative">
                     <SlidePreview 
                       slide={cur} 
