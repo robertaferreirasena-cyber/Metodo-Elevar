@@ -747,9 +747,7 @@ REGRAS OBRIGATÓRIAS:
 3. Subtítulos/Corpo: 4-6 linhas com conteúdo denso, exemplos e linguagem conversacional. Substitua o subtítulo do template.
 4. Cada slide deve ter conexão narrativa com o anterior.
 5. O último slide DEVE ter um CTA irresistível.
-6. Retorne APENAS um JSON válido: {"slides":[{"title":"...","body":"..."}]}`;
-Retorne APENAS um JSON válido sem markdown, neste formato exato:
-{"slides":[{"title":"...","body":"..."}]}`;
+6. Retorne APENAS um JSON válido sem markdown: {"slides":[{"title":"...","body":"..."}]}`;
 
       const resp = await fetch(CHAT_URL, {
         method: "POST",
