@@ -1886,6 +1886,7 @@ REGRAS OBRIGATÓRIAS:
                       wrapperStyle={{
                         width: "100%",
                         height: "100%",
+                        backgroundColor: "#f0f2f5"
                       }}
                       contentStyle={{
                         width: "100%",
