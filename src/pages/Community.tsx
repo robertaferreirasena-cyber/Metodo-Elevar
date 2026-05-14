@@ -92,6 +92,25 @@ export default function Community() {
     if (detectedVimeo && materialType !== 'vimeo') setMaterialType('vimeo');
   }, [detectedVimeo]);
 
+  const normalizeUrl = (rawUrl: string) => {
+    let normalizedUrl = rawUrl.trim();
+    if (!normalizedUrl) return '';
+    
+    if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://') || normalizedUrl.startsWith('blob:') || normalizedUrl.startsWith('data:')) {
+      return normalizedUrl;
+    } else if (normalizedUrl.startsWith('//')) {
+      return `https:${normalizedUrl}`;
+    } else if (normalizedUrl.startsWith('/')) {
+      return `${window.location.origin}${normalizedUrl}`;
+    } else {
+      const domainMatch = normalizedUrl.match(/^[a-zA-Z0-0][a-zA-Z0-9-]{1,61}[a-zA-Z0-0]\.[a-zA-Z]{2,}/);
+      if (domainMatch || (normalizedUrl.includes('.') && !normalizedUrl.includes(' '))) {
+        return `https://${normalizedUrl}`;
+      }
+    }
+    return normalizedUrl;
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
