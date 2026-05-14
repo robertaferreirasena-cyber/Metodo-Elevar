@@ -79,8 +79,9 @@ export default function Login() {
         return;
       }
 
+      const from = (location.state as any)?.from?.pathname || '/';
       toast.success('Login realizado com sucesso!');
-      navigate('/');
+      navigate(from);
     } catch (error) {
       toast.error('Ocorreu um erro ao fazer login');
     } finally {
