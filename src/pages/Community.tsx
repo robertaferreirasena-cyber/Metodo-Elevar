@@ -96,38 +96,37 @@ export default function Community() {
     let normalizedUrl = rawUrl.trim();
     if (!normalizedUrl) return '';
     
-    // Remote spaces and common invalid characters for a URL
-    normalizedUrl = normalizedUrl.replace(/\s+/g, '');
+    // Remove invisible characters and spaces
+    normalizedUrl = normalizedUrl.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, '');
     
     if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://') || normalizedUrl.startsWith('blob:') || normalizedUrl.startsWith('data:')) {
-      // Valid protocol
+      // Protocol present
     } else if (normalizedUrl.startsWith('//')) {
       normalizedUrl = `https:${normalizedUrl}`;
     } else if (normalizedUrl.startsWith('/')) {
       normalizedUrl = `${window.location.origin}${normalizedUrl}`;
     } else {
-      const domainMatch = normalizedUrl.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+/);
+      // Improved domain detection
+      const domainMatch = normalizedUrl.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-0](?:\.[a-zA-Z]{2,})+/);
       if (domainMatch || (normalizedUrl.includes('.') && !normalizedUrl.includes(' '))) {
         normalizedUrl = `https://${normalizedUrl}`;
       }
     }
 
-    try {
-      new URL(normalizedUrl);
-      return normalizedUrl;
-    } catch (e) {
-      console.warn("URL inválida após normalização:", normalizedUrl);
-      return normalizedUrl; // Fallback to raw normalized if URL constructor fails (e.g. relative paths in dev)
-    }
+    return normalizedUrl;
   };
 
   const handleOpenUrl = (url: string) => {
     const finalUrl = normalizeUrl(url);
     if (!finalUrl) {
-      toast.error("URL inválida ou vazia");
+      toast.error("URL inválida");
       return;
     }
-    window.open(finalUrl, '_blank', 'noopener,noreferrer');
+    
+    const newWindow = window.open(finalUrl, '_blank', 'noopener,noreferrer');
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      toast.warning("Pop-up bloqueado. Por favor, permita pop-ups para este site.");
+    }
   };
 
   const scrollToBottom = () => {
@@ -863,10 +862,23 @@ export default function Community() {
                     </div>
                   ) : vimeoMaterial.type === 'pdf' || normalizedUrl.toLowerCase().includes('.pdf') ? (
                     <iframe 
-                      src={`${normalizedUrl}#toolbar=0`} 
+                      src={normalizedUrl} 
                       className="w-full h-[70vh] rounded-lg border-none bg-white"
                       title={vimeoMaterial.title}
                     />
+                  ) : (normalizedUrl.toLowerCase().includes('vini.video') || normalizedUrl.toLowerCase().includes('vini.')) ? (
+                    <div className="w-full flex items-center justify-center p-4">
+                      <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black shadow-lg">
+                        <iframe
+                          src={normalizedUrl.includes('/embed/') ? normalizedUrl : normalizedUrl.replace('vini.video/', 'vini.video/embed/')}
+                          title={vimeoMaterial.title || 'Vini Video player'}
+                          className="absolute top-0 left-0 w-full h-full"
+                          frameBorder={0}
+                          allow="autoplay; fullscreen; picture-in-picture; clipboard-write"
+                          allowFullScreen
+                        />
+                      </div>
+                    </div>
                   ) : vimeoMaterial.type === 'image' || normalizedUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) ? (
                     <div className="relative w-full h-full flex items-center justify-center p-4">
                       <img 
