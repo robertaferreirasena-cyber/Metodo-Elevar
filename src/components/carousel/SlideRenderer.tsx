@@ -126,11 +126,15 @@ export const SlideRenderer = React.memo(({
         userSelect: "none",
       }}
     >
-      {(layout !== "image-bg" && slide.bgImageUrl) && renderBgImage()}
+      <div className="absolute inset-0 pointer-events-none">
+        {(layout !== "image-bg" && slide.bgImageUrl) && renderBgImage()}
+      </div>
       
       {layout === "image-bg" && (
         <>
-          {renderBgImage()}
+          <div className="absolute inset-0 pointer-events-none">
+            {renderBgImage()}
+          </div>
           <div className="absolute inset-0 flex flex-col" style={{ padding: padPx, textAlign: slide.align, justifyContent: slide.verticalAlign === "top" ? "flex-start" : "flex-end" }}>
             <div className="mb-2 font-bold uppercase tracking-widest" style={counterStyle}>
               {slideIndex + 1} / {totalSlides}
@@ -141,6 +145,7 @@ export const SlideRenderer = React.memo(({
           <div className="absolute bottom-0 left-0 right-0" style={{ height: 4 * fontScale, backgroundColor: slide.accentColor }} />
         </>
       )}
+
 
       {layout === "text-only" && (
         <>
