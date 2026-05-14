@@ -76,8 +76,8 @@ export default function UserUploads({ onSelect }: { onSelect: (url: string) => v
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2">
-        <Label className="text-xs font-semibold mb-1">Subir Nova Imagem</Label>
-        <div className="flex items-center gap-2">
+        <Label className="text-xs font-semibold mb-1">Upload de Imagens</Label>
+        <div className="flex flex-col gap-2">
           <Input 
             type="file" 
             accept="image/*" 
@@ -88,13 +88,14 @@ export default function UserUploads({ onSelect }: { onSelect: (url: string) => v
           />
           <Button 
             variant="outline" 
-            className="w-full gap-2 border-dashed border-2 h-16" 
+            className="w-full gap-2 border-dashed border-2 h-20 flex flex-col items-center justify-center bg-muted/30 hover:bg-muted/50" 
             asChild
             disabled={uploading}
           >
             <label htmlFor="carousel-upload" className="cursor-pointer">
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              {uploading ? "Subindo..." : "Clique para subir imagem"}
+              {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+              <span className="text-xs font-bold">{uploading ? "Subindo imagem..." : "Clique para subir qualquer imagem"}</span>
+              {!uploading && <span className="text-[10px] opacity-60">Sem limite de tamanho</span>}
             </label>
           </Button>
         </div>
