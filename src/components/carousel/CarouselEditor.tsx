@@ -36,6 +36,7 @@ import { toPng } from "html-to-image";
 import UserUploads from "./UserUploads";
 import ImageAdjustPanel from "./ImageAdjustPanel";
 import { User } from "lucide-react";
+import { CarouselDocumentation } from "./CarouselDocumentation";
 
 type FormatFilter = "all" | "1:1" | "4:5" | "16:9" | "9:16";
 
@@ -113,6 +114,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [slides, setSlides] = useState<SlideData[]>(sessionState.slides);
   const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
   const [selectedSlides, setSelectedSlides] = useState<number[]>([]);
+  const [lastGeneratedSlides, setLastGeneratedSlides] = useState<SlideData[]>([]); // To track if selection should be cleared
   const { user } = useAuth();
   const { hasProfile, formData } = usePersonaContext();
 
@@ -261,8 +263,13 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       }));
       const oldSelectedIndices = [...selectedSlides];
       setSlides(newSlides);
-      // Mantemos a seleção atual se os índices ainda existirem
-      setSelectedSlides(oldSelectedIndices.filter(idx => idx < newSlides.length));
+      setLastGeneratedSlides(newSlides);
+      
+      // Preserve selection if indices still exist
+      if (oldSelectedIndices.length > 0) {
+        setSelectedSlides(oldSelectedIndices.filter(idx => idx < newSlides.length));
+      }
+      
       setCurrentSlide(0);
       toast.success(isStatic ? "Post estático gerado!" : "Carrossel gerado!");
     } catch (err) {
@@ -413,6 +420,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
             <Move className="h-4 w-4" /> 
             {isFreeEditMode ? "Modo Livre Ativado" : "Ativar Edição Livre"}
           </Button>
+          <div className="h-6 w-px bg-border mx-2" />
+          <CarouselDocumentation />
         </div>
         <div className="flex items-center gap-2">
            {selectedSlides.length > 0 && (
