@@ -48,19 +48,28 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
           setScale(1);
           return;
         }
-        const cw = el.clientWidth - 32; // Standard padding
-        const ch = el.clientHeight - 32;
-        if (cw > 0 && ch > 0) {
-          const s = Math.min(cw / spec.width, ch / spec.height);
-          setScale(s);
-        }
+        
+        // Use a small delay to ensure clientWidth/Height are updated after format change
+        requestAnimationFrame(() => {
+          const cw = el.clientWidth - 40; // Increased padding for safety
+          const ch = el.clientHeight - 40;
+          
+          if (cw > 0 && ch > 0) {
+            const s = Math.min(cw / spec.width, ch / spec.height);
+            setScale(s);
+          }
+        });
       };
 
       updateScale();
       const obs = new ResizeObserver(updateScale);
       obs.observe(el);
-      return () => obs.disconnect();
-    }, [spec.width, spec.height, nativeSize, slide]);
+      window.addEventListener('resize', updateScale);
+      return () => {
+        obs.disconnect();
+        window.removeEventListener('resize', updateScale);
+      };
+    }, [spec.width, spec.height, nativeSize, aspectRatio]); // Added aspectRatio as dependency
 
     useEffect(() => {
       const el = containerRef.current;
