@@ -413,9 +413,15 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Tab Switcher */}
+        <div className="lg:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-[100] flex bg-background/80 backdrop-blur-md border rounded-full p-1 shadow-xl">
+           <Button variant={activeTab === 'edit' ? 'secondary' : 'ghost'} size="sm" className="rounded-full px-6 h-9" onClick={() => setActiveTab('edit')}>Editar</Button>
+           <Button variant={activeTab === 'preview' ? 'secondary' : 'ghost'} size="sm" className="rounded-full px-6 h-9" onClick={() => setActiveTab('preview')}>Ver Post</Button>
+        </div>
+
         {/* Sidebar */}
-        <div className="w-full lg:w-[400px] border-r bg-card flex flex-col shrink-0">
+        <div className={`${activeTab === 'edit' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[400px] border-r bg-card flex-col shrink-0 transition-all duration-300`}>
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-6">
               {/* Generation Section */}
