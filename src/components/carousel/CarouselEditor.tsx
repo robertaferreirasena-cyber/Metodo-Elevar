@@ -59,7 +59,7 @@ const EMPTY_CAROUSEL_STATE: CarouselSessionState = {
   currentJournalPaletteId: "terracota",
 };
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-mentor-chat`;
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/carousel-generator`;
 
 async function readStream(resp: Response, onContent: (full: string) => void): Promise<string> {
   if (!resp.body) throw new Error("Stream não disponível");
@@ -222,35 +222,40 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     setGenerating(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      let personaCtx = "";
-      if (hasProfile) {
-        const parts: string[] = [];
-        if (formData.niche) parts.push(`Nicho: ${formData.niche}`);
-        if (formData.product_description) parts.push(`Produto: ${formData.product_description}`);
-        if (parts.length) personaCtx = `\n\nDADOS DA PERSONA:\n${parts.join("\n")}`;
-      }
-
+      
       const isStatic = postType === "static";
-      const finalSlideCount = isStatic ? 1 : slideCount;
-
-      const prompt = `Crie um ${isStatic ? "post estático (1 slide)" : `carrossel de ${finalSlideCount} slides`} sobre: "${topic}"
-Tom de voz: ${tone}
-${isStatic ? "O post deve ter uma headline forte e um texto de apoio convincente." : "Distribua o conteúdo de forma lógica entre os slides. Cada slide deve ter um título curto e impactante e um texto de apoio."}
-${personaCtx}
-Retorne EXATAMENTE um JSON neste formato: {"slides":[{"title":"...","body":"...","caption":"..."}]}
-Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Instagram (apenas no primeiro slide). Nos outros slides pode ser vazio.`;
-
+      
       const resp = await fetch(CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
-        body: JSON.stringify({ messages: [{ role: "user", content: prompt }], persona: "copywriter" }),
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${session?.access_token}` 
+        },
+        body: JSON.stringify({ 
+          topic,
+          slideCount: isStatic ? 1 : slideCount,
+          tone,
+          postType
+        }),
       });
-      if (!resp.ok) throw new Error(`Erro ${resp.status}`);
-      const fullText = await readStream(resp, () => {});
-      const jsonMatch = fullText.match(/\{[\s\S]*"slides"[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("Resposta inválida");
-      const data = JSON.parse(jsonMatch[0]);
-      const newSlides = createSlidesFromTemplate(selectedTemplate, data.slides).map(s => ({
+
+      if (!resp.ok) {
+        const errData = await resp.json();
+        throw new Error(errData.error || `Erro ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      
+      // Mapear storySequence para o formato que o createSlidesFromTemplate espera
+      const formattedSlides = data.storySequence.map((s: any, idx: number) => ({
+        title: s.title,
+        body: s.subtitle, // subtitle é o corpo no novo formato
+        caption: idx === 0 ? data.caption : "", // Legenda de Marie Forleo no primeiro slide
+        imagePrompt: s.imagePrompt,
+        interactionSuggestion: s.interactionSuggestion
+      }));
+
+      const newSlides = createSlidesFromTemplate(selectedTemplate, formattedSlides).map(s => ({
         ...s,
         profileName: profileInfo.name,
         profileHandle: profileInfo.handle,

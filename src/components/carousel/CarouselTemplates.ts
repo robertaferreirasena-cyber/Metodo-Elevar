@@ -851,13 +851,15 @@ export interface SlideData {
 
 export function createSlidesFromTemplate(
   template: CarouselTemplate,
-  content: { title: string; body: string; caption?: string }[]
+  content: { title: string; body: string; caption?: string; imagePrompt?: string; interactionSuggestion?: string }[]
 ): SlideData[] {
   const isJournal = isJournalTemplate(template.id);
   return content.map((c, i) => ({
     title: c.title,
     body: c.body,
     caption: c.caption,
+    imagePrompt: c.imagePrompt,
+    interactionSuggestion: c.interactionSuggestion,
     bgColor: template.bgColor,
     textColor: template.textColor,
     accentColor: template.accentColor,
@@ -875,8 +877,8 @@ export function createSlidesFromTemplate(
       : template.layout,
     highlightBgColor: template.highlightBgColor,
     gap: template.gap || 20,
-    titlePos: { x: 0.1, y: 0.2, width: 0.8, height: 0.2 },
-    bodyPos: { x: 0.1, y: 0.45, width: 0.8, height: 0.3 },
+    titlePos: { x: 0.1, y: 0.15, width: 0.8, height: 0.2 },
+    bodyPos: { x: 0.1, y: 0.4, width: 0.8, height: 0.35 },
   }));
 }
 
