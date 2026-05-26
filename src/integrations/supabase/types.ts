@@ -170,39 +170,6 @@ export type Database = {
         }
         Relationships: []
       }
-      carousel_designs: {
-        Row: {
-          created_at: string | null
-          data: Json
-          id: string
-          is_template: boolean | null
-          name: string
-          thumbnail_url: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          data: Json
-          id?: string
-          is_template?: boolean | null
-          name?: string
-          thumbnail_url?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          data?: Json
-          id?: string
-          is_template?: boolean | null
-          name?: string
-          thumbnail_url?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       community_materials: {
         Row: {
           created_at: string | null
