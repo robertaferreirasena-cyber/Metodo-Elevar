@@ -703,7 +703,14 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                   <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
                     <div className="flex items-center justify-between">
                       <Label className="text-[11px] font-bold uppercase tracking-wider">Título Principal</Label>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
+                        <Input 
+                          type="color" 
+                          value={cur.titleColor || cur.textColor} 
+                          onChange={(e) => insertColorTag('title', e.target.value)}
+                          className="w-6 h-6 p-0 border-none bg-transparent cursor-pointer"
+                          title="Colorir palavra selecionada"
+                        />
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'b')}><Bold className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'i')}><Italic className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'u')}><Underline className="h-3 w-3" /></Button>
@@ -716,6 +723,29 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                       onChange={(e) => updateSlide(currentSlide, { title: e.target.value })} 
                       className="min-h-[60px] text-sm bg-background" 
                     />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Fonte do Título</Label>
+                        <select 
+                          className="w-full text-[10px] p-1 border rounded bg-background"
+                          value={cur.titleFontFamily || cur.fontFamily}
+                          onChange={(e) => updateSlide(currentSlide, { titleFontFamily: e.target.value })}
+                        >
+                          {FONT_OPTIONS.map(f => <option key={f.family} value={f.family}>{f.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Cor do Título</Label>
+                        <div className="flex gap-2 items-center">
+                          <Input 
+                            type="color" 
+                            value={cur.titleColor || cur.textColor} 
+                            onChange={(e) => updateSlide(currentSlide, { titleColor: e.target.value })}
+                            className="h-8 w-full p-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Tamanho</Label>
