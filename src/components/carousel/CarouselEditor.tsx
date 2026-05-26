@@ -432,9 +432,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
            <Button variant="outline" size="sm" onClick={() => exportSlides([currentSlide])} disabled={exporting || slides.length === 0} title="Baixar apenas o slide atual">
              <ImageIcon className="h-4 w-4 mr-2" /> Baixar PNG (Atual)
            </Button>
-           <Button variant="outline" size="sm" onClick={exportAll} disabled={exporting || slides.length === 0}>
-             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 mr-2" />} Exportar Tudo
-           </Button>
+            <Button variant="default" size="sm" onClick={exportAll} disabled={exporting || slides.length === 0} className="bg-primary hover:bg-primary/90">
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />} Exportar Tudo (.ZIP)
+            </Button>
         </div>
       </div>
 
