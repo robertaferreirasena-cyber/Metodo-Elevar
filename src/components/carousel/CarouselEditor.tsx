@@ -1040,6 +1040,14 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                     </div>
 
                     <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Espaçamento entre Textos</Label>
+                        <span className="text-xs font-mono">{cur.gap || 20}px</span>
+                      </div>
+                      <Slider value={[cur.gap || 20]} min={0} max={200} step={1} onValueChange={([val]) => updateSlide(currentSlide, { gap: val })} />
+                    </div>
+
+                    <div className="space-y-2 pt-2 border-t">
                       <Label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Alinhamento do Corpo</Label>
                       <div className="flex bg-muted p-1 rounded-md gap-1">
                         <Button 
@@ -1048,6 +1056,26 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                           className="flex-1 h-7 text-[10px]"
                           onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'top', bodyPos: undefined })}
                         >
+                          Topo
+                        </Button>
+                        <Button 
+                          variant={cur.bodyVerticalAlign === 'center' || !cur.bodyVerticalAlign ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'center', bodyPos: undefined })}
+                        >
+                          Meio
+                        </Button>
+                        <Button 
+                          variant={cur.bodyVerticalAlign === 'bottom' ? 'secondary' : 'ghost'} 
+                          size="sm" 
+                          className="flex-1 h-7 text-[10px]"
+                          onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'bottom', bodyPos: undefined })}
+                        >
+                          Baixo
+                        </Button>
+                      </div>
+                    </div>
                           Topo
                         </Button>
                         <Button 
