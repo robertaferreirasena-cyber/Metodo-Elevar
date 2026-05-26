@@ -130,6 +130,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [history, setHistory] = useState<SlideData[][]>([]);
   const [redoStack, setRedoStack] = useState<SlideData[][]>([]);
 
+  const [isFreeEditMode, setIsFreeEditMode] = useState(false);
+  const [selectedLayerId, setSelectedLayerId] = useState<string>();
+
   const pushToHistory = useCallback((currentSlides: SlideData[]) => {
     setHistory(prev => [...prev.slice(-19), JSON.parse(JSON.stringify(currentSlides))]);
     setRedoStack([]);
@@ -397,6 +400,16 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
              <Button variant="ghost" size="icon" onClick={undo} disabled={history.length === 0}><Undo2 className="h-4 w-4" /></Button>
              <Button variant="ghost" size="icon" onClick={redo} disabled={redoStack.length === 0}><Undo2 className="h-4 w-4 scale-x-[-1]" /></Button>
           </div>
+          <div className="h-6 w-px bg-border mx-2" />
+          <Button 
+            variant={isFreeEditMode ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setIsFreeEditMode(!isFreeEditMode)}
+            className="gap-2"
+          >
+            <Move className="h-4 w-4" /> 
+            {isFreeEditMode ? "Modo Livre Ativado" : "Ativar Edição Livre"}
+          </Button>
         </div>
         <div className="flex items-center gap-2">
            {selectedSlides.length > 0 && (
@@ -694,6 +707,139 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                     )}
                   </div>
                 </div>
+              </section>
+
+              <hr />
+
+              {/* Elements Section */}
+              <section className="space-y-4">
+                <Label className="text-sm font-bold flex items-center gap-2 text-primary">
+                  <Layers className="h-4 w-4" /> Elementos
+                </Label>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-10 text-[10px]"
+                    onClick={() => {
+                      const newLayer = {
+                        id: Math.random().toString(36).substr(2, 9),
+                        type: 'text' as const,
+                        content: 'Novo Texto',
+                        x: 0.3,
+                        y: 0.3,
+                        width: 0.4,
+                        height: 0.1,
+                        style: { color: cur.textColor, fontSize: '24px', textAlign: 'center' }
+                      };
+                      updateSlide(currentSlide, { layers: [...(cur.layers || []), newLayer] });
+                    }}
+                  >
+                    <Type className="h-4 w-4 mr-2" /> Texto
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-10 text-[10px]"
+                    onClick={() => {
+                      const newLayer = {
+                        id: Math.random().toString(36).substr(2, 9),
+                        type: 'shape' as const,
+                        x: 0.4,
+                        y: 0.4,
+                        width: 0.2,
+                        height: 0.2,
+                        style: { backgroundColor: cur.accentColor, borderRadius: '8px', opacity: 0.5 }
+                      };
+                      updateSlide(currentSlide, { layers: [...(cur.layers || []), newLayer] });
+                    }}
+                  >
+                    <Square className="h-4 w-4 mr-2" /> Caixa / Forma
+                  </Button>
+                </div>
+
+                {cur.layers && cur.layers.length > 0 && (
+                  <div className="space-y-2 mt-4">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Camadas no Slide</Label>
+                    <div className="space-y-1">
+                      {cur.layers.map((layer, idx) => (
+                        <div key={layer.id} className="flex items-center justify-between p-2 rounded bg-muted/50 text-[11px]">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            {layer.type === 'text' ? <Type className="h-3 w-3" /> : layer.type === 'shape' ? <Square className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
+                            <span className="truncate max-w-[120px]">{layer.content || `${layer.type} ${idx + 1}`}</span>
+                          </div>
+                          <div className="flex gap-1">
+                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedLayerId(layer.id)}>
+                               <Settings2 className="h-3 w-3" />
+                             </Button>
+                             <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
+                               updateSlide(currentSlide, { layers: cur.layers?.filter(l => l.id !== layer.id) });
+                               if (selectedLayerId === layer.id) setSelectedLayerId(undefined);
+                             }}>
+                               <Trash2 className="h-3 w-3" />
+                             </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedLayerId && (
+                  <div className="p-3 border rounded-lg bg-primary/5 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-[10px] font-bold uppercase">Ajustar Camada</Label>
+                      <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setSelectedLayerId(undefined)}><X className="h-3 w-3" /></Button>
+                    </div>
+                    {cur.layers?.find(l => l.id === selectedLayerId)?.type === 'text' && (
+                      <Input 
+                        className="h-8 text-xs"
+                        value={cur.layers?.find(l => l.id === selectedLayerId)?.content || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateSlide(currentSlide, {
+                            layers: cur.layers?.map(l => l.id === selectedLayerId ? { ...l, content: val } : l)
+                          });
+                        }}
+                      />
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                       <div className="space-y-1">
+                         <Label className="text-[9px] uppercase">Opacidade</Label>
+                         <Slider 
+                           value={[(cur.layers?.find(l => l.id === selectedLayerId)?.style?.opacity || 1) * 100]}
+                           min={0} max={100}
+                           onValueChange={([v]) => {
+                             updateSlide(currentSlide, {
+                               layers: cur.layers?.map(l => l.id === selectedLayerId ? { ...l, style: { ...l.style, opacity: v / 100 } } : l)
+                             });
+                           }}
+                         />
+                       </div>
+                       <div className="space-y-1">
+                         <Label className="text-[9px] uppercase">Cor</Label>
+                         <div className="flex gap-1 flex-wrap">
+                            {[cur.textColor, cur.accentColor, '#FFFFFF', '#000000', '#FF0000', '#00FF00', '#0000FF'].map(c => (
+                              <button 
+                                key={c}
+                                className="w-5 h-5 rounded-full border border-muted"
+                                style={{ backgroundColor: c }}
+                                onClick={() => {
+                                  updateSlide(currentSlide, {
+                                    layers: cur.layers?.map(l => l.id === selectedLayerId ? { 
+                                      ...l, 
+                                      style: { ...l.style, [l.type === 'text' ? 'color' : 'backgroundColor']: c } 
+                                    } : l)
+                                  });
+                                }}
+                              />
+                            ))}
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+                )}
               </section>
 
               <hr />

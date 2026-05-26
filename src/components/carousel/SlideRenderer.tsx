@@ -107,19 +107,32 @@ export const SlideRenderer = React.memo(({
 
   const renderText = (text: string, style: React.CSSProperties, pos?: any, className?: string) => {
     if (!text) return null;
+    
+    // Se temos posição absoluta, usamos ela, mas garantimos que não fique "amontoado"
+    // Adicionando display flex e padding interno se necessário
     const posStyle: React.CSSProperties = pos ? { 
       position: 'absolute', 
       left: `${pos.x * 100}%`, 
       top: `${pos.y * 100}%`, 
-      width: pos.width ? `${pos.width * 100}%` : undefined,
-      height: pos.height ? `${pos.height * 100}%` : undefined,
-      margin: 0
+      width: pos.width ? `${pos.width * 100}%` : '80%',
+      height: pos.height ? `${pos.height * 100}%` : 'auto',
+      margin: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center', // Centraliza verticalmente no box de arrastar
+      zIndex: 10,
     } : {};
+
     return (
       <div 
         className={className} 
-        style={{ ...style, ...posStyle }}
-        dangerouslySetInnerHTML={{ __html: text.replace(/\n/g, '<br/>') }}
+        style={{ 
+          ...style, 
+          ...posStyle, 
+          wordBreak: 'break-word',
+          whiteSpace: 'pre-wrap', // Preserva quebras de linha reais
+        }}
+        dangerouslySetInnerHTML={{ __html: text }}
       />
     );
   };

@@ -761,6 +761,13 @@ export function applyPaletteToSlide(slide: SlideData, palette: JournalPalette): 
 
 export const JOURNAL_SAMPLE_CONTENT: { title: string; body: string }[] = [];
 
+export interface JournalSampleTheme {
+  id: string;
+  label: string;
+  emoji: string;
+  slides: { title: string; body: string }[];
+}
+
 export const JOURNAL_SAMPLE_THEMES: JournalSampleTheme[] = [];
 
 export function buildJournalSampleSlides(
