@@ -8,7 +8,7 @@ export type CarouselLayout =
   | "tweet-post"
   | "prompt-card"
   | "sticker-card"
-  // ===== Família Journaling (papelaria orgânica) - REMOVIDO POR SOLICITAÇÃO =====
+  // ===== Família Journaling REMOVIDO =====
   | "journal-note";
 
 export type AspectRatio = "1:1" | "4:5" | "16:9" | "9:16";
