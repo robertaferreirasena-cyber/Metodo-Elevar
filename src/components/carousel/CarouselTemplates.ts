@@ -1002,6 +1002,8 @@ export interface SlideData {
   titleSize: number;
   bodySize: number;
   fontFamily: string;
+  titleFontFamily?: string;
+  bodyFontFamily?: string;
   align: "left" | "center";
   bgGradient?: string;
   layout: CarouselLayout;
