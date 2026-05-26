@@ -36,6 +36,7 @@ import { toPng } from "html-to-image";
 import UserUploads from "./UserUploads";
 import ImageAdjustPanel from "./ImageAdjustPanel";
 import { User } from "lucide-react";
+import { CarouselDocumentation } from "./CarouselDocumentation";
 
 type FormatFilter = "all" | "1:1" | "4:5" | "16:9" | "9:16";
 
@@ -113,6 +114,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
   const [slides, setSlides] = useState<SlideData[]>(sessionState.slides);
   const [currentSlide, setCurrentSlide] = useState(sessionState.currentSlide);
   const [selectedSlides, setSelectedSlides] = useState<number[]>([]);
+  const [lastGeneratedSlides, setLastGeneratedSlides] = useState<SlideData[]>([]); // To track if selection should be cleared
   const { user } = useAuth();
   const { hasProfile, formData } = usePersonaContext();
 
@@ -204,8 +206,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       profileName: profileInfo.name,
       profileHandle: profileInfo.handle,
       profileImageUrl: profileInfo.image,
-      titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.15 },
-      bodyPos: { x: 0.1, y: 0.3, width: 0.8, height: 0.4 },
+      titlePos: s.titlePos, // Manter se já existir (foi editado)
+      bodyPos: s.bodyPos,   // Manter se já existir (foi editado)
     });
 
     if (templateApplyMode === "all") {
@@ -239,12 +241,10 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
         }),
       });
 
-      if (!resp.ok) {
-        const errData = await resp.json();
-        throw new Error(errData.error || `Erro ${resp.status}`);
-      }
-
       const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.error || `Erro ${resp.status}`);
+      }
       
       // Mapear storySequence para o formato que o createSlidesFromTemplate espera
       const formattedSlides = data.storySequence.map((s: any, idx: number) => ({
@@ -263,8 +263,13 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       }));
       const oldSelectedIndices = [...selectedSlides];
       setSlides(newSlides);
-      // Mantemos a seleção atual se os índices ainda existirem
-      setSelectedSlides(oldSelectedIndices.filter(idx => idx < newSlides.length));
+      setLastGeneratedSlides(newSlides);
+      
+      // Preserve selection if indices still exist
+      if (oldSelectedIndices.length > 0) {
+        setSelectedSlides(oldSelectedIndices.filter(idx => idx < newSlides.length));
+      }
+      
       setCurrentSlide(0);
       toast.success(isStatic ? "Post estático gerado!" : "Carrossel gerado!");
     } catch (err) {
@@ -415,6 +420,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
             <Move className="h-4 w-4" /> 
             {isFreeEditMode ? "Modo Livre Ativado" : "Ativar Edição Livre"}
           </Button>
+          <div className="h-6 w-px bg-border mx-2" />
+          <CarouselDocumentation />
         </div>
         <div className="flex items-center gap-2">
            {selectedSlides.length > 0 && (
@@ -425,9 +432,9 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
            <Button variant="outline" size="sm" onClick={() => exportSlides([currentSlide])} disabled={exporting || slides.length === 0} title="Baixar apenas o slide atual">
              <ImageIcon className="h-4 w-4 mr-2" /> Baixar PNG (Atual)
            </Button>
-           <Button variant="outline" size="sm" onClick={exportAll} disabled={exporting || slides.length === 0}>
-             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 mr-2" />} Exportar Tudo
-           </Button>
+            <Button variant="default" size="sm" onClick={exportAll} disabled={exporting || slides.length === 0} className="bg-primary hover:bg-primary/90">
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />} Exportar Tudo (.ZIP)
+            </Button>
         </div>
       </div>
 

@@ -102,7 +102,7 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
     }, [spec.width, spec.height]);
 
     const renderDraggableLayer = (posKey: 'titlePos' | 'bodyPos', label: string) => {
-      const pos = slide[posKey] || (posKey === 'titlePos' ? { x: 0.1, y: 0.1, width: 0.8, height: 0.1 } : { x: 0.1, y: 0.25, width: 0.8, height: 0.3 });
+      const pos = slide[posKey] || (posKey === 'titlePos' ? { x: 0.1, y: 0.15, width: 0.8, height: 0.2 } : { x: 0.1, y: 0.4, width: 0.8, height: 0.35 });
       
       return (
         <Rnd
@@ -132,11 +132,11 @@ const SlidePreview = forwardRef<SlidePreviewRef, SlidePreviewProps>(
           disableDragging={!isFreeEditMode}
         >
           {isFreeEditMode ? (
-            <div className="w-full h-full border-2 border-primary/50 group-hover:border-primary border-dashed rounded flex items-center justify-center bg-primary/5">
+            <div className={`w-full h-full border-2 ${selectedLayerId === posKey ? 'border-primary bg-primary/10' : 'border-primary/30 group-hover:border-primary/60'} border-dashed rounded flex items-center justify-center bg-primary/5 cursor-move`}>
               <span className="text-[10px] font-bold text-primary opacity-50 uppercase tracking-widest">{label}</span>
             </div>
           ) : (
-            <div className="w-full h-full" /> // Invisible layer for interaction if needed later
+            null
           )}
         </Rnd>
       );
