@@ -239,12 +239,10 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
         }),
       });
 
-      if (!resp.ok) {
-        const errData = await resp.json();
-        throw new Error(errData.error || `Erro ${resp.status}`);
-      }
-
       const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.error || `Erro ${resp.status}`);
+      }
       
       // Mapear storySequence para o formato que o createSlidesFromTemplate espera
       const formattedSlides = data.storySequence.map((s: any, idx: number) => ({

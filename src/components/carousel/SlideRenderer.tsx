@@ -108,9 +108,9 @@ export const SlideRenderer = React.memo(({
   const renderText = (text: string, style: React.CSSProperties, pos?: any, className?: string) => {
     if (!text) return null;
     
-    // Se temos posição absoluta, usamos ela, mas garantimos que não fique "amontoado"
-    // Adicionando display flex e padding interno se necessário
-    const posStyle: React.CSSProperties = pos ? { 
+    // Se temos posição absoluta, usamos ela
+    const isAbsolute = !!pos;
+    const posStyle: React.CSSProperties = isAbsolute ? { 
       position: 'absolute', 
       left: `${pos.x * 100}%`, 
       top: `${pos.y * 100}%`, 
@@ -119,9 +119,12 @@ export const SlideRenderer = React.memo(({
       margin: 0,
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center', // Centraliza verticalmente no box de arrastar
+      justifyContent: style.textAlign === 'center' ? 'center' : 'flex-start',
       zIndex: 10,
-    } : {};
+    } : {
+      position: 'relative',
+      width: '100%',
+    };
 
     return (
       <div 
@@ -134,7 +137,8 @@ export const SlideRenderer = React.memo(({
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: style.textAlign === 'center' ? 'center' : 'flex-start'
+          justifyContent: style.textAlign === 'center' ? 'center' : 'flex-start',
+          flexShrink: 0,
         }}
         dangerouslySetInnerHTML={{ __html: text }}
       />
