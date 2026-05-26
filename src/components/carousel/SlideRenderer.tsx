@@ -130,7 +130,11 @@ export const SlideRenderer = React.memo(({
           ...style, 
           ...posStyle, 
           wordBreak: 'break-word',
-          whiteSpace: 'pre-wrap', // Preserva quebras de linha reais
+          whiteSpace: 'pre-wrap', 
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: style.textAlign === 'center' ? 'center' : 'flex-start'
         }}
         dangerouslySetInnerHTML={{ __html: text }}
       />
@@ -197,7 +201,8 @@ export const SlideRenderer = React.memo(({
                 flex: slide.titleVerticalAlign === "top" ? "0 0 auto" : slide.titleVerticalAlign === "bottom" ? "1 1 auto" : "0 0 auto",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: slide.titleVerticalAlign === "bottom" ? "flex-end" : "flex-start"
+                justifyContent: slide.titleVerticalAlign === "bottom" ? "flex-end" : "flex-start",
+                zIndex: 1
               }}>
                 <div style={{ marginBottom: `${(slide.gap || 20) * fontScale}px` }}>
                   {renderText(slide.title, titleStyle, slide.titlePos)}

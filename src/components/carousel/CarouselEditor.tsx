@@ -1226,7 +1226,9 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                       totalSlides={slides.length} 
                       aspectRatio={selectedTemplate.aspectRatio}
                       onUpdate={(upd) => updateSlide(currentSlide, upd)}
-                      isFreeEditMode={false}
+                      isFreeEditMode={isFreeEditMode}
+                      selectedLayerId={selectedLayerId}
+                      onSelectLayer={setSelectedLayerId}
                     />
                   </div>
                 ) : (
