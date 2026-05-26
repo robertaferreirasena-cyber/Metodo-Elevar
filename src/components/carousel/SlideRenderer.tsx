@@ -37,7 +37,7 @@ export const SlideRenderer = React.memo(({
     textDecoration: slide.titleUnderline ? "underline" : "none",
     textShadow: slide.textShadow || undefined,
     lineHeight: 1.15,
-    fontFamily: slide.titleFontFamily || slide.fontFamily,
+    fontFamily: slide.fontFamily,
     textAlign: slide.titleAlign || slide.align || "center",
   };
 
@@ -50,7 +50,7 @@ export const SlideRenderer = React.memo(({
     textDecoration: slide.bodyUnderline ? "underline" : "none",
     textShadow: slide.textShadow || undefined,
     lineHeight: 1.5,
-    fontFamily: slide.bodyFontFamily || slide.fontFamily,
+    fontFamily: slide.fontFamily,
     textAlign: slide.bodyAlign || slide.align || "center",
     marginTop: slide.gap ? `${slide.gap * fontScale}px` : undefined,
   };
