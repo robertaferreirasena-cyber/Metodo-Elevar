@@ -267,8 +267,10 @@ export const SlideRenderer = React.memo(({
 
       {layout === "editorial" && (
         <div className="absolute inset-0 flex p-12 gap-8">
-          <div className="flex-1 flex flex-col justify-center">
-            {renderText(slide.title, titleStyle, slide.titlePos, "mb-6")}
+          <div className="flex-1 flex flex-col justify-center relative">
+            <div className={!slide.titlePos ? "mb-6" : ""}>
+              {renderText(slide.title, titleStyle, slide.titlePos)}
+            </div>
             {renderText(slide.body, bodyStyle, slide.bodyPos)}
           </div>
           <div className="w-1/3 bg-muted rounded-lg overflow-hidden relative">
@@ -304,8 +306,10 @@ export const SlideRenderer = React.memo(({
               </div>
             ))}
           </div>
-          <div className="h-1/3">
-            {renderText(slide.title, titleStyle, slide.titlePos, "mb-2")}
+          <div className="h-1/3 relative">
+            <div className={!slide.titlePos ? "mb-2" : ""}>
+              {renderText(slide.title, titleStyle, slide.titlePos)}
+            </div>
             {renderText(slide.body, bodyStyle, slide.bodyPos)}
           </div>
         </div>
@@ -317,7 +321,9 @@ export const SlideRenderer = React.memo(({
               <div className="px-6 py-2 rounded-full mb-6 font-bold" style={{ backgroundColor: slide.highlightBgColor || slide.accentColor, color: slide.bgColor }}>
                  OFERTA ESPECIAL
               </div>
-              {renderText(slide.title, titleStyle, slide.titlePos, "mb-6")}
+              <div className={!slide.titlePos ? "mb-6" : ""}>
+                {renderText(slide.title, titleStyle, slide.titlePos)}
+              </div>
               {renderText(slide.body, bodyStyle, slide.bodyPos)}
            </div>
         </div>
