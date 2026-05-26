@@ -1076,26 +1076,7 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                         </Button>
                       </div>
                     </div>
-                          Topo
-                        </Button>
-                        <Button 
-                          variant={cur.bodyVerticalAlign === 'center' || !cur.bodyVerticalAlign ? 'secondary' : 'ghost'} 
-                          size="sm" 
-                          className="flex-1 h-7 text-[10px]"
-                          onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'center', bodyPos: undefined })}
-                        >
-                          Meio
-                        </Button>
-                        <Button 
-                          variant={cur.bodyVerticalAlign === 'bottom' ? 'secondary' : 'ghost'} 
-                          size="sm" 
-                          className="flex-1 h-7 text-[10px]"
-                          onClick={() => updateSlide(currentSlide, { bodyVerticalAlign: 'bottom', bodyPos: undefined })}
-                        >
-                          Baixo
-                        </Button>
-                      </div>
-                    </div>
+
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
