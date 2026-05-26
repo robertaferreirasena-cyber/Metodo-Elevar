@@ -1063,9 +1063,13 @@ export function createSlidesFromTemplate(
     bgColor: template.bgColor,
     textColor: template.textColor,
     accentColor: template.accentColor,
+    titleColor: template.textColor,
+    bodyColor: template.textColor,
     titleSize: template.titleSize,
     bodySize: template.bodySize,
     fontFamily: template.fontFamily,
+    titleFontFamily: template.fontFamily,
+    bodyFontFamily: template.fontFamily,
     align: template.align,
     bgGradient: template.bgGradient,
     layout: isJournal
