@@ -204,8 +204,8 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
       profileName: profileInfo.name,
       profileHandle: profileInfo.handle,
       profileImageUrl: profileInfo.image,
-      titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.15 },
-      bodyPos: { x: 0.1, y: 0.3, width: 0.8, height: 0.4 },
+      titlePos: s.titlePos, // Manter se já existir (foi editado)
+      bodyPos: s.bodyPos,   // Manter se já existir (foi editado)
     });
 
     if (templateApplyMode === "all") {
