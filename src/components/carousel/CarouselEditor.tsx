@@ -101,6 +101,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     "session_carousel_editor_v2", EMPTY_CAROUSEL_STATE, 1000, "local"
   );
 
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("preview"); // Default to preview to see the content
   const [topic, setTopic] = useState(sessionState.topic || "");
   const [slideCount, setSlideCount] = useState(sessionState.slideCount);
   const [tone, setTone] = useState(sessionState.tone);
