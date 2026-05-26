@@ -107,19 +107,36 @@ export const SlideRenderer = React.memo(({
 
   const renderText = (text: string, style: React.CSSProperties, pos?: any, className?: string) => {
     if (!text) return null;
+    
+    // Se temos posição absoluta, usamos ela, mas garantimos que não fique "amontoado"
+    // Adicionando display flex e padding interno se necessário
     const posStyle: React.CSSProperties = pos ? { 
       position: 'absolute', 
       left: `${pos.x * 100}%`, 
       top: `${pos.y * 100}%`, 
-      width: pos.width ? `${pos.width * 100}%` : undefined,
-      height: pos.height ? `${pos.height * 100}%` : undefined,
-      margin: 0
+      width: pos.width ? `${pos.width * 100}%` : '80%',
+      height: pos.height ? `${pos.height * 100}%` : 'auto',
+      margin: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center', // Centraliza verticalmente no box de arrastar
+      zIndex: 10,
     } : {};
+
     return (
       <div 
         className={className} 
-        style={{ ...style, ...posStyle }}
-        dangerouslySetInnerHTML={{ __html: text.replace(/\n/g, '<br/>') }}
+        style={{ 
+          ...style, 
+          ...posStyle, 
+          wordBreak: 'break-word',
+          whiteSpace: 'pre-wrap', 
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: style.textAlign === 'center' ? 'center' : 'flex-start'
+        }}
+        dangerouslySetInnerHTML={{ __html: text }}
       />
     );
   };
@@ -184,7 +201,8 @@ export const SlideRenderer = React.memo(({
                 flex: slide.titleVerticalAlign === "top" ? "0 0 auto" : slide.titleVerticalAlign === "bottom" ? "1 1 auto" : "0 0 auto",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: slide.titleVerticalAlign === "bottom" ? "flex-end" : "flex-start"
+                justifyContent: slide.titleVerticalAlign === "bottom" ? "flex-end" : "flex-start",
+                zIndex: 1
               }}>
                 <div style={{ marginBottom: `${(slide.gap || 20) * fontScale}px` }}>
                   {renderText(slide.title, titleStyle, slide.titlePos)}
@@ -301,78 +319,7 @@ export const SlideRenderer = React.memo(({
         </div>
       )}
 
-      {layout === "journal-photo-card" && (
-        <div className="absolute inset-0 flex items-center justify-center p-12">
-           {renderBgImage()}
-           <div className="relative z-10 p-10 shadow-2xl rounded-sm" style={{ backgroundColor: slide.bgColor, width: '80%', height: '70%', textAlign: slide.align }}>
-              {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-              {renderText(slide.body, bodyStyle, slide.bodyPos)}
-              <div className="absolute top-4 right-4"><WashiTape width={120 * fontScale} color={slide.accentColor} rotate={-15} /></div>
-           </div>
-        </div>
-      )}
-
-      {layout === "journal-note" && (
-        <div className="absolute inset-0 flex flex-col p-16" style={{ background: slide.bgColor }}>
-           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: PAPER_TEXTURES.notebook }} />
-           <div className="border-l-4 border-primary/20 pl-8 h-full flex flex-col justify-center relative z-10">
-              {renderText(slide.title, { ...titleStyle, fontFamily: slide.titleFontFamily || slide.fontFamily || "'Playfair Display', serif" }, slide.titlePos, "mb-6")}
-              {renderText(slide.body, { ...bodyStyle, fontFamily: slide.bodyFontFamily || slide.fontFamily || "'DM Sans', sans-serif" }, slide.bodyPos)}
-           </div>
-           <div className="absolute top-8 right-8"><GoldStamp size={80 * fontScale} /></div>
-        </div>
-      )}
-
-      {layout === "journal-tape" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center" style={{ backgroundColor: slide.bgColor }}>
-           <div className="absolute top-10"><WashiTape width={200 * fontScale} color={slide.accentColor} /></div>
-           <div className="bg-white p-12 shadow-xl rotate-1 max-w-[90%]">
-              {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-              {renderText(slide.body, bodyStyle, slide.bodyPos)}
-           </div>
-           <div className="absolute bottom-10 right-10 rotate-12"><WaxSeal color={slide.accentColor} size={60 * fontScale} /></div>
-        </div>
-      )}
-
-      {layout === "journal-binder" && (
-        <div className="absolute inset-0 flex flex-col p-16 pt-24" style={{ backgroundColor: slide.bgColor }}>
-           <div className="absolute top-0 left-0 right-0 h-16 flex justify-around px-12">
-              <SpiralBinder width={spec.width - 100} rings={8} />
-           </div>
-           <div className="h-full border-t border-muted pt-8">
-              {renderText(slide.title, titleStyle, slide.titlePos, "mb-6")}
-              {renderText(slide.body, bodyStyle, slide.bodyPos)}
-           </div>
-        </div>
-      )}
-
-      {layout === "journal-torn-paper" && (
-        <div className="absolute inset-0">
-           {renderBgImage()}
-           <div className="absolute inset-0 flex items-center justify-center">
-              <TornPaperPath width={spec.width * 0.85} height={spec.height * 0.75} fill={slide.bgColor}>
-                 {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-                 {renderText(slide.body, bodyStyle, slide.bodyPos)}
-              </TornPaperPath>
-           </div>
-        </div>
-      )}
-
-      {layout === "journal-envelope" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-12" style={{ backgroundColor: slide.bgColor }}>
-           <div className="relative w-full aspect-video flex flex-col items-center justify-center text-center">
-              <div className="absolute inset-0">
-                 <EnvelopeShape width={spec.width * 0.7} height={spec.width * 0.5} color={slide.bgColor} flapColor={slide.accentColor} />
-              </div>
-              <div className="relative z-10 px-12">
-                {renderText(slide.title, titleStyle, slide.titlePos, "mb-4")}
-                {renderText(slide.body, bodyStyle, slide.bodyPos)}
-              </div>
-              <div className="absolute -bottom-8"><WaxSeal color={slide.accentColor} size={70 * fontScale} /></div>
-           </div>
-           <div className="mt-16"><HandDrawnArrow color={slide.accentColor} width={60 * fontScale} rotate={180} /></div>
-        </div>
-      )}
+      {/* Journaling layouts removed */}
 
       {/* Default footer accent line for non-journaling */}
       {!layout.startsWith('journal-') && (

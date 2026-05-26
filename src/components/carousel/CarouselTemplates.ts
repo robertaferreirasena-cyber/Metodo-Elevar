@@ -8,13 +8,8 @@ export type CarouselLayout =
   | "tweet-post"
   | "prompt-card"
   | "sticker-card"
-  // ===== Família Journaling (papelaria orgânica) =====
-  | "journal-note"        // folha de caderno + selo dourado
-  | "journal-tape"        // folha presa com fita + card destaque
-  | "journal-photo-card"  // foto de fundo + card colorido sobreposto
-  | "journal-binder"      // espiral metálico no topo
-  | "journal-torn-paper"  // papel rasgado sobre foto
-  | "journal-envelope";   // envelope aberto + selo de cera
+  // ===== Família Journaling REMOVIDO =====
+  | "journal-note";
 
 export type AspectRatio = "1:1" | "4:5" | "16:9" | "9:16";
 
@@ -725,115 +720,12 @@ export interface CarouselTemplate {
     highlightBgColor: "rgba(255,255,255,0.95)",
   },
 
-  // ============================================================
-  // ========== COLEÇÃO JOURNALING (papelaria orgânica) ==========
-  // ============================================================
-  {
-    id: "journal-cream",
-    name: "📓 Caderno Cream",
-    description: "Folha de caderno + selo dourado, fundo linho creme",
-    aspectRatio: "1:1",
-    bgColor: "#f0e4cf",
-    textColor: "#3a1a12",
-    accentColor: "#a23e2e",
-    fontFamily: "'Cormorant Garamond', serif",
-    titleSize: 38,
-    bodySize: 18,
-    align: "center",
-    layout: "journal-note",
-  },
-  {
-    id: "journal-rust",
-    name: "📓 Caderno Rust",
-    description: "Folha presa com fita washi sobre fundo vermelho terra",
-    aspectRatio: "1:1",
-    bgColor: "#a23e2e",
-    textColor: "#3a1a12",
-    accentColor: "#f0e6d2",
-    fontFamily: "'Playfair Display', serif",
-    titleSize: 40,
-    bodySize: 18,
-    align: "center",
-    layout: "journal-tape",
-  },
-  {
-    id: "journal-olive",
-    name: "🌿 Caderno Olive",
-    description: "Foto de fundo + card oliva sobreposto",
-    aspectRatio: "1:1",
-    bgColor: "#6b7a3a",
-    textColor: "#fefdf8",
-    accentColor: "#6b7a3a",
-    fontFamily: "'Cormorant Garamond', serif",
-    titleSize: 38,
-    bodySize: 18,
-    align: "center",
-    layout: "journal-photo-card",
-  },
-  {
-    id: "journal-copper",
-    name: "✉️ Caderno Copper",
-    description: "Envelope aberto com selo de cera vermelho",
-    aspectRatio: "1:1",
-    bgColor: "#b8693d",
-    textColor: "#3a1a12",
-    accentColor: "#7a1f15",
-    fontFamily: "'Playfair Display', serif",
-    titleSize: 36,
-    bodySize: 18,
-    align: "center",
-    layout: "journal-envelope",
-  },
-  {
-    id: "journal-forest",
-    name: "🌱 Caderno Forest",
-    description: "Papel rasgado sobre foto de natureza",
-    aspectRatio: "1:1",
-    bgColor: "#3a4a32",
-    textColor: "#3a2a1a",
-    accentColor: "#8aa05a",
-    fontFamily: "'Cormorant Garamond', serif",
-    titleSize: 42,
-    bodySize: 18,
-    align: "center",
-    layout: "journal-torn-paper",
-  },
-  {
-    id: "journal-binder",
-    name: "📎 Caderno Espiral",
-    description: "Folha presa por espiral metálico no topo",
-    aspectRatio: "1:1",
-    bgColor: "#e85a2a",
-    textColor: "#3a1a12",
-    accentColor: "#a23e2e",
-    fontFamily: "'Cormorant Garamond', serif",
-    titleSize: 38,
-    bodySize: 18,
-    align: "center",
-    layout: "journal-binder",
-  },
+  // Removed journaling templates as requested
 ];
 
-// IDs da família Journaling (para agrupamento na UI e distribuição em sequência)
-export const JOURNAL_TEMPLATE_IDS = [
-  "journal-rust",
-  "journal-cream",
-  "journal-olive",
-  "journal-binder",
-  "journal-forest",
-  "journal-copper",
-] as const;
+export const JOURNAL_TEMPLATE_IDS = [] as const;
 
-// Sequência de layouts aplicada automaticamente quando o usuário escolhe
-// "Aplicar a todos" em qualquer template Journaling — gera variação visual coerente.
-export const JOURNAL_LAYOUT_SEQUENCE: CarouselLayout[] = [
-  "journal-tape",        // capa impactante
-  "journal-note",        // desenvolvimento 1
-  "journal-photo-card",  // desenvolvimento 2
-  "journal-binder",      // desenvolvimento 3
-  "journal-torn-paper",  // desenvolvimento 4
-  "journal-envelope",    // CTA / encerramento
-];
+export const JOURNAL_LAYOUT_SEQUENCE: CarouselLayout[] = ["text-only"];
 
 export function isJournalTemplate(templateId: string): boolean {
   return (JOURNAL_TEMPLATE_IDS as readonly string[]).includes(templateId);
@@ -864,31 +756,11 @@ export const JOURNAL_PALETTES: JournalPalette[] = [
 ];
 
 export function applyPaletteToSlide(slide: SlideData, palette: JournalPalette): SlideData {
-  return {
-    ...slide,
-    bgColor: palette.bgColor,
-    textColor: palette.textColor,
-    accentColor: palette.accentColor,
-    // clear per-slide overrides for color fields so the palette wins
-    titleColor: undefined,
-    bodyColor: undefined,
-  };
+  return slide;
 }
 
-/**
- * Sample journaling content used by the off-screen Collection Exporter
- * to render the 6 layouts with the same body of text and current palette.
- */
-export const JOURNAL_SAMPLE_CONTENT: { title: string; body: string }[] = [
-  { title: "Como dobrar seu faturamento sem dobrar a jornada", body: "Três pilares que aplicamos com nossas mentoradas para escalar com leveza e estratégia." },
-  { title: "O segredo da consistência está nos pequenos rituais", body: "Não é talento. É repetição inteligente, todos os dias, no mesmo horário, com presença." },
-  { title: "Sua marca precisa de uma narrativa, não só de posts", body: "Histórias conectam. Conteúdo solto se perde. Comece pelo porquê e o resto se organiza." },
-  { title: "Pare de vender produto. Venda transformação", body: "Sua cliente não quer comprar — ela quer virar uma versão melhor de si mesma." },
-  { title: "Estratégia sem execução é só sonho bonito", body: "Plano de 90 dias, ações de 7, revisão semanal. Simples, mas exige disciplina." },
-  { title: "Vamos juntas construir o seu próximo capítulo?", body: "Clique no link da bio e agende uma conversa gratuita comigo. Sua hora chegou." },
-];
+export const JOURNAL_SAMPLE_CONTENT: { title: string; body: string }[] = [];
 
-/** Pre-made offline content themes for the Journaling Collection sample button. */
 export interface JournalSampleTheme {
   id: string;
   label: string;
@@ -896,88 +768,14 @@ export interface JournalSampleTheme {
   slides: { title: string; body: string }[];
 }
 
-export const JOURNAL_SAMPLE_THEMES: JournalSampleTheme[] = [
-  {
-    id: "generico",
-    label: "Genérico (mentoria)",
-    emoji: "📓",
-    slides: JOURNAL_SAMPLE_CONTENT,
-  },
-  {
-    id: "autoestima",
-    label: "Autoestima",
-    emoji: "💗",
-    slides: [
-      { title: "Você é mais do que o espelho diz hoje", body: "Sua autoestima não nasce da imagem — nasce do quanto você se escolhe todos os dias." },
-      { title: "O elogio que falta vem de dentro", body: "Pare de esperar validação externa. Comece pelo seu próprio olhar pelo seu nome." },
-      { title: "Pequenos rituais reconstroem grandes mulheres", body: "Café com calma, banho consciente, roupa que abraça. O cuidado é uma forma de amor." },
-      { title: "Compare-se só com a versão de ontem", body: "A jornada das outras não é régua. Cada passo seu já é coragem em movimento." },
-      { title: "Você cabe inteira no espaço que ocupa", body: "Não diminua sua voz, sua presença, seus sonhos. O mundo precisa de você inteira." },
-      { title: "Que tal começar hoje a se escolher?", body: "Salve este post. Releia amanhã. E me conta nos comentários: qual passo você dá hoje?" },
-    ],
-  },
-  {
-    id: "rotina",
-    label: "Rotina matinal",
-    emoji: "☀️",
-    slides: [
-      { title: "Sua manhã decide o tom do seu dia", body: "Não é mágica — é estrutura. As primeiras duas horas constroem ou destroem o resto." },
-      { title: "Acorde 30 min antes do celular", body: "O scroll matinal sequestra sua atenção antes de você existir. Comece por você." },
-      { title: "Hidrate, respire, alongue", body: "Três gestos simples que reativam corpo e mente sem custar nada e mudam tudo." },
-      { title: "Escreva 3 prioridades em papel", body: "Tudo que está na cabeça pesa. No papel, vira plano. Plano vira ação." },
-      { title: "Movimento antes da tela", body: "Caminhar 10 minutos no sol já reorganiza humor, foco e energia para o dia." },
-      { title: "Vamos montar sua rotina ideal?", body: "Comenta MANHÃ que te mando o checklist completo da rotina das mentoradas." },
-    ],
-  },
-  {
-    id: "produtividade",
-    label: "Produtividade leve",
-    emoji: "🌿",
-    slides: [
-      { title: "Produtividade não é fazer mais — é fazer o que importa", body: "Listas infinitas cansam. Foco em 3 prioridades reais transforma." },
-      { title: "Bloqueie tempo, não tarefas", body: "Agenda por blocos protege sua energia. Tarefa solta vira procrastinação criativa." },
-      { title: "Faça primeiro o que dá medo", body: "A tarefa que você empurra é exatamente a que vai destravar seu dia inteiro." },
-      { title: "Pausas são parte do método", body: "Cérebro descansado entrega 3x mais. Trabalhe em ciclos, não em maratona." },
-      { title: "Encerre o dia com revisão", body: "5 minutos para olhar o que andou e o que sobrou. Amanhã começa pronto." },
-      { title: "Quer minha planilha de blocos?", body: "Comenta FOCO e te envio o template que uso com minhas mentoradas toda semana." },
-    ],
-  },
-  {
-    id: "vendas",
-    label: "Vendas com leveza",
-    emoji: "💼",
-    slides: [
-      { title: "Vender é servir, não convencer", body: "Quando você entende a dor real da sua cliente, a venda vira conversa natural." },
-      { title: "Pare de pedir desculpa pelo seu preço", body: "Seu valor não é o seu custo. É a transformação que sua cliente recebe." },
-      { title: "Escute mais, fale menos", body: "Cada objeção é um pedido de segurança. Pergunte antes de apresentar solução." },
-      { title: "Mostre prova, não promessa", body: "Print de cliente, antes/depois, depoimento real. Resultado fala mais que adjetivo." },
-      { title: "Follow-up é onde mora a venda", body: "70% das vendas acontecem depois do 5º contato. Não desista no primeiro 'vou pensar'." },
-      { title: "Bora destravar suas vendas?", body: "Comenta VENDER e te chamo no direct com o roteiro que multiplicou meu fechamento." },
-    ],
-  },
-];
+export const JOURNAL_SAMPLE_THEMES: JournalSampleTheme[] = [];
 
-/** Builds 6 sample SlideData (one per JOURNAL_LAYOUT_SEQUENCE entry) for the exporter. */
 export function buildJournalSampleSlides(
   palette: JournalPalette,
   profileHandle?: string,
   themeId?: string,
 ): SlideData[] {
-  const theme = JOURNAL_SAMPLE_THEMES.find(t => t.id === themeId) || JOURNAL_SAMPLE_THEMES[0];
-  const content = theme.slides;
-  return JOURNAL_LAYOUT_SEQUENCE.map((layout, i) => ({
-    title: content[i]?.title || content[0].title,
-    body: content[i]?.body || content[0].body,
-    bgColor: palette.bgColor,
-    textColor: palette.textColor,
-    accentColor: palette.accentColor,
-    titleSize: 38,
-    bodySize: 18,
-    fontFamily: "'Cormorant Garamond', serif",
-    align: "center",
-    layout,
-    profileHandle: profileHandle || "@suamarca",
-  }));
+  return [];
 }
 
 export interface LayerData {
@@ -1077,8 +875,8 @@ export function createSlidesFromTemplate(
       : template.layout,
     highlightBgColor: template.highlightBgColor,
     gap: template.gap || 20,
-    titlePos: { x: 0.1, y: 0.1, width: 0.8, height: 0.15 },
-    bodyPos: { x: 0.1, y: 0.3, width: 0.8, height: 0.4 },
+    titlePos: { x: 0.1, y: 0.2, width: 0.8, height: 0.2 },
+    bodyPos: { x: 0.1, y: 0.45, width: 0.8, height: 0.3 },
   }));
 }
 
