@@ -977,7 +977,7 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
         </div>
 
         {/* Main Workspace (Simplified) */}
-        <div className="flex-1 bg-muted/40 relative flex flex-col overflow-hidden">
+        <div className={`${activeTab === 'preview' ? 'flex' : 'hidden'} lg:flex flex-1 bg-muted/40 relative flex-col overflow-hidden transition-all duration-300`}>
           {exporting && (
             <div className="absolute top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md p-4 border-b shadow-lg animate-in slide-in-from-top duration-300">
               <div className="max-w-md mx-auto space-y-3">
