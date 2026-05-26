@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { GraduationCap, BookOpen, Palette, Sparkles, AlertTriangle, Instagram } from "lucide-react";
+import { GraduationCap, BookOpen, Sparkles, AlertTriangle, Instagram } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import CarouselEditor from "@/components/carousel/CarouselEditor";
+
 import { toast } from "sonner";
 import { useLearning } from "@/hooks/useLearning";
 import MissionChecklist from "@/components/learning/MissionChecklist";
@@ -21,18 +21,13 @@ import { MissionContextBanner } from "@/components/learning/MissionContextBanner
 export default function LearningModules() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("encontros");
-  const [carouselTopic, setCarouselTopic] = useState("");
 
   // Handle URL params for deep-linking (e.g., from MentorChat)
   useEffect(() => {
     const tab = searchParams.get("tab");
     const topic = searchParams.get("topic");
     if (tab === "carousel") {
-      if (topic) {
-        setCarouselTopic(decodeURIComponent(topic));
-        toast.success("Tema recebido! Gerando carrossel...");
-      }
-      setActiveTab("carousel");
+      setActiveTab("encontros");
       setSearchParams({}, { replace: true });
     } else if (tab === "instapro") {
       setActiveTab("instapro");
@@ -41,10 +36,7 @@ export default function LearningModules() {
   }, [searchParams, setSearchParams]);
 
   const handleCreateContent = useCallback((post: InstaProfile["posts_sugeridos"][0]) => {
-    const topic = `${post.titulo}\n\n${post.descricao}\n\nLegenda: ${post.legenda}`;
-    setCarouselTopic(topic);
-    setActiveTab("carousel");
-    toast.success(`Carrossel pré-preenchido com: "${post.titulo}"`);
+    toast.info(`Sugestão anotada: "${post.titulo}". Use no seu editor preferido.`);
   }, []);
 
   return (
@@ -61,16 +53,12 @@ export default function LearningModules() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="encontros"><BookOpen className="h-4 w-4 mr-1" /> Encontros</TabsTrigger>
-          <TabsTrigger value="carousel"><Palette className="h-4 w-4 mr-1" /> Carrossel</TabsTrigger>
           <TabsTrigger value="instapro"><Instagram className="h-4 w-4 mr-1" /> Insta PRO</TabsTrigger>
         </TabsList>
 
         <TabsContent value="encontros"><EncontrosTab /></TabsContent>
-        <TabsContent value="carousel">
-          <CarouselEditor initialTopic={carouselTopic} />
-        </TabsContent>
         <TabsContent value="instapro"><InstaProTab onCreateContent={handleCreateContent} /></TabsContent>
       </Tabs>
     </div>

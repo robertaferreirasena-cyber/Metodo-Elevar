@@ -16,26 +16,6 @@ const tools = [
     action: "Configurar Perfil"
   },
   {
-    title: "Gerador de Carrossel",
-    description: "Crie carrosséis virais com templates profissionais e IA",
-    icon: Palette,
-    color: "bg-pink-500/10",
-    iconColor: "text-pink-500",
-    href: "/aprendizado?tab=carousel",
-    badge: "POPULAR",
-    action: "Acessar"
-  },
-  {
-    title: "Criar do Zero",
-    description: "Inicie um design de carrossel em branco com total liberdade estilo Canva",
-    icon: PlusCircle,
-    color: "bg-blue-500/10",
-    iconColor: "text-blue-500",
-    href: "/aprendizado?tab=carousel&mode=blank",
-    badge: "NOVO",
-    action: "Criar"
-  },
-  {
     title: "Automação Instagram",
     description: "Fluxos ManyChat de alta conversão para DMs automáticas e funis",
     icon: Bot,
@@ -62,7 +42,7 @@ export default function InstagramHub() {
       </div>
 
       {/* Tools Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
         {tools.map((tool) => (
           <Link key={tool.title} to={tool.href} className="group">
             <Card className="h-full hover:shadow-lg transition-all hover:border-primary/50 border-border/50 bg-card/50 backdrop-blur-sm">
