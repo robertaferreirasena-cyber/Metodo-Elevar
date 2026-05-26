@@ -711,6 +711,15 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                     <div className="flex items-center justify-between">
                       <Label className="text-[11px] font-bold uppercase tracking-wider">Título Principal</Label>
                       <div className="flex gap-1 items-center">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={() => updateSlide(currentSlide, { titlePos: undefined })}
+                          title="Resetar Posição"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
                         <Input 
                           type="color" 
                           value={cur.titleColor || cur.textColor} 
