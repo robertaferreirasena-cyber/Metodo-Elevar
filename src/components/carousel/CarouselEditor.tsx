@@ -101,6 +101,7 @@ export default function CarouselEditor({ initialTopic }: CarouselEditorProps = {
     "session_carousel_editor_v2", EMPTY_CAROUSEL_STATE, 1000, "local"
   );
 
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("preview"); // Default to preview to see the content
   const [topic, setTopic] = useState(sessionState.topic || "");
   const [slideCount, setSlideCount] = useState(sessionState.slideCount);
   const [tone, setTone] = useState(sessionState.tone);
@@ -372,6 +373,20 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
     updateSlide(currentSlide, { [field]: newText });
   };
 
+  const insertColorTag = (field: 'title' | 'body', color: string) => {
+    const textarea = document.getElementById(`${field}-textarea`) as HTMLTextAreaElement;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const selected = text.substring(start, end);
+    const after = text.substring(end);
+    
+    const newText = `${before}<span style="color: ${color}">${selected}</span>${after}`;
+    updateSlide(currentSlide, { [field]: newText });
+  };
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       {/* Header bar */}
@@ -398,9 +413,15 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Tab Switcher */}
+        <div className="lg:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-[100] flex bg-background/80 backdrop-blur-md border rounded-full p-1 shadow-xl">
+           <Button variant={activeTab === 'edit' ? 'secondary' : 'ghost'} size="sm" className="rounded-full px-6 h-9" onClick={() => setActiveTab('edit')}>Editar</Button>
+           <Button variant={activeTab === 'preview' ? 'secondary' : 'ghost'} size="sm" className="rounded-full px-6 h-9" onClick={() => setActiveTab('preview')}>Ver Post</Button>
+        </div>
+
         {/* Sidebar */}
-        <div className="w-full lg:w-[400px] border-r bg-card flex flex-col shrink-0">
+        <div className={`${activeTab === 'edit' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[400px] border-r bg-card flex-col shrink-0 transition-all duration-300`}>
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-6">
               {/* Generation Section */}
@@ -689,7 +710,23 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                   <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
                     <div className="flex items-center justify-between">
                       <Label className="text-[11px] font-bold uppercase tracking-wider">Título Principal</Label>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={() => updateSlide(currentSlide, { titlePos: undefined })}
+                          title="Resetar Posição"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
+                        <Input 
+                          type="color" 
+                          value={cur.titleColor || cur.textColor} 
+                          onChange={(e) => insertColorTag('title', e.target.value)}
+                          className="w-6 h-6 p-0 border-none bg-transparent cursor-pointer"
+                          title="Colorir palavra selecionada"
+                        />
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'b')}><Bold className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'i')}><Italic className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('title', 'u')}><Underline className="h-3 w-3" /></Button>
@@ -702,6 +739,29 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                       onChange={(e) => updateSlide(currentSlide, { title: e.target.value })} 
                       className="min-h-[60px] text-sm bg-background" 
                     />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Fonte do Título</Label>
+                        <select 
+                          className="w-full text-[10px] p-1 border rounded bg-background"
+                          value={cur.titleFontFamily || cur.fontFamily}
+                          onChange={(e) => updateSlide(currentSlide, { titleFontFamily: e.target.value })}
+                        >
+                          {FONT_OPTIONS.map(f => <option key={f.family} value={f.family}>{f.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Cor do Título</Label>
+                        <div className="flex gap-2 items-center">
+                          <Input 
+                            type="color" 
+                            value={cur.titleColor || cur.textColor} 
+                            onChange={(e) => updateSlide(currentSlide, { titleColor: e.target.value })}
+                            className="h-8 w-full p-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Tamanho</Label>
@@ -722,7 +782,23 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                   <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
                     <div className="flex items-center justify-between">
                       <Label className="text-[11px] font-bold uppercase tracking-wider">Texto de Apoio</Label>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={() => updateSlide(currentSlide, { bodyPos: undefined })}
+                          title="Resetar Posição"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
+                        <Input 
+                          type="color" 
+                          value={cur.bodyColor || cur.textColor} 
+                          onChange={(e) => insertColorTag('body', e.target.value)}
+                          className="w-6 h-6 p-0 border-none bg-transparent cursor-pointer"
+                          title="Colorir palavra selecionada"
+                        />
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('body', 'b')}><Bold className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('body', 'i')}><Italic className="h-3 w-3" /></Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => insertTag('body', 'u')}><Underline className="h-3 w-3" /></Button>
@@ -735,6 +811,29 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
                       onChange={(e) => updateSlide(currentSlide, { body: e.target.value })} 
                       className="min-h-[80px] text-sm bg-background" 
                     />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Fonte do Texto</Label>
+                        <select 
+                          className="w-full text-[10px] p-1 border rounded bg-background"
+                          value={cur.bodyFontFamily || cur.fontFamily}
+                          onChange={(e) => updateSlide(currentSlide, { bodyFontFamily: e.target.value })}
+                        >
+                          {FONT_OPTIONS.map(f => <option key={f.family} value={f.family}>{f.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Cor do Texto</Label>
+                        <div className="flex gap-2 items-center">
+                          <Input 
+                            type="color" 
+                            value={cur.bodyColor || cur.textColor} 
+                            onChange={(e) => updateSlide(currentSlide, { bodyColor: e.target.value })}
+                            className="h-8 w-full p-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Tamanho</Label>
@@ -896,7 +995,7 @@ Importante: O campo "caption" deve ser uma legenda persuasiva para o post no Ins
         </div>
 
         {/* Main Workspace (Simplified) */}
-        <div className="flex-1 bg-muted/40 relative flex flex-col overflow-hidden">
+        <div className={`${activeTab === 'preview' ? 'flex' : 'hidden'} lg:flex flex-1 bg-muted/40 relative flex-col overflow-hidden transition-all duration-300`}>
           {exporting && (
             <div className="absolute top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md p-4 border-b shadow-lg animate-in slide-in-from-top duration-300">
               <div className="max-w-md mx-auto space-y-3">
