@@ -44,7 +44,6 @@ interface Tag {
 }
 
 interface UserPermissions {
-  module_private: boolean;
   module_group: boolean;
   module_sequences: boolean;
   module_community: boolean;
@@ -53,7 +52,6 @@ interface UserPermissions {
   module_persona: boolean;
   module_ideas: boolean;
   module_photoboss: boolean;
-  module_conversation_analysis: boolean;
   custom_daily_limit: number | null;
   custom_monthly_limit: number | null;
   custom_persona_limit: number | null;
@@ -83,7 +81,6 @@ interface UserManagementDialogProps {
 }
 
 const defaultPermissions: UserPermissions = {
-  module_private: true,
   module_group: true,
   module_sequences: true,
   module_community: true,
@@ -92,7 +89,6 @@ const defaultPermissions: UserPermissions = {
   module_persona: true,
   module_ideas: true,
   module_photoboss: true,
-  module_conversation_analysis: true,
   custom_daily_limit: null,
   custom_monthly_limit: null,
   custom_persona_limit: null,

@@ -14,10 +14,7 @@ import { toast } from "sonner";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
-import PrivateMode from "./pages/PrivateMode";
 import GroupMode from "./pages/GroupMode";
-import StrategyGenerator from "./pages/StrategyGenerator";
-import ConversationAnalysis from "./pages/ConversationAnalysis";
 import GroupContent from "./pages/GroupContent";
 import GroupSequences from "./pages/GroupSequences";
 import GroupTemplates from "./pages/GroupTemplates";
@@ -120,47 +117,12 @@ const App = () => (
                 }
               />
 
-              {/* Private Mode Routes */}
-              <Route
-                path="/privado"
-                element={
-                  <ProtectedRoute>
-                    <ModuleGuard module="module_private">
-                      <AppLayout>
-                        <PrivateMode />
-                      </AppLayout>
-                    </ModuleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/privado/estrategias"
-                element={
-                  <ProtectedRoute>
-                    <ModuleGuard module="module_private">
-                      <AppLayout>
-                        <StrategyGenerator />
-                      </AppLayout>
-                    </ModuleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/privado/analise"
-                element={
-                  <ProtectedRoute>
-                    <ModuleGuard module="module_conversation_analysis">
-                      <AppLayout>
-                        <ConversationAnalysis />
-                      </AppLayout>
-                    </ModuleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/privado/scripts"
-                element={<Navigate to="/privado" replace />}
-              />
+              {/* Legacy Private Mode redirects (removed) */}
+              <Route path="/privado" element={<Navigate to="/mentora" replace />} />
+              <Route path="/privado/estrategias" element={<Navigate to="/mentora" replace />} />
+              <Route path="/privado/analise" element={<Navigate to="/mentora" replace />} />
+              <Route path="/privado/scripts" element={<Navigate to="/mentora" replace />} />
+
 
               {/* Group Mode Routes */}
               <Route
@@ -391,8 +353,8 @@ const App = () => (
               />
 
               {/* Legacy redirects */}
-              <Route path="/estrategias" element={<Navigate to="/privado/estrategias" replace />} />
-              <Route path="/analise" element={<Navigate to="/privado/analise" replace />} />
+              <Route path="/estrategias" element={<Navigate to="/mentora" replace />} />
+              <Route path="/analise" element={<Navigate to="/mentora" replace />} />
 
               {/* Install Page - no layout needed */}
               <Route path="/instalar" element={<Install />} />
