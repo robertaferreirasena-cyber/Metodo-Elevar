@@ -22,13 +22,10 @@ export default function History() {
   const navigate = useNavigate();
   const { conversations, loading, deleteConversation } = useConversations();
 
-  const handleOpenConversation = (id: string, type: string) => {
-    if (type === "strategy") {
-      navigate(`/privado/estrategias?conversa=${id}`);
-    } else {
-      navigate(`/privado/analise?conversa=${id}`);
-    }
+  const handleOpenConversation = (_id: string, _type: string) => {
+    // Páginas antigas de Estratégia/Análise foram removidas. Histórico agora é apenas leitura.
   };
+
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -82,10 +79,10 @@ export default function History() {
               Suas conversas aparecerão aqui. Comece criando sua primeira estratégia de vendas.
             </p>
             <Button
-              onClick={() => navigate("/privado/estrategias")}
+              onClick={() => navigate("/mentora")}
               className="gradient-primary glow-pink text-primary-foreground"
             >
-              Criar primeira estratégia
+              Conversar com a Mentora
             </Button>
           </div>
         ) : (
