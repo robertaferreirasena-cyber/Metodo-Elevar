@@ -1318,7 +1318,6 @@ export type Database = {
           custom_sequence_limit: number | null
           id: string
           module_community: boolean | null
-          module_conversation_analysis: boolean | null
           module_favorites: boolean | null
           module_group: boolean | null
           module_history: boolean | null
@@ -1326,7 +1325,6 @@ export type Database = {
           module_manychat_flows: boolean | null
           module_persona: boolean | null
           module_photoboss: boolean | null
-          module_private: boolean | null
           module_sequences: boolean | null
           module_traffic_ads: boolean | null
           updated_at: string | null
@@ -1340,7 +1338,6 @@ export type Database = {
           custom_sequence_limit?: number | null
           id?: string
           module_community?: boolean | null
-          module_conversation_analysis?: boolean | null
           module_favorites?: boolean | null
           module_group?: boolean | null
           module_history?: boolean | null
@@ -1348,7 +1345,6 @@ export type Database = {
           module_manychat_flows?: boolean | null
           module_persona?: boolean | null
           module_photoboss?: boolean | null
-          module_private?: boolean | null
           module_sequences?: boolean | null
           module_traffic_ads?: boolean | null
           updated_at?: string | null
@@ -1362,7 +1358,6 @@ export type Database = {
           custom_sequence_limit?: number | null
           id?: string
           module_community?: boolean | null
-          module_conversation_analysis?: boolean | null
           module_favorites?: boolean | null
           module_group?: boolean | null
           module_history?: boolean | null
@@ -1370,7 +1365,6 @@ export type Database = {
           module_manychat_flows?: boolean | null
           module_persona?: boolean | null
           module_photoboss?: boolean | null
-          module_private?: boolean | null
           module_sequences?: boolean | null
           module_traffic_ads?: boolean | null
           updated_at?: string | null
