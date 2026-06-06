@@ -4,7 +4,6 @@ import { useAuth } from './useAuth';
 import { useAdmin } from './useAdmin';
 
 export type ModuleKey = 
-  | 'module_private'
   | 'module_group'
   | 'module_sequences'
   | 'module_persona'
@@ -13,12 +12,10 @@ export type ModuleKey =
   | 'module_history'
   | 'module_community'
   | 'module_photoboss'
-  | 'module_conversation_analysis'
   | 'module_traffic_ads'
   | 'module_manychat_flows';
 
 interface UserPermissions {
-  module_private: boolean;
   module_group: boolean;
   module_sequences: boolean;
   module_persona: boolean;
@@ -27,7 +24,6 @@ interface UserPermissions {
   module_history: boolean;
   module_community: boolean;
   module_photoboss: boolean;
-  module_conversation_analysis: boolean;
   module_traffic_ads: boolean;
   module_manychat_flows: boolean;
   custom_daily_limit: number | null;
@@ -37,7 +33,6 @@ interface UserPermissions {
 }
 
 const DEFAULT_PERMISSIONS: UserPermissions = {
-  module_private: true,
   module_group: true,
   module_sequences: true,
   module_persona: true,
@@ -46,7 +41,6 @@ const DEFAULT_PERMISSIONS: UserPermissions = {
   module_history: true,
   module_community: true,
   module_photoboss: true,
-  module_conversation_analysis: true,
   module_traffic_ads: true,
   module_manychat_flows: true,
   custom_daily_limit: null,
@@ -92,24 +86,22 @@ export function usePermissions() {
           // Fall back to defaults if error
           setPermissions(DEFAULT_PERMISSIONS);
         } else if (data) {
-          // Merge with defaults (null values from DB mean "use default" = true)
+          const d = data as Record<string, unknown>;
           setPermissions({
-            module_private: data.module_private ?? true,
-            module_group: data.module_group ?? true,
-            module_sequences: data.module_sequences ?? true,
-            module_persona: data.module_persona ?? true,
-            module_ideas: data.module_ideas ?? true,
-            module_favorites: data.module_favorites ?? true,
-            module_history: data.module_history ?? true,
-            module_community: data.module_community ?? true,
-            module_photoboss: data.module_photoboss ?? true,
-            module_conversation_analysis: data.module_conversation_analysis ?? true,
-            module_traffic_ads: (data as Record<string, unknown>).module_traffic_ads as boolean ?? true,
-            module_manychat_flows: (data as Record<string, unknown>).module_manychat_flows as boolean ?? true,
-            custom_daily_limit: data.custom_daily_limit,
-            custom_monthly_limit: data.custom_monthly_limit,
-            custom_persona_limit: data.custom_persona_limit,
-            custom_sequence_limit: data.custom_sequence_limit,
+            module_group: (d.module_group as boolean) ?? true,
+            module_sequences: (d.module_sequences as boolean) ?? true,
+            module_persona: (d.module_persona as boolean) ?? true,
+            module_ideas: (d.module_ideas as boolean) ?? true,
+            module_favorites: (d.module_favorites as boolean) ?? true,
+            module_history: (d.module_history as boolean) ?? true,
+            module_community: (d.module_community as boolean) ?? true,
+            module_photoboss: (d.module_photoboss as boolean) ?? true,
+            module_traffic_ads: (d.module_traffic_ads as boolean) ?? true,
+            module_manychat_flows: (d.module_manychat_flows as boolean) ?? true,
+            custom_daily_limit: (d.custom_daily_limit as number | null) ?? null,
+            custom_monthly_limit: (d.custom_monthly_limit as number | null) ?? null,
+            custom_persona_limit: (d.custom_persona_limit as number | null) ?? null,
+            custom_sequence_limit: (d.custom_sequence_limit as number | null) ?? null,
           });
         } else {
           // No custom permissions set - use defaults (all enabled)
@@ -168,10 +160,6 @@ export function usePermissions() {
 
 // Map routes to their required module permission
 export const ROUTE_MODULE_MAP: Record<string, ModuleKey> = {
-  '/privado': 'module_private',
-  '/privado/estrategias': 'module_private',
-  '/privado/analise': 'module_conversation_analysis',
-  '/privado/scripts': 'module_private',
   '/grupo': 'module_group',
   '/grupo/conteudo': 'module_group',
   '/grupo/sequencias': 'module_sequences',

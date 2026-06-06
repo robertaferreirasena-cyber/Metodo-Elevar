@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ModuleKey } from '@/hooks/usePermissions';
 
 const MODULE_NAMES: Record<ModuleKey, string> = {
-  module_private: 'Modo Privado',
   module_group: 'Modo Grupo',
   module_sequences: 'Sequências de Posts',
   module_persona: 'Persona Raio-X',
@@ -14,7 +13,6 @@ const MODULE_NAMES: Record<ModuleKey, string> = {
   module_history: 'Histórico',
   module_community: 'Comunidade',
   module_photoboss: 'Ensaio Fotográfico',
-  module_conversation_analysis: 'Análise de Conversas',
   module_traffic_ads: 'Tráfego Pago',
   module_manychat_flows: 'Automação Instagram',
 };

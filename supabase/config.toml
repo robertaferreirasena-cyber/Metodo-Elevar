@@ -3,8 +3,6 @@ project_id = "atizmwsokehhxclbckfr"
 [functions.sales-strategist]
 verify_jwt = false
 
-[functions.conversation-analyzer]
-verify_jwt = false
 
 [functions.persona-generator]
 verify_jwt = false

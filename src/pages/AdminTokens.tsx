@@ -18,10 +18,9 @@ interface FeatureTokens {
 }
 
 const FEATURE_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  'sales-strategist': { label: 'Estrategista', icon: <MessageCircle className="h-4 w-4" />, color: 'bg-primary' },
+  'ai-mentor-chat': { label: 'Mentoria Elevar', icon: <MessageCircle className="h-4 w-4" />, color: 'bg-primary' },
   'persona-generator': { label: 'Raio-X', icon: <Brain className="h-4 w-4" />, color: 'bg-accent' },
   'sequence-generator': { label: 'Sequências', icon: <ListOrdered className="h-4 w-4" />, color: 'bg-secondary' },
-  'conversation-analyzer': { label: 'Análise', icon: <BarChart3 className="h-4 w-4" />, color: 'bg-muted' },
   'photoboss': { label: 'PhotoBoss', icon: <Camera className="h-4 w-4" />, color: 'bg-primary/70' },
 };
 

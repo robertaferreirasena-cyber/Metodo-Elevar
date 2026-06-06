@@ -43,7 +43,7 @@ const ACTIVITY_CONFIG: Record<string, { route: string; label: string }> = {
   content: { route: "/mentora", label: "Conteúdo / Copy" },
   photo: { route: "/ensaio-fotografico", label: "PhotoBoss" },
   foto: { route: "/ensaio-fotografico", label: "PhotoBoss" },
-  instagram_private: { route: "/privado", label: "Instagram Privado" },
+  instagram_private: { route: "/mentora", label: "Mentoria Elevar" },
   instagram_group: { route: "/grupo", label: "Instagram Grupo" },
   financeiro: { route: "/financeiro", label: "Central Financeira" },
   metas: { route: "/metas-elevar", label: "Metas Elevar" },

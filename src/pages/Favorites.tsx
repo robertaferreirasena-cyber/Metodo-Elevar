@@ -90,10 +90,10 @@ export default function Favorites() {
               Crie estratégias e clique no ícone de coração para salvar suas favoritas aqui.
             </p>
             <Button
-              onClick={() => navigate("/privado/estrategias")}
+              onClick={() => navigate("/mentora")}
               className="gradient-primary glow-pink text-primary-foreground"
             >
-              Criar estratégia
+              Conversar com a Mentora
             </Button>
           </div>
         ) : (

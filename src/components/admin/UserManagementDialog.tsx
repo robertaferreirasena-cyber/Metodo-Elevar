@@ -44,7 +44,6 @@ interface Tag {
 }
 
 interface UserPermissions {
-  module_private: boolean;
   module_group: boolean;
   module_sequences: boolean;
   module_community: boolean;
@@ -53,7 +52,6 @@ interface UserPermissions {
   module_persona: boolean;
   module_ideas: boolean;
   module_photoboss: boolean;
-  module_conversation_analysis: boolean;
   custom_daily_limit: number | null;
   custom_monthly_limit: number | null;
   custom_persona_limit: number | null;
@@ -83,7 +81,6 @@ interface UserManagementDialogProps {
 }
 
 const defaultPermissions: UserPermissions = {
-  module_private: true,
   module_group: true,
   module_sequences: true,
   module_community: true,
@@ -92,7 +89,6 @@ const defaultPermissions: UserPermissions = {
   module_persona: true,
   module_ideas: true,
   module_photoboss: true,
-  module_conversation_analysis: true,
   custom_daily_limit: null,
   custom_monthly_limit: null,
   custom_persona_limit: null,
@@ -552,7 +548,6 @@ export function UserManagementDialog({ user, open, onOpenChange, onUserUpdated }
                     <Shield className="h-4 w-4" /> Módulos
                   </h4>
                   {[
-                    { key: 'module_private', label: 'Modo Privado' },
                     { key: 'module_group', label: 'Modo Grupo' },
                     { key: 'module_sequences', label: 'Sequências' },
                     { key: 'module_community', label: 'Comunidade' },
@@ -561,7 +556,6 @@ export function UserManagementDialog({ user, open, onOpenChange, onUserUpdated }
                     { key: 'module_persona', label: 'Persona Raio-X' },
                     { key: 'module_ideas', label: 'Gerador de Ideias' },
                     { key: 'module_photoboss', label: 'PhotoBoss' },
-                    { key: 'module_conversation_analysis', label: 'Análise de Conversas' },
                   ].map(({ key, label }) => (
                     <div key={key} className="flex items-center justify-between">
                       <Label className="text-sm">{label}</Label>
