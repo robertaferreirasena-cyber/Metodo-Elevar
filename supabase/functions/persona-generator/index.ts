@@ -268,15 +268,18 @@ IMPORTANTE:
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
+      if (response.status === 402 || response.status === 403) {
+        const body = await response.text();
+        console.error("[persona-generator] gateway error", response.status, body);
         return new Response(
-          JSON.stringify({ error: "Créditos esgotados." }),
+          JSON.stringify({ error: "Créditos de IA esgotados ou limite do workspace atingido. Ajuste o limite de créditos do workspace na Lovable para continuar." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       const errBody = await response.text();
       console.error("[persona-generator] gateway error", response.status, errBody);
       throw new Error(`Erro no processamento da IA (${response.status})`);
+
     }
 
     const data = await response.json();
