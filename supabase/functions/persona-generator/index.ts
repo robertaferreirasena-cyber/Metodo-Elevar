@@ -251,7 +251,7 @@ IMPORTANTE:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "google/gemini-3-flash-preview",
         max_tokens: 4000,
         messages: [
           { role: "system", content: PERSONA_PROMPT },
@@ -274,7 +274,9 @@ IMPORTANTE:
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      throw new Error("Erro no processamento da IA");
+      const errBody = await response.text();
+      console.error("[persona-generator] gateway error", response.status, errBody);
+      throw new Error(`Erro no processamento da IA (${response.status})`);
     }
 
     const data = await response.json();
